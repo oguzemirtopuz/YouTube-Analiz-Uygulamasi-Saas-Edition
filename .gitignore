@@ -1,0 +1,13 @@
+build/
+dist/
+logs/
+temp_videos/
+shorts_output/
+*.log
+channels.db
+app_out.txt
+out.txt
+test_out.txt
+__pycache__/
+*.pyc
+server.spec

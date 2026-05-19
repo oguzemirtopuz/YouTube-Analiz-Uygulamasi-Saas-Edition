@@ -11,3 +11,14 @@ test_out.txt
 __pycache__/
 *.pyc
 server.spec
+
+# Temporary generated files
+c_*.csv
+t_*.png
+
+# Temporary test/helper scripts
+check.py
+refactor.py
+test_*.py
+search*.py
+search_*.py

@@ -57,13 +57,17 @@ From a very young age, I have immersed myself in technology, building production
 *   **Description:** An autonomous, cognitive agent architecture & local-first assistant featuring episodic memory, tree-based JSON planning, self-healing re-planning, and isolated browser/desktop tools.
 *   **Technologies:** Python, Asyncio, Playwright, Vector DBs, HuggingFace NLP.
 
-#### ⚽ FutDisiplin
-*   **Description:** A custom web application that matches my passion for football with tactical analysis, tracking, and discipline models.
-*   **Technologies:** JavaScript, HTML5, CSS3, Local Database Architectures.
+#### 🎤 [VocalCleaner (Live Web Application)](https://vocalcleaner.onrender.com/)
+*   **Description:** A production-grade, dual-engine AI audio enhancing studio pipeline chaining CleanVoice AI (surgical de-noise) and Auphonic API (studio mastering and broadcast standard -16 LUFS loudness normalizations). **Live on Render!**
+*   **Technologies:** Node.js, Express, CleanVoice AI API, Auphonic API, HTML5/CSS3.
 
-#### 📈 RankVibe
-*   **Description:** A collaborative ranking and social feedback workspace conceptualized with premium user experience and custom state management.
-*   **Technologies:** Javascript, CSS3, Secure API Integrations.
+#### 🎬 [RankVibe Automation](https://github.com/oguzemirtopuz/RankVibe_Automation_Public)
+*   **Description:** An autonomous content engine that conceptualizes Shorts/TikToks using AI (OpenRouter), searches raw YouTube compilation videos, and slices high-action scenes using computer vision for Top 5 ranking compilations.
+*   **Technologies:** Python, OpenCV (Scene Detection), FFmpeg Rendering Core, OpenRouter AI API.
+
+#### ⚡ [ViralCut Pro](https://github.com/oguzemirtopuz/ViralCut)
+*   **Description:** An ultra-high-speed, local-first video trimming engine utilizing raw direct byte streaming (bypassing multipart RAM overhead) and FFmpeg stream-copy (`-c copy`) for instant zero-reencoding video clipping.
+*   **Technologies:** Python, FastAPI Asynchronous Streams, FFmpeg, HTML5/CSS3.
 
 #### 🚜 [Cropocalypse (Steam Wishlist)](https://store.steampowered.com/app/4259600/Cropocalypse/)
 *   **Description:** An immersive 3D farming simulator and resource management game powered by Unity, featuring stylized cell-shaded aesthetics, automated agricultural pipelines, and equipment systems. **Listed on Steam!**

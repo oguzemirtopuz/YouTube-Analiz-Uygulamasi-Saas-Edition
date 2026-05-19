@@ -1,4 +1,4 @@
-# 👋 Hi, I'm Oğuz Emir Topuz (`OguzEmir177`)
+# 👋 Hi, I'm Oğuz Emir Topuz (`oguzemirtopuz`)
 
 <div align="center">
   <img src="https://readme-typing-svg.demolab.com?font=Outfit&size=24&pause=1000&color=F7DF1E&width=435&lines=14-Year-Old+Fullstack+Developer;Football+Enthusiast+%26+Dev;SaaS+Product+Builder;3D+Game+Designer" alt="Typing SVG" />
@@ -49,11 +49,11 @@ From a very young age, I have immersed myself in technology, building production
 
 ### 📂 Featured Projects
 
-#### 🎬 [YouTube Analiz Pro (SaaS Edition)](https://github.com/OguzEmir177/YouTube-Analiz-Uygulamas-Saas-Edition)
+#### 🎬 [YouTube Analiz Pro (SaaS Edition)](https://github.com/oguzemirtopuz/YouTube-Analiz-Uygulamas-Saas-Edition)
 *   **Description:** A complete, asynchronous video analytics platform built for creators, featuring computer vision (thumbnail contrast/emotion analytics), voice & tempo evaluation, and an smart AI Coach.
 *   **Technologies:** Python, FastAPI, SQLite (aiosqlite WAL), OpenCV, Librosa, Gemini 2.0 Flash Vision, Llama-3.3-70B.
 
-#### 🧠 [JARVIS-Cognitive-OS](https://github.com/OguzEmir177/JARVIS-Cognitive-OS)
+#### 🧠 [JARVIS-Cognitive-OS](https://github.com/oguzemirtopuz/JARVIS-Cognitive-OS)
 *   **Description:** An autonomous, cognitive agent architecture & local-first assistant featuring episodic memory, tree-based JSON planning, self-healing re-planning, and isolated browser/desktop tools.
 *   **Technologies:** Python, Asyncio, Playwright, Vector DBs, HuggingFace NLP.
 
@@ -74,8 +74,8 @@ From a very young age, I have immersed myself in technology, building production
 ### 📊 GitHub Analytics
 
 <div align="center">
-  <img src="https://github-readme-stats.vercel.app/api?username=OguzEmir177&show_icons=true&theme=tokyonight&include_all_commits=true&count_private=true" alt="Oğuz Emir's GitHub Stats" height="180px" />
-  <img src="https://github-readme-stats.vercel.app/api/top-langs/?username=OguzEmir177&layout=compact&theme=tokyonight&langs_count=6" alt="Oğuz Emir's Top Languages" height="180px" />
+  <img src="https://github-readme-stats.vercel.app/api?username=oguzemirtopuz&show_icons=true&theme=tokyonight&include_all_commits=true&count_private=true" alt="Oğuz Emir's GitHub Stats" height="180px" />
+  <img src="https://github-readme-stats.vercel.app/api/top-langs/?username=oguzemirtopuz&layout=compact&theme=tokyonight&langs_count=6" alt="Oğuz Emir's Top Languages" height="180px" />
 </div>
 
 ---
@@ -84,7 +84,7 @@ From a very young age, I have immersed myself in technology, building production
 
 I'm always open to new SaaS collaborations, open-source projects, or football tactical debates!
 
-*   🐙 **GitHub:** [@OguzEmir177](https://github.com/OguzEmir177)
+*   🐙 **GitHub:** [@oguzemirtopuz](https://github.com/oguzemirtopuz)
 *   📧 **Email:** [oguzemirtopuz10@gmail.com](mailto:oguzemirtopuz10@gmail.com)
 *   🌐 **Personal Website:** *Coming Soon!*
 

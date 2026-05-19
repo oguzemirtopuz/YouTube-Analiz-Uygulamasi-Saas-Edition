@@ -78,8 +78,8 @@ From a very young age, I have immersed myself in technology, building production
 ### 📊 GitHub Analytics
 
 <div align="center">
-  <img src="https://github-readme-stats.vercel.app/api?username=oguzemirtopuz&show_icons=true&theme=tokyonight&include_all_commits=true&count_private=true" alt="Oğuz Emir's GitHub Stats" height="180px" />
-  <img src="https://github-readme-stats.vercel.app/api/top-langs/?username=oguzemirtopuz&layout=compact&theme=tokyonight&langs_count=6" alt="Oğuz Emir's Top Languages" height="180px" />
+  <img src="https://github-readme-stats.vercel.app/api?username=oguzemirtopuz&show_icons=true&theme=tokyonight&include_all_commits=true&count_private=true&cb=1" alt="Oğuz Emir's GitHub Stats" height="180px" />
+  <img src="https://github-readme-stats.vercel.app/api/top-langs/?username=oguzemirtopuz&layout=compact&theme=tokyonight&langs_count=6&cb=1" alt="Oğuz Emir's Top Languages" height="180px" />
 </div>
 
 ---

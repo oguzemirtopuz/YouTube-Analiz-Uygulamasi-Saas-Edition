@@ -65,9 +65,9 @@ From a very young age, I have immersed myself in technology, building production
 *   **Description:** A collaborative ranking and social feedback workspace conceptualized with premium user experience and custom state management.
 *   **Technologies:** Javascript, CSS3, Secure API Integrations.
 
-#### 🎮 3D Strategy Game & BabaClutch
-*   **Description:** Unity & C# powered 3D games emphasizing mechanics, pathfinding, and interactive level designs.
-*   **Technologies:** Unity, C#, 3D Blender Designs, Physics Engines.
+#### 🚜 [Cropocalypse (Steam Wishlist)](https://store.steampowered.com/app/4259600/Cropocalypse/)
+*   **Description:** An immersive 3D farming simulator and resource management game powered by Unity, featuring stylized cell-shaded aesthetics, automated agricultural pipelines, and equipment systems. **Listed on Steam!**
+*   **Technologies:** Unity, C#, Toony Colors Pro Shaders, 3D Blender Modeling, Physics Engines.
 
 ---
 

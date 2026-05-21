@@ -98,6 +98,42 @@ When the application starts, a sleek, modern, built-in **PyWebView desktop windo
 
 ---
 
+## 🔄 How to Update & Backup Guide
+
+### ⚠️ What Data to Back Up First
+Before upgrading your application to a new version, always back up the following critical files to avoid losing your configurations, history, or custom translations:
+1. **`channels.db`**: This is your local SQLite database located in the application directory. It contains all your local user accounts, channel configurations, historical analyses, and encrypted API keys.
+2. **`translations.xlsx`**: If you have customized any interface translations, dynamic texts, or PDF labels, keep a copy of this Excel file.
+
+### 🚀 Step-by-Step Update Process
+
+#### Method A: If Installed via Git (Recommended)
+1. **Back up your database:** Copy `channels.db` and `translations.xlsx` to a safe location outside the project folder.
+2. **Fetch and apply the latest changes:**
+   ```bash
+   git stash
+   git pull origin main
+   git stash pop
+   ```
+3. **Restore your database:** Copy your backed-up `channels.db` and `translations.xlsx` files back into the project folder (overwriting the default ones if necessary).
+4. **Update Python dependencies:**
+   ```bash
+   pip install -r requirements.txt --upgrade
+   ```
+5. **Run the application:** Launch it using your preferred method (PowerShell, BAT, or VBS).
+
+#### Method B: If Downloaded as a ZIP
+1. **Save your database:** Copy `channels.db` and `translations.xlsx` to a safe location outside the project directory.
+2. **Download and Extract:** Download the latest release ZIP from GitHub and extract it.
+3. **Merge/Replace Files:** Copy all the newly extracted files over your existing installation.
+4. **Restore Database:** Move your saved `channels.db` and `translations.xlsx` back into the main directory.
+5. **Update Dependencies:**
+   ```bash
+   pip install -r requirements.txt --upgrade
+   ```
+
+---
+
 ## 👤 About the Developer
 
 This project was developed by **Oğuz Emir Topuz**.

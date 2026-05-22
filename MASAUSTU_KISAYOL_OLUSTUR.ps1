@@ -1,7 +1,7 @@
 $desktop = [System.Environment]::GetFolderPath("Desktop")
 $shortcutPath = Join-Path $desktop "YouTube Analiz Pro.lnk"
-$targetPath = "c:\Users\Oğuz\Desktop\Projeler\Yt_Analiz\YT_AnalizPro\YouTube Analiz Pro.vbs"
-$workingDir = "c:\Users\Oğuz\Desktop\Projeler\Yt_Analiz\YT_AnalizPro"
+$workingDir = $PSScriptRoot
+$targetPath = Join-Path $workingDir "YouTube Analiz Pro.vbs"
 
 $WshShell = New-Object -ComObject WScript.Shell
 $Shortcut = $WshShell.CreateShortcut($shortcutPath)

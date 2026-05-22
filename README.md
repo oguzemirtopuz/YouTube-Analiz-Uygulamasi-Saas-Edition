@@ -53,11 +53,16 @@ The biggest advantage of this application is that **your data and API keys are c
 
 ## 📋 Requirements
 
+> [!WARNING]
+> **CRITICAL: FFmpeg IS REQUIRED!**
+> This application uses FFmpeg to process videos and extract audio. If FFmpeg is not installed and added to your system's PATH, the application **WILL NOT WORK** and you will get an "FFmpeg not found" error when uploading videos.
+
 To run this application, the following must be installed on your system:
 
 *   **Python 3.10 or higher:** [Download Python](https://www.python.org/downloads/) (Make sure to check *"Add Python to PATH"* during installation!)
 *   **FFmpeg (For Video Analysis):** Must be added to your system's PATH environment variable.
     *   *Easy Installation on Windows:* Open PowerShell as Administrator and run `winget install Gyan.FFmpeg` to install it in seconds.
+    *   *Manual Installation Video:* [How to Install FFmpeg on Windows](https://www.youtube.com/watch?v=JR36oH35Fgg)
 
 ---
 

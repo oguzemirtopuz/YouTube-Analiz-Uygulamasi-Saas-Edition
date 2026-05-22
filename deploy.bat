@@ -7,7 +7,7 @@ echo =========================================
 echo.
 
 set "DESKTOP=%USERPROFILE%\Desktop"
-set "SRC_DB=C:\Users\proog\Downloads\analizprofinal-main\analizprofinal-main\channels.db"
+set "SRC_DB=%~dp0channels.db"
 set "SRC_DIR=%~dp0"
 
 :: ── ADIM 1: Masaustu Temizligi ─────────────────────────────

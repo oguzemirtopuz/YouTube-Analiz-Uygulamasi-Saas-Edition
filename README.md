@@ -13,6 +13,20 @@ Built entirely on an **asynchronous database architecture**, **hardware-based GP
 
 ---
 
+## 🆕 What's New in v1.1.0 — "Open Source Ready" Update
+
+This version focuses on making YouTube Analyzer Pro fully compatible with any system globally, alongside a brand new Auto-Updater!
+
+1. 🔄 **One-Click Auto-Updater (`update.py`)**
+   - **No Git? No Problem!** A native, zero-dependency update orchestrator. Just run `python update.py` to fetch the latest version securely.
+   - **Zero Data Loss:** Safely backs up your `channels.db` and custom translations before applying updates.
+
+2. 🛡️ **Bulletproof Global Compatibility**
+   - **Dynamic Path Mapping:** All local hardcoded paths have been purged. The app autonomously resolves its execution directory using `%~dp0` and `os.path`, running flawlessly on any PC worldwide.
+   - **Dependency Shield:** A massive UX improvement that prominently flags FFmpeg requirements *before* fatal crashes occur, complete with installation safety nets.
+
+---
+
 ## ✨ Advanced Highlighted Features
 
 ### 🤖 1. AI Coach & Smart Recommendation Engine

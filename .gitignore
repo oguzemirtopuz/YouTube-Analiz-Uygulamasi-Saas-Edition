@@ -5,6 +5,9 @@ temp_videos/
 shorts_output/
 *.log
 channels.db
+
+# Encryption key — NEVER commit this file!
+.secret.key
 app_out.txt
 out.txt
 test_out.txt

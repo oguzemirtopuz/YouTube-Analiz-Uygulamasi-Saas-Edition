@@ -47,6 +47,7 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from email.mime.base import MIMEBase
 from email import encoders
+from cryptography.fernet import Fernet
 
 # --- RAKİP ANALİZİ KÜTÜPHANESİ ---
 try:
@@ -88,6 +89,47 @@ os.chdir(APP_DIR)
 # Log dizini
 LOGS_DIR = APP_DIR / "logs"
 LOGS_DIR.mkdir(exist_ok=True)
+
+# ═══════════════════════════════════════════════════════════
+#   KRİPTO YÖNETİCİSİ (Şifre & API Key Güvenliği)
+# ═══════════════════════════════════════════════════════════
+class CryptoManager:
+    """Fernet simetrik şifreleme ile hassas verileri (API key, SMTP şifre) korur.
+    .secret.key dosyası APP_DIR altında tutulur ve asla paylaşılmamalıdır.
+    Eski şifrelenmemiş verileri bozmadan okuyabilir (geriye dönük uyumluluk).
+    """
+    KEY_FILE = APP_DIR / ".secret.key"
+    _fernet = None
+
+    @classmethod
+    def get_fernet(cls):
+        if cls._fernet is None:
+            if not cls.KEY_FILE.exists():
+                with open(cls.KEY_FILE, "wb") as f:
+                    f.write(Fernet.generate_key())
+            with open(cls.KEY_FILE, "rb") as f:
+                key = f.read()
+            cls._fernet = Fernet(key)
+        return cls._fernet
+
+    @classmethod
+    def encrypt(cls, text: str) -> str:
+        """Metni şifreler. Boş string gelirse olduğu gibi döndürür."""
+        if not text:
+            return text
+        return cls.get_fernet().encrypt(text.encode()).decode()
+
+    @classmethod
+    def decrypt(cls, text: str) -> str:
+        """Şifreli metni çözer. Çözme başarısız olursa orijinal metni döndürür
+        (eski şifrelenmemiş veriler için geriye dönük uyumluluk)."""
+        if not text:
+            return text
+        try:
+            return cls.get_fernet().decrypt(text.encode()).decode()
+        except Exception:
+            return text  # Geriye dönük uyumluluk: eski şifrelenmemiş veri
+
 
 # Ana uygulama logger
 app_logger = logging.getLogger("yt_analiz")
@@ -395,7 +437,7 @@ async def get_groq_api_key() -> str:
         try:
             async with db.execute("SELECT value FROM app_settings WHERE key='groq_api_key'") as cursor:
                 row = await cursor.fetchone()
-            return row[0] if row and row[0] else ""
+            return CryptoManager.decrypt(row[0]) if row and row[0] else ""
         finally:
             await db.close()
     except Exception as e:
@@ -449,6 +491,7 @@ async def generate_ai_game_feedback(c_type: str, c_aud: str, c_purp: str, tech_s
         f"CRITICAL RULE: Use ONLY the provided '{c_type}' and '{c_purp}' data. "
         f"NO HALLUCINATION: NEVER make up information. If you do not know the answer to something, explicitly state 'I do not know' (veya 'Bilmiyorum'). NEVER give wrong information. "
         f"ANTI-GENERIC RULE: NEVER use generic advice like 'surprise them in the first 10 seconds' or 'ilk 10 saniyede şaşırt'. You MUST answer the 'HOW' question. Provide a highly specific, concrete scene or script. "
+        f"CRITICAL THUMBNAIL RULE: If the Channel Type is 'Gaming' or 'Oyun', NEVER suggest adding real human faces to the thumbnail. Instead, suggest using glowing text, high-contrast game characters, or epic in-game vehicles. "
         f"Start with an emoji + 'ANALİZ PRO KOÇU: ' "
         f"(ES='ENTRENADOR PRO: ', EN='PRO COACH: '). "
         f"Be actionable and punchy. "
@@ -484,7 +527,7 @@ async def analyze_image_with_gemini(image_base64: str, mime_type: str) -> str:
                 row = await cursor.fetchone()
         finally:
             await db.close()
-        gemini_key = row[0] if row and row[0] else ""
+        gemini_key = CryptoManager.decrypt(row[0]) if row and row[0] else ""
         #print(f"GEMINI KEY VAR MI: {bool(gemini_key)}, mime: {mime_type}")
         if not gemini_key:
             return ""
@@ -551,8 +594,7 @@ def send_verification_email(to_email: str, code: str, lang: str = "tr") -> bool:
                 await db.close()
         rows = asyncio.run(_get_smtp())
         smtp_email = rows.get('smtp_email', '')
-        smtp_password = rows.get('smtp_password', '')
-        
+        smtp_password = CryptoManager.decrypt(rows.get('smtp_password', ''))
 
         if not smtp_email or not smtp_password:
             return False
@@ -627,7 +669,7 @@ def send_report_email(to_email: str, pdf_path: str, video_name: str, lang: str =
                 await db.close()
         rows = asyncio.run(_get_smtp())
         smtp_email = rows.get('smtp_email', '')
-        smtp_password = rows.get('smtp_password', '')
+        smtp_password = CryptoManager.decrypt(rows.get('smtp_password', ''))
 
         if not smtp_email or not smtp_password:
             return False
@@ -975,7 +1017,7 @@ def check_content_consistency(title: str, tags: str, description: str) -> dict:
 class CompetitorAnalyzer:
 
     @staticmethod
-    def get_competitor(category: str, tags: str, manual_url: str = ""):
+    def get_competitor(category: str, tags: str, manual_url: str = "", channel_name: str = ""):
         fallback_data = {
             'title': f"{category.split()[0] if category else 'Viral'} Konseptli Video",
             'channel': 'Sektör Lideri (Otomatik)',
@@ -1016,9 +1058,17 @@ class CompetitorAnalyzer:
                     search_query = f"{short_cat} {short_tags}".strip()
                     if not search_query or len(search_query) < 3:
                         search_query = "YouTube trend"
-                    info = ydl.extract_info(f"ytsearch1:{search_query}", download=False)
+                    info = ydl.extract_info(f"ytsearch3:{search_query}", download=False)
                     if 'entries' in info and len(info['entries']) > 0:
-                        entry = info['entries'][0]
+                        entry = None
+                        for candidate in info['entries']:
+                            uploader = candidate.get('uploader', '') or candidate.get('channel', '')
+                            if channel_name and uploader.lower().strip() == channel_name.lower().strip():
+                                continue  # Kendi kanalını atla
+                            entry = candidate
+                            break
+                        if entry is None:
+                            return fallback_data
                         comp_desc = entry.get('description', '')
                         c_hashes = [w.strip('#').lower() for w in str(comp_desc).split() if w.startswith('#')]
                         c_hashes = list(dict.fromkeys([h for h in c_hashes if h]))
@@ -1052,9 +1102,9 @@ class AnalysisEngine:
         return INDUSTRY_STANDARDS['default']
 
     @staticmethod
-    def generate_dynamic_feedback(c_type, c_aud, c_purp, tech_score, retention_score, peaks,
-                                   lang="tr", thumb_insights: dict = None,
-                                   visual_insights_str: str = ""):
+    async def generate_dynamic_feedback(c_type, c_aud, c_purp, tech_score, retention_score, peaks,
+                                        lang="tr", thumb_insights: dict = None,
+                                        visual_insights_str: str = ""):
         
         c_type_raw = c_type.lower()
         c_aud_raw = c_aud.lower() if c_aud else "izleyici"
@@ -1065,7 +1115,7 @@ class AnalysisEngine:
         is_es = (lang == "es")
 
         # --- Hardcoded keyword routing removed for neutrality ---
-        ai_feedback = generate_ai_game_feedback(
+        ai_feedback = await generate_ai_game_feedback(
             c_type, c_aud, c_purp, tech_score, retention_score, peaks, lang,
             visual_insights=visual_insights_str
         )
@@ -1552,7 +1602,8 @@ class AnalysisEngine:
                 all_rms_blocks.append(rms_block)
 
             if not all_rms_blocks:
-                return {"tech_score": 5.0, "peaks": 0, "peak_times": [], "max_gap": 0, "viral_score": 0.0, "duration": 0.0, "rms_data": []}
+                app_logger.error("Ses analizi hatası: Videoda ses bloğu bulunamadı (sessiz veya bozuk video).")
+                raise ValueError("Videonun ses kanalı okunamadı veya video tamamen sessiz. Lütfen ses içeren geçerli bir MP4 yükleyin.")
 
             rms = np.concatenate(all_rms_blocks)
             del all_rms_blocks
@@ -1572,7 +1623,8 @@ class AnalysisEngine:
                 "duration": round(duration, 1), "rms_data": rms_list
             }
         except Exception as e:
-            return {"tech_score": 5.0, "peaks": 0, "peak_times": [], "max_gap": 0, "viral_score": 0.0, "duration": 0.0, "rms_data": []}
+            app_logger.error(f"Ses analizi hatası: {e}")
+            raise ValueError(f"Videonun ses kanalı okunamadı veya dosya bozuk. Lütfen ses içeren geçerli bir MP4 yükleyin. (Detay: {str(e)[:80]})")
         finally:
             if os.path.exists(temp_audio):
                 try:
@@ -2182,7 +2234,8 @@ async def get_gemini_key():
     c.execute("SELECT value FROM app_settings WHERE key='gemini_api_key'")
     row = c.fetchone()
     conn.close()
-    return {"has_key": bool(row and row[0]), "key": row[0] if row else ""}
+    decrypted = CryptoManager.decrypt(row[0]) if row and row[0] else ""
+    return {"has_key": bool(decrypted), "key": decrypted}
 
 
 @app.post("/api/settings/gemini")
@@ -2199,7 +2252,7 @@ async def set_gemini_key(key: str = Form(...)):
         return {"success": False, "error": "Gemini API ile bağlantı kurulamadı"}
     conn = get_db()
     c = conn.cursor()
-    c.execute("INSERT OR REPLACE INTO app_settings (key, value) VALUES ('gemini_api_key', ?)", (key,))
+    c.execute("INSERT OR REPLACE INTO app_settings (key, value) VALUES ('gemini_api_key', ?)", (CryptoManager.encrypt(key),))
     conn.commit()
     conn.close()
     return {"success": True}
@@ -2433,13 +2486,14 @@ async def analyze_video(
 
         conn = get_db()
         c = conn.cursor()
-        c.execute("SELECT content_type, target_audience, purpose FROM channels WHERE id=?", (channel_id,))
+        c.execute("SELECT content_type, target_audience, purpose, name FROM channels WHERE id=?", (channel_id,))
         ch_data = c.fetchone()
         conn.close()
 
         c_type = ch_data[0] if ch_data else "Genel"
         c_aud = ch_data[1] if ch_data else ""
         c_purp = ch_data[2] if ch_data else ""
+        ch_name = ch_data[3] if ch_data else ""
 
         # --- NON-BLOCKING: Ağır CPU/IO analiz işlemleri ---
         tech = await run_in_threadpool(AnalysisEngine.analyze_video_tech, v_path, pro_mode)
@@ -2452,7 +2506,7 @@ async def analyze_video(
             AnalysisEngine.analyze_scene_changes, v_path, c_type)
 
         # --- NON-BLOCKING: Rakip analizi (network I/O) ---
-        competitor_data = await run_in_threadpool(CompetitorAnalyzer.get_competitor, c_type, tags, competitor_url)
+        competitor_data = await run_in_threadpool(CompetitorAnalyzer.get_competitor, c_type, tags, competitor_url, ch_name)
         if competitor_data:
             competitor_data['user_title_len'] = len(title)
             competitor_data['user_tags'] = [t.strip() for t in tags.split(',') if t.strip()]
@@ -2472,9 +2526,12 @@ async def analyze_video(
             try:
                 df = pd.read_csv(c_path, skipinitialspace=True)
                 df.columns = df.columns.str.strip().str.lower()
-                ret_col = next((col for col in df.columns if 'retention' in col.lower()), None)
+                ret_keywords = ['retention', 'izlenme', 'görüntüleme', 'elde tutma']
+                ret_col = next((col for col in df.columns if any(kw in col.lower() for kw in ret_keywords)), None)
                 if ret_col:
-                    intro = pd.to_numeric(df[ret_col], errors='coerce').dropna().iloc[:30]
+                    df[ret_col] = df[ret_col].astype(str).str.replace('%', '', regex=False).str.replace(',', '.', regex=False)
+                    df[ret_col] = pd.to_numeric(df[ret_col], errors='coerce')
+                    intro = df[ret_col].dropna().iloc[:30]
                     if len(intro) > 5:
                         start = intro.iloc[0]
                         worst_idx = intro.diff().idxmin()
@@ -2549,19 +2606,19 @@ async def analyze_video(
 
         visual_insights_str = " ".join(vi_parts)
 
-        dynamic_feedback = AnalysisEngine.generate_dynamic_feedback(
+        dynamic_feedback = await AnalysisEngine.generate_dynamic_feedback(
             c_type, c_aud, c_purp, tech["tech_score"], retention["score"],
             tech["peaks"], lang=lang, thumb_insights=thumb_data,
             visual_insights_str=visual_insights_str)
-        dynamic_feedback_tr = AnalysisEngine.generate_dynamic_feedback(
+        dynamic_feedback_tr = await AnalysisEngine.generate_dynamic_feedback(
             c_type, c_aud, c_purp, tech["tech_score"], retention["score"],
             tech["peaks"], lang="tr", thumb_insights=thumb_data,
             visual_insights_str=visual_insights_str)
-        dynamic_feedback_en = AnalysisEngine.generate_dynamic_feedback(
+        dynamic_feedback_en = await AnalysisEngine.generate_dynamic_feedback(
             c_type, c_aud, c_purp, tech["tech_score"], retention["score"],
             tech["peaks"], lang="en", thumb_insights=thumb_data,
             visual_insights_str=visual_insights_str)
-        dynamic_feedback_es = AnalysisEngine.generate_dynamic_feedback(
+        dynamic_feedback_es = await AnalysisEngine.generate_dynamic_feedback(
             c_type, c_aud, c_purp, tech["tech_score"], retention["score"],
             tech["peaks"], lang="es", thumb_insights=thumb_data,
             visual_insights_str=visual_insights_str)
@@ -3630,7 +3687,7 @@ async def get_groq_key():
 async def set_groq_key(key: str = Form(...)):
     db = await get_async_db()
     try:
-        await db.execute("INSERT OR REPLACE INTO app_settings (key, value) VALUES ('groq_api_key', ?)", (key.strip(),))
+        await db.execute("INSERT OR REPLACE INTO app_settings (key, value) VALUES ('groq_api_key', ?)", (CryptoManager.encrypt(key.strip()),))
         await db.commit()
     finally:
         await db.close()
@@ -3660,7 +3717,7 @@ async def set_smtp_settings(request: Request):
         db = await get_async_db()
         try:
             await db.execute("INSERT OR REPLACE INTO app_settings (key, value) VALUES ('smtp_email', ?)", (email,))
-            await db.execute("INSERT OR REPLACE INTO app_settings (key, value) VALUES ('smtp_password', ?)", (password,))
+            await db.execute("INSERT OR REPLACE INTO app_settings (key, value) VALUES ('smtp_password', ?)", (CryptoManager.encrypt(password),))
             await db.commit()
         finally:
             await db.close()

@@ -13,17 +13,19 @@ Built entirely on an **asynchronous database architecture**, **hardware-based GP
 
 ---
 
-## 🆕 What's New in v1.1.0 — "Open Source Ready" Update
+## 🆕 What's New in v1.2.0 — "Security & Quality" Update
 
-This version focuses on making YouTube Analyzer Pro fully compatible with any system globally, alongside a brand new Auto-Updater!
+This critical update focuses on enterprise-grade security and robust error handling to ensure a true SaaS-level experience.
 
-1. 🔄 **One-Click Auto-Updater (`update.py`)**
-   - **No Git? No Problem!** A native, zero-dependency update orchestrator. Just run `python update.py` to fetch the latest version securely.
-   - **Zero Data Loss:** Safely backs up your `channels.db` and custom translations before applying updates.
+1. 🔒 **Enterprise-Grade Security (Fernet Encryption)**
+   - **No More Plain Text:** All sensitive credentials (API Keys, SMTP Passwords) are now encrypted using AES-128 `cryptography.fernet` before being saved to the local SQLite database.
+   - **Zero Data Loss:** Backward compatibility is fully maintained; old unencrypted keys are seamlessly read and re-saved securely on the next update.
 
-2. 🛡️ **Bulletproof Global Compatibility**
-   - **Dynamic Path Mapping:** All local hardcoded paths have been purged. The app autonomously resolves its execution directory using `%~dp0` and `os.path`, running flawlessly on any PC worldwide.
-   - **Dependency Shield:** A massive UX improvement that prominently flags FFmpeg requirements *before* fatal crashes occur, complete with installation safety nets.
+2. 🚀 **"Fail Fast" & Async Architecture**
+   - **Honest Analytics:** The system no longer returns "fake" positive scores when a silent or corrupted video is uploaded. Instead, it instantly fails fast, providing the user with a transparent, actionable error message.
+   - **Async Coroutine Fix:** Resolved a critical bug where the AI feedback system would crash due to unsynchronized coroutines, ensuring stable and reliable AI coaching.
+
+> 📜 **Full Version History:** See the [CHANGELOG.md](./CHANGELOG.md) for all past updates including the v1.1.0 Open Source features!
 
 ---
 

@@ -463,9 +463,9 @@ elBtnRetry.addEventListener('click', () => showView('idle'));
   let [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
   if (isYouTubeChannelTab(tab)) {
     elBtnClone.style.display = 'none';
-    elBtnAnalyze.style.display = 'inline-flex';
+    elBtnAnalyze.style.display = 'block';
   } else {
-    elBtnClone.style.display = 'inline-flex';
+    elBtnClone.style.display = 'block';
     elBtnAnalyze.style.display = 'none';
   }
   

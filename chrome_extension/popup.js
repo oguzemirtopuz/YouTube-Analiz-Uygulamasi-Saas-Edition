@@ -28,6 +28,8 @@ const elDot          = $('status-dot');
 const elStatusLabel  = $('server-status-label');
 const elBtnClone     = $('btn-clone');
 const elBtnAnalyze   = $('btn-analyze');
+const elRabbitQuery  = $('rabbit-query');
+const elBtnRabbit    = $('btn-rabbit');
 const elBtnReset     = $('btn-reset');
 const elBtnRetry     = $('btn-retry');
 const elResultBox    = $('result-content');
@@ -220,6 +222,61 @@ async function analyzeChannel() {
   }
 }
 
+// ── Tavşan Deliği (Niş Bulucu) Ana Akışı ──────────────────────────────────────
+async function findRabbitHole() {
+  const query = elRabbitQuery.value.trim();
+  if (!query) {
+    showError('⚠️ Eksik Bilgi', 'Lütfen aramak için bir kelime (niş) girin.');
+    return;
+  }
+  
+  const serverUp = await checkServer();
+  if (!serverUp) {
+    showError('🔴 Sunucu Çevrimdışı', 'YT Analiz Pro masaüstü uygulaması çalışmıyor.');
+    return;
+  }
+  
+  showView('loading');
+  elLoadingSub.textContent = 'Derinlere iniliyor... (Bu işlem biraz sürebilir)';
+  
+  try {
+    const resp = await fetch(`${SERVER}/api/extension/rabbit_hole`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ query })
+    });
+    
+    const data = await resp.json();
+    if (!resp.ok || data.error) {
+      showError('⚠️ İşlem Başarısız', data.error || 'Bu nişte aykırı bir trend bulunamadı.');
+      return;
+    }
+    
+    let htmlCards = `<h4 style="color:#e0b0ff; margin-bottom:15px;">🐇 '${query}' İçin Aykırı Videolar</h4>`;
+    
+    data.outliers.forEach(v => {
+      htmlCards += `
+<div style="background: rgba(10,20,30,0.8); border: 1px solid #06b6d4; border-radius: 12px; padding: 15px; margin-bottom: 15px;">
+    <h4 style="color: white; margin-bottom: 8px; font-size: 1.05rem; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">${v.title}</h4>
+    <div style="margin-bottom: 8px; font-size: 0.85rem; color: #94a3b8;">
+        Kanal: <span style="color: #cbd5e1;">${v.channel}</span>
+    </div>
+    <div style="display:flex; justify-content:space-between; align-items:center;">
+        <span style="background: linear-gradient(90deg, #f43f5e, #f97316); color: white; padding: 4px 8px; border-radius: 6px; font-size: 0.75rem; font-weight: bold; box-shadow: 0 0 10px rgba(244,63,94,0.5);">
+            🔥 Hız: ${v.velocity} izlenme/gün
+        </span>
+        <a href="${v.url}" target="_blank" style="color: #38bdf8; text-decoration: none; font-size: 0.8rem; font-weight: bold;">İzle ↗</a>
+    </div>
+</div>`;
+    });
+    
+    elResultBox.innerHTML = htmlCards;
+    showView('result');
+  } catch (err) {
+    showError('🔌 Bağlantı Hatası', `Sunucuya ulaşılamadı: ${err.message}`);
+  }
+}
+
 // ── Klonlama Ana Akışı ────────────────────────────────────────────────────────
 async function cloneVideo() {
   // 1. Sunucu online mı?
@@ -380,6 +437,7 @@ elBtnLogin.addEventListener('click', handleLogin);
 elBtnLogout.addEventListener('click', handleLogout);
 elBtnClone.addEventListener('click', cloneVideo);
 elBtnAnalyze.addEventListener('click', analyzeChannel);
+elBtnRabbit.addEventListener('click', findRabbitHole);
 
 elBtnReset.addEventListener('click', () => {
   elThumbWrap.style.display = 'none';

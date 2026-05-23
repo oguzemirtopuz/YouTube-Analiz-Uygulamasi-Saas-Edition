@@ -3181,6 +3181,72 @@ async def extension_recent_analyses(user_id: int):
     finally:
         await db.close()
 
+def extract_rabbit_hole_sync(query: str):
+    import yt_dlp
+    from datetime import datetime
+    
+    opts = {
+        'extract_flat': 'in_playlist',
+        'quiet': True,
+        'no_warnings': True
+    }
+    
+    search_query = f"ytsearch10:{query}"
+    
+    with yt_dlp.YoutubeDL(opts) as ydl:
+        info = ydl.extract_info(search_query, download=False)
+        entries = info.get('entries', [])
+        
+        if not entries:
+            raise ValueError("Bu nişte video bulunamadı.")
+            
+        results = []
+        today = datetime.now()
+        
+        for v in entries:
+            upload_date_str = v.get('upload_date') # YYYYMMDD
+            view_count = v.get('view_count', 0)
+            
+            if not upload_date_str or not view_count:
+                continue
+                
+            try:
+                upload_date = datetime.strptime(upload_date_str, '%Y%m%d')
+                days_diff = (today - upload_date).days
+                days = max(1, days_diff) # prevent div by zero
+                velocity = view_count / days
+                
+                results.append({
+                    "title": v.get('title', 'Bilinmeyen Video'),
+                    "channel": v.get('uploader', 'Bilinmeyen Kanal'),
+                    "url": v.get('url', ''),
+                    "view_count": view_count,
+                    "velocity": int(velocity)
+                })
+            except Exception:
+                continue
+                
+        if not results:
+            raise ValueError("Geçerli veri bulunamadı.")
+            
+        # Sort by velocity descending
+        results.sort(key=lambda x: x['velocity'], reverse=True)
+        return results[:3]
+
+class RabbitHoleRequest(BaseModel):
+    query: str
+
+@app.post("/api/extension/rabbit_hole")
+async def extension_rabbit_hole(payload: RabbitHoleRequest):
+    try:
+        top_outliers = await run_in_threadpool(extract_rabbit_hole_sync, payload.query)
+        if not top_outliers:
+            return {"error": "Bu nişte aykırı bir trend bulunamadı."}
+        return {"success": True, "outliers": top_outliers}
+    except Exception as e:
+        app_logger.error(f"[rabbit_hole] Hata: {e}", exc_info=True)
+        return {"error": "Bu nişte aykırı bir trend bulunamadı veya ağ hatası oluştu."}
+
 
 @app.post("/api/extension/clone_video")
 async def extension_clone_video(payload: CloneVideoRequest):

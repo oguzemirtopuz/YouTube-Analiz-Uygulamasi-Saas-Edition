@@ -3204,27 +3204,30 @@ def extract_rabbit_hole_sync(query: str):
         today = datetime.now()
         
         for v in entries:
-            upload_date_str = v.get('upload_date') # YYYYMMDD
+            upload_date_str = v.get('upload_date')
             view_count = v.get('view_count', 0)
             
-            if not upload_date_str or not view_count:
+            if not view_count:
                 continue
                 
-            try:
-                upload_date = datetime.strptime(upload_date_str, '%Y%m%d')
-                days_diff = (today - upload_date).days
-                days = max(1, days_diff) # prevent div by zero
-                velocity = view_count / days
-                
-                results.append({
-                    "title": v.get('title', 'Bilinmeyen Video'),
-                    "channel": v.get('uploader', 'Bilinmeyen Kanal'),
-                    "url": v.get('url', ''),
-                    "view_count": view_count,
-                    "velocity": int(velocity)
-                })
-            except Exception:
-                continue
+            days = 1
+            if upload_date_str:
+                try:
+                    upload_date = datetime.strptime(upload_date_str, '%Y%m%d')
+                    days_diff = (today - upload_date).days
+                    days = max(1, days_diff)
+                except Exception:
+                    days = 1
+                    
+            velocity = view_count / days
+            
+            results.append({
+                "title": v.get('title', 'Bilinmeyen Video'),
+                "channel": v.get('uploader', 'Bilinmeyen Kanal'),
+                "url": v.get('url', ''),
+                "view_count": view_count,
+                "velocity": int(velocity)
+            })
                 
         if not results:
             raise ValueError("Geçerli veri bulunamadı.")
@@ -3244,7 +3247,7 @@ async def extension_rabbit_hole(payload: RabbitHoleRequest):
             return {"error": "Bu nişte aykırı bir trend bulunamadı."}
         return {"success": True, "outliers": top_outliers}
     except Exception as e:
-        app_logger.error(f"[rabbit_hole] Hata: {e}", exc_info=True)
+        app_logger.error(f"Rabbit Hole Hatası: {e}", exc_info=True)
         return {"error": "Bu nişte aykırı bir trend bulunamadı veya ağ hatası oluştu."}
 
 

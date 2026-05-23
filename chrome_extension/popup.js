@@ -17,6 +17,7 @@ const SERVER = 'http://127.0.0.1:8000';
 const $ = id => document.getElementById(id);
 
 const views = {
+  login:   $('view-login'),
   idle:    $('view-idle'),
   loading: $('view-loading'),
   result:  $('view-result'),
@@ -35,6 +36,14 @@ const elThumbMeta    = $('video-meta');
 const elLoadingSub   = $('loading-sub-text');
 const elErrorTitle   = $('error-title');
 const elErrorMsg     = $('error-msg');
+
+const elLoginUser    = $('login-username');
+const elLoginPass    = $('login-password');
+const elLoginError   = $('login-error');
+const elBtnLogin     = $('btn-login');
+const elDashUser     = $('dash-username');
+const elBtnLogout    = $('btn-logout');
+const elRecentList   = $('recent-list');
 
 // ── View Geçişi ───────────────────────────────────────────────────────────────
 function showView(name) {
@@ -75,6 +84,87 @@ function showError(title, msg) {
   elErrorTitle.textContent = title;
   elErrorMsg.textContent   = msg;
   showView('error');
+}
+
+// ── Auth & Dashboard ──────────────────────────────────────────────────────────
+async function loadRecentAnalyses(userId) {
+  try {
+    const resp = await fetch(`${SERVER}/api/extension/recent_analyses?user_id=${userId}`);
+    const data = await resp.json();
+    elRecentList.innerHTML = '';
+    
+    if (data.success && data.analyses.length > 0) {
+      data.analyses.forEach(a => {
+        const li = document.createElement('li');
+        li.innerHTML = `<span class="recent-name" title="${a.video_name}">${a.video_name}</span><span class="recent-score">${a.score}</span>`;
+        elRecentList.appendChild(li);
+      });
+    } else {
+      elRecentList.innerHTML = '<li style="color:#666; font-style:italic;">Henüz analiz yok.</li>';
+    }
+  } catch (err) {
+    elRecentList.innerHTML = '<li style="color:var(--error);">Veriler çekilemedi.</li>';
+  }
+}
+
+async function handleLogin() {
+  const username = elLoginUser.value.trim();
+  const password = elLoginPass.value.trim();
+  
+  if (!username || !password) {
+    elLoginError.textContent = 'Kullanıcı adı ve şifre zorunludur.';
+    elLoginError.style.display = 'block';
+    return;
+  }
+  
+  const serverUp = await checkServer();
+  if (!serverUp) {
+    elLoginError.textContent = 'Sunucuya bağlanılamadı.';
+    elLoginError.style.display = 'block';
+    return;
+  }
+
+  elBtnLogin.textContent = 'Giriş yapılıyor...';
+  elBtnLogin.disabled = true;
+  elLoginError.style.display = 'none';
+  
+  try {
+    const resp = await fetch(`${SERVER}/api/extension/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, password })
+    });
+    
+    const data = await resp.json();
+    if (!resp.ok) {
+      throw new Error(data.detail || 'Giriş başarısız.');
+    }
+    
+    await chrome.storage.local.set({ user_id: data.user_id, username: data.username });
+    showDashboard(data.username, data.user_id);
+    
+  } catch (err) {
+    elLoginError.textContent = err.message;
+    elLoginError.style.display = 'block';
+  } finally {
+    elBtnLogin.textContent = 'Giriş Yap';
+    elBtnLogin.disabled = false;
+  }
+}
+
+function showDashboard(username, userId) {
+  elDashUser.textContent = username;
+  showView('idle');
+  loadRecentAnalyses(userId);
+}
+
+function handleLogout() {
+  chrome.storage.local.remove(['user_id', 'username'], () => {
+    elLoginUser.value = '';
+    elLoginPass.value = '';
+    elLoginError.style.display = 'none';
+    showView('login');
+  });
 }
 
 // ── YouTube Sekme Doğrulama ───────────────────────────────────────────────────
@@ -210,6 +300,8 @@ function extractYouTubeData() {
 }
 
 // ── Event Listeners ───────────────────────────────────────────────────────────
+elBtnLogin.addEventListener('click', handleLogin);
+elBtnLogout.addEventListener('click', handleLogout);
 elBtnClone.addEventListener('click', cloneVideo);
 
 elBtnReset.addEventListener('click', () => {
@@ -225,5 +317,12 @@ elBtnRetry.addEventListener('click', () => showView('idle'));
 (async () => {
   elBtnClone.disabled = true; // sunucu kontrolü bitene kadar devre dışı
   await checkServer();
-  showView('idle');
+  
+  chrome.storage.local.get(['user_id', 'username'], (res) => {
+    if (res.user_id && res.username) {
+      showDashboard(res.username, res.user_id);
+    } else {
+      showView('login');
+    }
+  });
 })();

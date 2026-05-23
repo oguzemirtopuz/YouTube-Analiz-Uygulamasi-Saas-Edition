@@ -132,6 +132,50 @@ body {
   line-height: 1.7;
 }
 
+/* ── Form Inputs ── */
+.form-group {
+  width: 100%;
+}
+.input-field {
+  width: 100%;
+  padding: 12px 14px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  font-size: 13px;
+  font-family: inherit;
+  outline: none;
+  transition: all 0.2s ease;
+}
+.input-field:focus {
+  border-color: var(--purple);
+  box-shadow: 0 0 0 2px rgba(168, 85, 247, 0.2);
+}
+
+/* ── Dashboard List ── */
+.recent-list li {
+  padding: 8px 10px;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.recent-list li:last-child {
+  border-bottom: none;
+}
+.recent-name {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 180px;
+  color: var(--text);
+}
+.recent-score {
+  font-weight: 600;
+  color: var(--success);
+}
+
 /* ── Primary Button ── */
 .btn {
   display: inline-flex;

@@ -3039,6 +3039,49 @@ class CloneVideoRequest(BaseModel):
     channel:   str = Field(default="Bilinmeyen Kanal", description="Kanal adı")
     thumbnail: str = Field(default="", description="Thumbnail URL")
 
+class ExtensionLoginRequest(BaseModel):
+    username: str
+    password: str
+
+@app.post("/api/extension/login")
+async def extension_login(req: ExtensionLoginRequest):
+    db = await get_async_db()
+    try:
+        async with db.execute("SELECT id, username, password_hash FROM users WHERE username = ?", (req.username,)) as cursor:
+            user = await cursor.fetchone()
+            
+        if not user:
+            raise HTTPException(status_code=401, detail="Geçersiz kullanıcı adı veya şifre.")
+            
+        if not verify_password(req.password, user['password_hash']):
+            raise HTTPException(status_code=401, detail="Geçersiz kullanıcı adı veya şifre.")
+            
+        return {"success": True, "user_id": user['id'], "username": user['username']}
+    finally:
+        await db.close()
+
+@app.get("/api/extension/recent_analyses")
+async def extension_recent_analyses(user_id: int):
+    db = await get_async_db()
+    try:
+        async with db.execute(
+            "SELECT id, video_name, overall_score, timestamp FROM analyses WHERE user_id = ? ORDER BY id DESC LIMIT 5",
+            (user_id,)
+        ) as cursor:
+            rows = await cursor.fetchall()
+            
+        analyses = []
+        for r in rows:
+            analyses.append({
+                "id": r['id'],
+                "video_name": r['video_name'],
+                "score": round(r['overall_score'] or 0, 1),
+                "date": r['timestamp']
+            })
+        return {"success": True, "analyses": analyses}
+    finally:
+        await db.close()
+
 
 @app.post("/api/extension/clone_video")
 async def extension_clone_video(payload: CloneVideoRequest):

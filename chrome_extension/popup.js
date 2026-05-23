@@ -164,13 +164,9 @@ async function cloneVideo() {
     const data = await resp.json();
 
     if (!resp.ok || data.error) {
-      const msg = data.error || `HTTP ${resp.status}`;
-      // Transcript yoksa özel mesaj
-      if (msg.includes('transcript') || msg.includes('altyazı')) {
-        showError('📝 Altyazı Bulunamadı', 'Bu videonun altyazısı (transcript) mevcut değil.\nFarklı bir video deneyin.');
-      } else {
-        showError('⚠️ Sunucu Hatası', msg);
-      }
+      // Backend'den error mesajı geldiyse doğrudan onu göster. Yoksa genel HTTP statüsünü yazdır.
+      const msg = data.error || `Bilinmeyen Hata (HTTP ${resp.status})`;
+      showError('⚠️ İşlem Başarısız', msg);
       return;
     }
 

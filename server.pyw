@@ -2879,47 +2879,23 @@ async def test_gemini_ping():
 def _fetch_transcript_sync(video_id: str) -> str:
     """
     youtube-transcript-api'yi thread-pool içinde senkron olarak çalıştırır
-    (event-loop'u bloklamaz). Türkçe → İngilizce → herhangi dil sırasıyla dener.
-    Altyazı bulunamazsa ValueError fırlatır.
+    (event-loop'u bloklamaz).
+    Altyazı bulunamazsa veya hata olursa exception yakalayıp string olarak hata döner.
     """
     try:
-        from youtube_transcript_api import YouTubeTranscriptApi, TranscriptsDisabled, NoTranscriptFound
+        from youtube_transcript_api import YouTubeTranscriptApi
     except ImportError:
-        raise RuntimeError(
-            "youtube-transcript-api kurulu değil. "
-            "Lütfen 'pip install youtube-transcript-api' komutunu çalıştırın."
-        )
+        return "HATA: youtube-transcript-api kurulu değil. Lütfen 'pip install youtube-transcript-api' komutunu çalıştırın."
 
     try:
-        transcript_list = YouTubeTranscriptApi.list_transcripts(video_id)
-    except TranscriptsDisabled:
-        raise ValueError("Bu videonun altyazısı (transcript) devre dışı bırakılmış.")
+        entries = YouTubeTranscriptApi.get_transcript(video_id, languages=['tr', 'en', 'de', 'es', 'fr'])
+        full_text = " ".join(
+            (e.text if hasattr(e, "text") else e.get("text", ""))
+            for e in entries
+        )
+        return full_text.strip()
     except Exception as e:
-        raise ValueError(f"Transcript listesi alınamadı: {e}")
-
-    # Öncelik sırası: tr → en → ilk mevcut
-    preferred = ["tr", "en"]
-    transcript = None
-    for lang in preferred:
-        try:
-            transcript = transcript_list.find_transcript([lang])
-            break
-        except NoTranscriptFound:
-            continue
-
-    if transcript is None:
-        try:
-            transcript = next(iter(transcript_list))
-        except StopIteration:
-            raise ValueError("Bu video için hiçbir altyazı bulunamadı.")
-
-    entries = transcript.fetch()
-    # Her entry'nin text alanını birleştir
-    full_text = " ".join(
-        (e.text if hasattr(e, "text") else e.get("text", ""))
-        for e in entries
-    )
-    return full_text.strip()
+        return f"HATA: {e}"
 
 
 async def _call_groq_clone(api_key: str, title: str, channel: str, transcript: str) -> str:
@@ -3017,20 +2993,13 @@ async def extension_clone_video(payload: CloneVideoRequest):
     # ── 1. Transcript ────────────────────────────────────────
     try:
         transcript = await run_in_threadpool(_fetch_transcript_sync, video_id)
-    except RuntimeError as e:
-        # Kütüphane eksik
-        app_logger.error(f"[clone_video] Kütüphane hatası: {e}")
-        raise HTTPException(status_code=503, detail=str(e))
-    except ValueError as e:
-        # Altyazı yok veya erişilemiyor — 404 kullan (422 Pydantic'e ayrılmış)
-        app_logger.warning(f"[clone_video] Transcript yok: {e}")
-        raise HTTPException(status_code=404, detail=f"altyazı: {e}")
     except Exception as e:
-        app_logger.error(f"[clone_video] Transcript beklenmeyen hata: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=f"Transcript alınamadı: {e}")
+        app_logger.error(f"[clone_video] Transcript çağrısında beklenmeyen hata: {e}", exc_info=True)
+        return JSONResponse(status_code=400, content={"success": False, "error": f"Altyazı çekilemedi: {e}"})
 
-    if not transcript:
-        raise HTTPException(status_code=404, detail="altyazı: Boş transcript döndü.")
+    if not transcript or transcript.startswith("HATA:"):
+        app_logger.warning(f"[clone_video] Transcript alınamadı: {transcript}")
+        return JSONResponse(status_code=400, content={"success": False, "error": "Bu videoda altyazı bulunamadı veya okunamadı."})
 
     # ── 2. Groq API anahtarı ─────────────────────────────────
     api_key = await get_groq_api_key()

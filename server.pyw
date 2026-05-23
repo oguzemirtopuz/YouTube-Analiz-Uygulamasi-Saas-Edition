@@ -3074,7 +3074,7 @@ Bana acımasız ve net bir 'Savaş Raporu' yaz. Rakip benden nerede iyi? Ben onu
         "Content-Type": "application/json"
     }
     payload = {
-        "model": "llama3-70b-8192",
+        "model": "llama-3.3-70b-versatile",
         "messages": [
             {"role": "system", "content": "Sen acımasız bir YouTube stratejistisin."},
             {"role": "user", "content": prompt}

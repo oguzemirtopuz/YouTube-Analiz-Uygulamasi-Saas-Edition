@@ -312,7 +312,32 @@ async function cloneVideo() {
     }
 
     // 7. Sonucu göster
-    elResultBox.textContent = data.result || '(Boş yanıt)';
+    try {
+      const ideas = JSON.parse(data.result);
+      if (Array.isArray(ideas)) {
+        let htmlCards = '';
+        ideas.forEach(idea => {
+          htmlCards += `
+<div style="background: rgba(30,20,50,0.8); border: 1px solid #a855f7; border-radius: 12px; padding: 15px; margin-bottom: 15px;">
+    <h4 style="color: white; margin-bottom: 8px; font-size: 1.1rem;">💡 ${idea.title || 'Başlık Yok'}</h4>
+    <div style="margin-bottom: 8px;">
+        <span style="color: #f59e0b; font-size: 0.8rem; font-weight: bold;">KANCA (HOOK)</span><br>
+        <span style="color: #d8b4fe; font-size: 0.9rem;">"${idea.hook || 'Kanca Yok'}"</span>
+    </div>
+    <div>
+        <span style="color: #10b981; font-size: 0.8rem; font-weight: bold;">THUMBNAIL</span><br>
+        <span style="color: #94a3b8; font-size: 0.85rem;">${idea.thumbnail || 'Thumbnail önerisi yok'}</span>
+    </div>
+</div>`;
+        });
+        elResultBox.innerHTML = htmlCards;
+      } else {
+        throw new Error("Dizi değil");
+      }
+    } catch (e) {
+      // JSON.parse hata verirse ham metni göster
+      elResultBox.textContent = data.result || '(Boş yanıt)';
+    }
     showView('result');
 
   } catch (fetchErr) {

@@ -27,6 +27,7 @@ const views = {
 const elDot          = $('status-dot');
 const elStatusLabel  = $('server-status-label');
 const elBtnClone     = $('btn-clone');
+const elBtnAnalyze   = $('btn-analyze');
 const elBtnReset     = $('btn-reset');
 const elBtnRetry     = $('btn-retry');
 const elResultBox    = $('result-content');
@@ -172,6 +173,53 @@ function isYouTubeTab(tab) {
   return tab?.url?.match(/https:\/\/(www\.)?youtube\.com\/watch\?/);
 }
 
+function isYouTubeChannelTab(tab) {
+  return tab?.url?.match(/https:\/\/(www\.)?youtube\.com\/(@|channel\/|c\/)/);
+}
+
+// ── Savaş Raporu Ana Akışı (Kanal Analizi) ────────────────────────────────────
+async function analyzeChannel() {
+  const serverUp = await checkServer();
+  if (!serverUp) {
+    showError('🔴 Sunucu Çevrimdışı', 'YT Analiz Pro masaüstü uygulaması çalışmıyor.');
+    return;
+  }
+  
+  let [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+  if (!isYouTubeChannelTab(tab)) {
+    showError('📺 Kanal Sayfası Gerekli', 'Bu işlem yalnızca YouTube kanal sayfalarında çalışır.');
+    return;
+  }
+  
+  const { user_id } = await chrome.storage.local.get(['user_id']);
+  if (!user_id) {
+    showError('🔐 Giriş Gerekli', 'Kanal analizi için giriş yapmalısınız.');
+    return;
+  }
+  
+  showView('loading');
+  elLoadingSub.textContent = 'Kanal verileri çekiliyor ve Savaş Raporu oluşturuluyor... (Bu işlem biraz sürebilir)';
+  
+  try {
+    const resp = await fetch(`${SERVER}/api/extension/analyze_channel`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ channel_url: tab.url, user_id })
+    });
+    
+    const data = await resp.json();
+    if (!resp.ok || data.error) {
+      showError('⚠️ İşlem Başarısız', data.error || 'Bilinmeyen Hata');
+      return;
+    }
+    
+    elResultBox.innerHTML = `<strong>⚔️ VS ${data.rival_name || 'Rakip'}</strong><br><br>${data.result}`;
+    showView('result');
+  } catch (err) {
+    showError('🔌 Bağlantı Hatası', `Sunucuya ulaşılamadı: ${err.message}`);
+  }
+}
+
 // ── Klonlama Ana Akışı ────────────────────────────────────────────────────────
 async function cloneVideo() {
   // 1. Sunucu online mı?
@@ -303,6 +351,7 @@ function extractYouTubeData() {
 elBtnLogin.addEventListener('click', handleLogin);
 elBtnLogout.addEventListener('click', handleLogout);
 elBtnClone.addEventListener('click', cloneVideo);
+elBtnAnalyze.addEventListener('click', analyzeChannel);
 
 elBtnReset.addEventListener('click', () => {
   elThumbWrap.style.display = 'none';
@@ -317,6 +366,15 @@ elBtnRetry.addEventListener('click', () => showView('idle'));
 (async () => {
   elBtnClone.disabled = true; // sunucu kontrolü bitene kadar devre dışı
   await checkServer();
+  
+  let [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+  if (isYouTubeChannelTab(tab)) {
+    elBtnClone.style.display = 'none';
+    elBtnAnalyze.style.display = 'inline-flex';
+  } else {
+    elBtnClone.style.display = 'inline-flex';
+    elBtnAnalyze.style.display = 'none';
+  }
   
   chrome.storage.local.get(['user_id', 'username'], (res) => {
     if (res.user_id && res.username) {

@@ -3027,6 +3027,67 @@ Kurallar:
     else:
         raise ValueError(f"Groq API hatası: HTTP {resp.status_code}")
 
+def extract_channel_stats_sync(channel_url: str):
+    import yt_dlp
+    opts = {
+        'extract_flat': True,
+        'playlist_end': 10,
+        'quiet': True,
+        'no_warnings': True
+    }
+    with yt_dlp.YoutubeDL(opts) as ydl:
+        info = ydl.extract_info(channel_url, download=False)
+        entries = info.get('entries', [])
+        if not entries:
+            raise ValueError("Kanal videoları bulunamadı.")
+        
+        total_views = 0
+        count = 0
+        for v in entries:
+            if v.get('view_count'):
+                total_views += v['view_count']
+                count += 1
+                
+        avg_views = total_views / count if count > 0 else 0
+        return {
+            "channel_name": info.get('title', 'Bilinmeyen Kanal'),
+            "avg_views": avg_views,
+            "video_count_analyzed": count
+        }
+
+async def _call_groq_battle(api_key: str, my_data: dict, rival_data: dict) -> str:
+    import requests
+    
+    prompt = f"""
+Sen acımasız ve net bir YouTube stratejistisin.
+Benim kanalımın verileri: {my_data}
+Rakip kanalın verileri: {rival_data}
+
+Bana acımasız ve net bir 'Savaş Raporu' yaz. Rakip benden nerede iyi? Ben onu geçmek için hangi içerik açığına saldırmalıyım? 3 maddelik bir eylem planı ver.
+"""
+    headers = {
+        "Authorization": f"Bearer {api_key}",
+        "Content-Type": "application/json"
+    }
+    payload = {
+        "model": "llama3-70b-8192",
+        "messages": [
+            {"role": "system", "content": "Sen acımasız bir YouTube stratejistisin."},
+            {"role": "user", "content": prompt}
+        ],
+        "temperature": 0.7,
+        "max_tokens": 1024
+    }
+    
+    def _post():
+        return requests.post("https://api.groq.com/openai/v1/chat/completions", headers=headers, json=payload, timeout=30)
+    
+    resp = await run_in_threadpool(_post)
+    if resp.status_code == 200:
+        return resp.json()["choices"][0]["message"]["content"].strip()
+    else:
+        raise ValueError(f"Groq API hatası: HTTP {resp.status_code}")
+
 
 class CloneVideoRequest(BaseModel):
     """Chrome eklentisinden gelen video metadata modeli."""
@@ -3038,6 +3099,39 @@ class CloneVideoRequest(BaseModel):
     title:     str = Field(default="Başlık Yok", description="Video başlığı")
     channel:   str = Field(default="Bilinmeyen Kanal", description="Kanal adı")
     thumbnail: str = Field(default="", description="Thumbnail URL")
+
+class AnalyzeChannelRequest(BaseModel):
+    channel_url: str
+    user_id: int
+
+@app.post("/api/extension/analyze_channel")
+async def extension_analyze_channel(payload: AnalyzeChannelRequest):
+    api_key = get_groq_api_key()
+    if not api_key:
+        return {"error": "Groq API anahtarı ayarlanmamış."}
+        
+    try:
+        rival_data = await run_in_threadpool(extract_channel_stats_sync, payload.channel_url)
+    except Exception as e:
+        return {"error": f"Kanal verileri okunamadı: {str(e)}"}
+        
+    db = await get_async_db()
+    try:
+        async with db.execute("SELECT AVG(overall_score) as avg_score, COUNT(*) as count FROM analyses WHERE user_id = ?", (payload.user_id,)) as c:
+            my_stats = await c.fetchone()
+    finally:
+        await db.close()
+        
+    my_data = {
+        "avg_score": round(my_stats['avg_score'] or 0, 1) if my_stats and my_stats['avg_score'] else 0,
+        "total_analyzed_videos": my_stats['count'] if my_stats else 0
+    }
+    
+    try:
+        report = await _call_groq_battle(api_key, my_data, rival_data)
+        return {"result": report, "rival_name": rival_data["channel_name"]}
+    except Exception as e:
+        return {"error": f"Savaş raporu oluşturulamadı: {str(e)}"}
 
 class ExtensionLoginRequest(BaseModel):
     username: str

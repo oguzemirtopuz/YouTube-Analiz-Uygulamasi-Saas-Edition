@@ -114,9 +114,23 @@ async function loadTranslations() {
     try {
         const res = await fetch(`${API_URL}/api/translations`);
         const data = await res.json();
-        if (data.tr) LANGS = data;
+        if (data.error) {
+            // Backend dosyayı bulamadı veya okuyamadı — ham key'lerin görünmesini önlemek için
+            // mevcut LANGS boş kalır; sorun konsolda detaylıca görünür.
+            console.error(
+                '[loadTranslations] ❌ Backend çeviri hatası döndürdü:',
+                data.error,
+                '\nÇözüm: translations.xlsx dosyasını proje kök dizinine koyun ve sunucuyu yeniden başlatın.'
+            );
+            return; // LANGS'ı boş bırak (t() fallback'e düşer)
+        }
+        if (data.tr) {
+            LANGS = data;
+        } else {
+            console.error('[loadTranslations] ❌ Backend beklenmeyen format döndürdü:', data);
+        }
     } catch (e) {
-        console.error('Çeviri yüklenemedi:', e);
+        console.error('[loadTranslations] ❌ Ağ/parse hatası (sunucu çalışıyor mu?):', e);
     }
 }
 

@@ -2763,10 +2763,32 @@ async def api_send_report(request: Request):
 
 @app.get("/api/translations")
 async def get_translations():
+    # Arama sırası: BUNDLE_DIR → APP_DIR → BASE_DIR (PyInstaller ve dev modu uyumlu)
+    search_paths = [
+        BUNDLE_DIR / 'translations.xlsx',
+        APP_DIR    / 'translations.xlsx',
+        BASE_DIR   / 'translations.xlsx',
+    ]
+
+    xlsx_path = None
+    for candidate in search_paths:
+        if candidate.exists():
+            xlsx_path = candidate
+            break
+
+    if xlsx_path is None:
+        tried = [str(p) for p in search_paths]
+        app_logger.error(
+            f"[translations] translations.xlsx bulunamadı! "
+            f"Aranan yollar: {tried}"
+        )
+        return {
+            'error': f"translations.xlsx bulunamadı. Aranan yollar: {tried}",
+            'tr': {}, 'en': {}, 'es': {}
+        }
+
     try:
-        xlsx_path = BUNDLE_DIR / 'translations.xlsx'
-        if not xlsx_path.exists():
-            xlsx_path = APP_DIR / 'translations.xlsx'
+        app_logger.info(f"[translations] Yükleniyor: {xlsx_path}")
         df = pd.read_excel(str(xlsx_path), sheet_name='ui', dtype=str).fillna('')
         result = {'tr': {}, 'en': {}, 'es': {}}
         for _, row in df.iterrows():
@@ -2774,10 +2796,23 @@ async def get_translations():
             if not key:
                 continue
             for lang in ['tr', 'en', 'es']:
-                result[lang][key] = str(row[lang]).strip()
+                if lang in df.columns:
+                    result[lang][key] = str(row[lang]).strip()
+        app_logger.info(
+            f"[translations] ✅ Yüklendi: {len(result.get('tr', {}))} anahtar "
+            f"({xlsx_path.name})"
+        )
         return result
     except Exception as e:
-        return {'error': str(e)}
+        app_logger.error(
+            f"[translations] translations.xlsx okunurken hata! "
+            f"Dosya: {xlsx_path} | Hata türü: {type(e).__name__} | Detay: {e}",
+            exc_info=True
+        )
+        return {
+            'error': f"Çeviri dosyası okunamadı: {type(e).__name__}: {e}",
+            'tr': {}, 'en': {}, 'es': {}
+        }
 
 
 @app.get("/api/test/gemini-models")

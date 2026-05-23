@@ -176,7 +176,10 @@ function isYouTubeTab(tab) {
 }
 
 function isYouTubeChannelTab(tab) {
-  return tab?.url?.match(/https:\/\/(www\.)?youtube\.com\/(@[^\/]+|channel\/[^\/]+|c\/[^\/]+|user\/[^\/]+)/);
+    if (!tab || !tab.url) return false;
+    const url = tab.url.toLowerCase();
+    // Eğer URL'de /@ veya /channel/ veya /c/ varsa bu bir kanal sayfasıdır.
+    return url.includes('/@') || url.includes('/channel/') || url.includes('/c/');
 }
 
 // ── Savaş Raporu Ana Akışı (Kanal Analizi) ────────────────────────────────────
@@ -461,12 +464,15 @@ elBtnRetry.addEventListener('click', () => showView('idle'));
   await checkServer();
   
   let [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+  const btnClone = document.getElementById('btn-clone');
+  const btnAnalyze = document.getElementById('btn-analyze');
+  
   if (isYouTubeChannelTab(tab)) {
-    elBtnClone.style.display = 'none';
-    elBtnAnalyze.style.display = 'block';
+      if (btnClone) btnClone.style.display = 'none';
+      if (btnAnalyze) btnAnalyze.style.display = 'block';
   } else {
-    elBtnClone.style.display = 'block';
-    elBtnAnalyze.style.display = 'none';
+      if (btnClone) btnClone.style.display = 'block';
+      if (btnAnalyze) btnAnalyze.style.display = 'none';
   }
   
   chrome.storage.local.get(['user_id', 'username'], (res) => {

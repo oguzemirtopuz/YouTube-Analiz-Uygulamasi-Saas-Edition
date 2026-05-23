@@ -2,6 +2,22 @@
 
 All notable changes to this project will be documented in this file.
 
+## [v2.0.0] - Enterprise Architecture & 1-Click Install
+
+### 🏗️ Refactored (The Great Refactor)
+- **Modular Service Layer:** Surgically decomposed the monolithic `server.pyw` (4,100+ lines) into clean, standalone modules under the `app/` package, adhering to SOLID principles and single-responsibility guidelines.
+- **`app/database/db.py`:** Centralized async SQLite engine using Write-Ahead Logging (WAL) and automatic migration management.
+- **`app/services/security.py`:** Encapsulated AES-128 Fernet encryption for API keys and PBKDF2 cryptography for secure user sessions.
+- **`app/services/email_service.py`:** Extracted dynamic multilingual report and verification code email distribution logic.
+- **`app/services/ai_service.py`:** Decoupled external API orchestrations for Groq (Llama-3.3-70B) and Google Gemini 2.0 Flash models.
+- **`app/services/competitor.py`:** Modularized yt-dlp integrated competitor research and dynamic metrics computing algorithms.
+- **`app/services/analysis_engine.py`:** Separated the core multimedia engines combining OpenCV, librosa audio tracking, and DeepFace vision models.
+
+### 🚀 Added
+- **`install.bat` (1-Click Installer):** Formulated an advanced Windows setup script that handles Python diagnostics, establishes an isolated `venv`, installs dependencies from `requirements.txt`, automatically downloads and configures FFmpeg binaries, and spawns a desktop launching shortcut.
+
+---
+
 ## [v1.2.0] - Security & Quality Update
 
 ### 🔒 Security

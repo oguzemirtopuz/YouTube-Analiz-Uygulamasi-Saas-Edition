@@ -15,19 +15,23 @@ Built entirely on an **asynchronous database architecture**, **hardware-based GP
 
 ---
 
-## 🆕 What's New in v1.2.0 — "Security & Quality" Update
+## 🆕 What's New in v2.0.0 — "Enterprise Architecture & 1-Click Install"
 
-This critical update focuses on enterprise-grade security and robust error handling to ensure a true SaaS-level experience.
+This major milestone upgrades the application to a high-performance, modular enterprise architecture and introduces an automated, hassle-free environment setup.
 
-1. 🔒 **Enterprise-Grade Security (Fernet Encryption)**
-   - **No More Plain Text:** All sensitive credentials (API Keys, SMTP Passwords) are now encrypted using AES-128 `cryptography.fernet` before being saved to the local SQLite database.
-   - **Zero Data Loss:** Backward compatibility is fully maintained; old unencrypted keys are seamlessly read and re-saved securely on the next update.
+### 🏗️ 1. Enterprise Architecture & Service-Layer Decomposition (The Great Refactor)
+- **Monolithic code is gone:** Surgically refactored the massive 4,100+ lines `server.pyw` module, cleanly separating the business logic and database interactions into dedicated packages while maintaining 100% backward compatibility and zero API endpoint breakage.
+- **`app/database/db.py` (Database Layer):** Centralized SQLite WAL-mode async initialization, sessions, and migration pipelines.
+- **`app/services/security.py` (Security Service):** Encapsulated all cryptography routines, password hashing, and token operations.
+- **`app/services/email_service.py` (Notification Service):** Modularized SMTP configuration and automated localized PDF report email delivery.
+- **`app/services/ai_service.py` (AI Orchestrator):** Decoupled Groq (Llama 3.3 70B) and Gemini 2.0 Flash integrations.
+- **`app/services/competitor.py` (Competitor Intelligence):** Extracted specialized competitive analysis and keyword extraction logic.
+- **`app/services/analysis_engine.py` (Analysis Core):** Decoupled sound, video frame rate, and DeepFace/OpenCV analysis engines.
 
-2. 🚀 **"Fail Fast" & Async Architecture**
-   - **Honest Analytics:** The system no longer returns "fake" positive scores when a silent or corrupted video is uploaded. Instead, it instantly fails fast, providing the user with a transparent, actionable error message.
-   - **Async Coroutine Fix:** Resolved a critical bug where the AI feedback system would crash due to unsynchronized coroutines, ensuring stable and reliable AI coaching.
+### 🚀 2. Automated 1-Click Setup (`install.bat`)
+- Designed an enterprise-grade Windows batch installer that automates pre-requisite checks, virtual environment isolation (`venv`), Python dependency setups, FFmpeg automated binaries extraction, and creates a desktop launch shortcut.
 
-> 📜 **Full Version History:** See the [CHANGELOG.md](./CHANGELOG.md) for all past updates including the v1.1.0 Open Source features!
+> 📜 **Full Version History:** See the [CHANGELOG.md](./CHANGELOG.md) for detailed release notes of past versions.
 
 ---
 

@@ -24,27 +24,28 @@
   --radius:    12px;
   --radius-sm: 8px;
   --shadow-glow: 0 0 20px rgba(168, 85, 247, 0.35);
-}
-
-body {
+html, body {
   margin: 0;
   padding: 0;
   width: 100%;
-  min-height: 100vh;
+  height: 100%;
+  min-width: 450px;
+  min-height: 600px;
   background-color: #0f0a1a;
   display: flex;
   justify-content: center;
-  align-items: center;
+  align-items: flex-start; /* Üstten başlasın */
   font-family: 'Inter', system-ui, sans-serif;
   color: var(--text);
-  overflow-x: hidden;
+  overflow: hidden;
 }
 
 .container {
   width: 100%;
   max-width: 450px;
-  max-height: 90vh; /* Ekrana sığması için */
-  overflow-y: auto; /* Taşan içeriği kaydır */
+  height: 100%;
+  max-height: 600px;
+  overflow-y: auto;
   overflow-x: hidden;
   background: #16101f;
   border: 1px solid #4c1d95;

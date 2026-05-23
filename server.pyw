@@ -3033,9 +3033,16 @@ KURALLAR:
 
 def extract_channel_stats_sync(channel_url: str):
     import yt_dlp
+    
+    # YouTube'un yeni yapısında sadece /videos sekmesinden doğru video listesi çekilebilir.
+    # Eğer URL'de alt sekmeler (/featured, /shorts, vb.) varsa temizleyip /videos ekliyoruz.
+    if not channel_url.endswith('/videos'):
+        base_url = channel_url.split('/featured')[0].split('/shorts')[0].split('/streams')[0].rstrip('/')
+        channel_url = f"{base_url}/videos"
+        
     opts = {
-        'extract_flat': True,
-        'playlist_end': 10,
+        'extract_flat': False, # Gerçek izlenme sayısını almak için metadata indirmeliyiz
+        'playlist_end': 5,     # Hız için son 5 videoyu analiz ediyoruz
         'quiet': True,
         'no_warnings': True
     }
@@ -3048,14 +3055,18 @@ def extract_channel_stats_sync(channel_url: str):
         total_views = 0
         count = 0
         for v in entries:
-            if v.get('view_count'):
+            # v olabilir veya yt-dlp None döndürebilir
+            if v and v.get('view_count'):
                 total_views += v['view_count']
                 count += 1
                 
-        avg_views = total_views / count if count > 0 else 0
+        if count == 0:
+            raise ValueError("Kanal videolarının izlenme sayıları okunamadı. YouTube yapısı değişmiş veya kanal boş olabilir.")
+            
+        avg_views = total_views / count
         return {
-            "channel_name": info.get('title', 'Bilinmeyen Kanal'),
-            "avg_views": avg_views,
+            "channel_name": info.get('uploader', info.get('title', 'Bilinmeyen Kanal')),
+            "avg_views": int(avg_views),
             "video_count_analyzed": count
         }
 

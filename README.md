@@ -161,6 +161,64 @@ When the application starts, a sleek, modern **PyWebView desktop window** will o
 
 ---
 
+## 🧩 Chrome Eklentisi — Viral Klonlama Motoru
+
+YT Analiz Pro'nun Chrome eklentisi, YouTube'da gezinirken herhangi bir videoyu **tek tıkla** AI ile klonlayıp viral konsept üretmenizi sağlar.
+
+### ✨ Özellikler
+
+| Özellik | Açıklama |
+|---------|----------|
+| 🎬 Video Metadata Çekme | Başlık, Kanal Adı, URL ve Thumbnail otomatik alınır |
+| 📝 Transcript Analizi | `youtube-transcript-api` ile senaryo çekilir (TR → EN öncelikli) |
+| 🤖 AI Konsept Üretimi | Groq Llama-3.3-70B ile 3 viral başlık, kanca ve thumbnail fikri |
+| ⚡ Fail-Fast UI | Sunucu kapalıysa, YouTube'da değilseniz veya altyazı yoksa anında şık hata mesajı |
+
+### 🛠️ Kurulum (Developer Mode)
+
+> [!IMPORTANT]
+> Chrome eklentisini kullanabilmek için YT Analiz Pro masaüstü uygulamasının **açık ve çalışır** durumda olması gerekir (`http://127.0.0.1:8000`).
+
+#### Adım 1 — Yeni Bağımlılığı Kur
+
+```bash
+pip install youtube-transcript-api>=0.6.2
+```
+
+#### Adım 2 — Chrome'u Aç
+
+1. Tarayıcı adres çubuğuna şunu yaz: `chrome://extensions`
+2. Sağ üst köşedeki **"Geliştirici modu"** (Developer mode) anahtarını **aç** (toggle ON).
+
+#### Adım 3 — Eklentiyi Yükle
+
+3. **"Paketlenmemiş öğe yükle"** (Load unpacked) butonuna tıkla.
+4. Açılan dosya seçici penceresinde şu klasörü seç:
+
+   ```
+   <proje-dizini>/chrome_extension/
+   ```
+
+5. **"Klasör Seç"** → Eklenti listesinde **"YT Analiz Pro — Viral Klonlama Motoru"** görünecek.
+
+#### Adım 4 — Kullan
+
+1. YouTube'da herhangi bir video sayfasını aç (`youtube.com/watch?v=...`).
+2. Tarayıcı araç çubuğundaki 🚀 ikonuna tıkla.
+3. **"Bu Videoyu Klonla"** butonuna bas.
+4. AI ~10-20 saniye içinde 3 viral konsept üretir ve ekranda gösterir.
+
+### ⚠️ Olası Hatalar ve Çözümleri
+
+| Hata Mesajı | Neden? | Çözüm |
+|-------------|--------|--------|
+| 🔴 Sunucu Çevrimdışı | FastAPI çalışmıyor | `BASLAT.bat` ile uygulamayı aç |
+| 📺 YouTube Sayfası Gerekli | Farklı bir sitede | YouTube video sayfasına git |
+| 📝 Altyazı Bulunamadı | Video altyazısı yok/kapalı | Altyazılı başka video dene |
+| Groq API Hatası | API anahtarı yok/geçersiz | Ayarlar panelinden Groq anahtarını gir |
+
+---
+
 ## 🔄 How to Update & Backup Guide
 
 ### ⚠️ What Data to Back Up First

@@ -2809,8 +2809,190 @@ async def test_gemini_ping():
     return {"status": resp.status_code, "body": resp.text[:300]}
 
 
+
+# ═══════════════════════════════════════════════════════════
+#   VİRAL KLONLAMA MOTORU — Chrome Eklentisi Entegrasyonu
+# ═══════════════════════════════════════════════════════════
+
+def _fetch_transcript_sync(video_id: str) -> str:
+    """
+    youtube-transcript-api'yi thread-pool içinde senkron olarak çalıştırır
+    (event-loop'u bloklamaz). Türkçe → İngilizce → herhangi dil sırasıyla dener.
+    Altyazı bulunamazsa ValueError fırlatır.
+    """
+    try:
+        from youtube_transcript_api import YouTubeTranscriptApi, TranscriptsDisabled, NoTranscriptFound
+    except ImportError:
+        raise RuntimeError(
+            "youtube-transcript-api kurulu değil. "
+            "Lütfen 'pip install youtube-transcript-api' komutunu çalıştırın."
+        )
+
+    try:
+        transcript_list = YouTubeTranscriptApi.list_transcripts(video_id)
+    except TranscriptsDisabled:
+        raise ValueError("Bu videonun altyazısı (transcript) devre dışı bırakılmış.")
+    except Exception as e:
+        raise ValueError(f"Transcript listesi alınamadı: {e}")
+
+    # Öncelik sırası: tr → en → ilk mevcut
+    preferred = ["tr", "en"]
+    transcript = None
+    for lang in preferred:
+        try:
+            transcript = transcript_list.find_transcript([lang])
+            break
+        except NoTranscriptFound:
+            continue
+
+    if transcript is None:
+        try:
+            transcript = next(iter(transcript_list))
+        except StopIteration:
+            raise ValueError("Bu video için hiçbir altyazı bulunamadı.")
+
+    entries = transcript.fetch()
+    # Her entry'nin text alanını birleştir
+    full_text = " ".join(
+        (e.text if hasattr(e, "text") else e.get("text", ""))
+        for e in entries
+    )
+    return full_text.strip()
+
+
+async def _call_groq_clone(api_key: str, title: str, channel: str, transcript: str) -> str:
+    """
+    Groq Llama-3.3-70B ile viral klonlama konsepti üretir.
+    Senkron requests çağrısını run_in_threadpool ile sarmalar.
+    """
+    prompt = f"""Aşağıda bir YouTube videosunun başlığı, kanal adı ve senaryosu (transcript) yer almaktadır.
+
+📌 Başlık  : {title}
+📺 Kanal   : {channel}
+📝 Senaryo (ilk 2000 karakter):
+{transcript[:2000]}
+
+Görevin:
+1. Videonun kurgu iskeletini 3-4 madde hâlinde çıkar (Ana Yapı).
+2. Bu videonun başarısını kopyalayan, benim kanalım için 3 FARKLI viral konsept üret.
+   Her konsept için şunları ver:
+   - 🎯 Viral Başlık
+   - 🪝 Kanca (Hook) — İlk 5 saniyede söylenecek cümle
+   - 🖼️ Thumbnail Fikri — Renk, duygu ve metin önerisi
+
+Kurallar:
+- Türkçe yaz.
+- Klişe tavsiyelerden kaçın; somut ve uygulanabilir ol.
+- Başlıklar SEO uyumlu ve merak uyandırıcı olsun.
+- Thumbnail fikirleri görsel olarak net ve dikkat çekici olsun."""
+
+    def _post():
+        resp = requests.post(
+            "https://api.groq.com/openai/v1/chat/completions",
+            headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
+            json={
+                "model": "llama-3.3-70b-versatile",
+                "messages": [{"role": "user", "content": prompt}],
+                "max_tokens": 900,
+                "temperature": 0.8,
+            },
+            timeout=30,
+        )
+        return resp
+
+    resp = await run_in_threadpool(_post)
+
+    if resp.status_code == 200:
+        return resp.json()["choices"][0]["message"]["content"].strip()
+    elif resp.status_code == 401:
+        raise ValueError("Groq API anahtarı geçersiz. Ayarlar panelinden kontrol edin.")
+    elif resp.status_code == 429:
+        raise ValueError("Groq API kotası doldu. Lütfen bir süre bekleyin.")
+    else:
+        raise ValueError(f"Groq API hatası: HTTP {resp.status_code}")
+
+
+@app.post("/api/extension/clone_video")
+async def extension_clone_video(request: Request):
+    """
+    Chrome eklentisinden gelen video verilerini karşılar.
+    1. Transcript çeker (youtube-transcript-api, thread-pool içinde)
+    2. Groq ile viral konsept üretir
+    3. Sonucu JSON olarak döner
+
+    Beklenen JSON body:
+        { "url": "...", "videoId": "...", "title": "...", "channel": "...", "thumbnail": "..." }
+    """
+    try:
+        data = await request.json()
+    except Exception:
+        raise HTTPException(status_code=422, detail="Geçersiz JSON gövdesi.")
+
+    url      = (data.get("url") or "").strip()
+    video_id = (data.get("videoId") or "").strip()
+    title    = (data.get("title") or "Başlık Yok").strip()
+    channel  = (data.get("channel") or "Bilinmeyen Kanal").strip()
+
+    if not video_id and "v=" in url:
+        from urllib.parse import urlparse, parse_qs
+        video_id = parse_qs(urlparse(url).query).get("v", [""])[0]
+
+    if not video_id:
+        raise HTTPException(status_code=400, detail="Video ID bulunamadı. Geçerli bir YouTube URL'si gönderin.")
+
+    app_logger.info(f"[clone_video] video_id={video_id} title='{title[:60]}'")
+
+    # ── 1. Transcript ────────────────────────────────────────
+    try:
+        transcript = await run_in_threadpool(_fetch_transcript_sync, video_id)
+    except RuntimeError as e:
+        # Kütüphane eksik
+        app_logger.error(f"[clone_video] Kütüphane hatası: {e}")
+        raise HTTPException(status_code=503, detail=str(e))
+    except ValueError as e:
+        # Altyazı yok veya erişilemiyor
+        app_logger.warning(f"[clone_video] Transcript yok: {e}")
+        raise HTTPException(status_code=422, detail=f"altyazı: {e}")
+    except Exception as e:
+        app_logger.error(f"[clone_video] Transcript beklenmeyen hata: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Transcript alınamadı: {e}")
+
+    if not transcript:
+        raise HTTPException(status_code=422, detail="altyazı: Boş transcript döndü.")
+
+    # ── 2. Groq API anahtarı ─────────────────────────────────
+    api_key = await get_groq_api_key()
+    if not api_key:
+        raise HTTPException(
+            status_code=503,
+            detail="Groq API anahtarı ayarlanmamış. Uygulamanın Ayarlar panelinden ekleyin."
+        )
+
+    # ── 3. AI Konsept Üretimi ────────────────────────────────
+    try:
+        result = await _call_groq_clone(api_key, title, channel, transcript)
+    except ValueError as e:
+        app_logger.warning(f"[clone_video] Groq hatası: {e}")
+        raise HTTPException(status_code=502, detail=str(e))
+    except Exception as e:
+        app_logger.error(f"[clone_video] AI hatası: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"AI konsept üretimi başarısız: {e}")
+
+    app_logger.info(f"[clone_video] ✅ Konsept üretildi: video_id={video_id}")
+
+    return {
+        "success":   True,
+        "video_id":  video_id,
+        "title":     title,
+        "channel":   channel,
+        "result":    result,
+        "transcript_length": len(transcript),
+    }
+
+
 @app.get("/health")
 async def health():
+
     return {
         "status": "online",
         "ffmpeg_available": FFMPEG_AVAILABLE,

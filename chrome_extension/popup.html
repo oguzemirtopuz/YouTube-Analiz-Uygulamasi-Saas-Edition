@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>YT Analiz Pro</title>
+  <link rel="stylesheet" href="popup.css" />
+</head>
+<body>
+  <!-- ── Header ── -->
+  <header class="header">
+    <div class="logo-wrap">
+      <span class="logo-icon">🚀</span>
+      <div>
+        <div class="logo-title">YT Analiz Pro</div>
+        <div class="logo-sub">Viral Klonlama Motoru</div>
+      </div>
+    </div>
+    <div id="status-dot" class="dot dot--checking" title="Sunucu durumu kontrol ediliyor..."></div>
+  </header>
+
+  <!-- ── Main Content ── -->
+  <main class="main">
+
+    <!-- Idle state -->
+    <section id="view-idle" class="view active">
+      <div class="hero-icon">🎬</div>
+      <p class="hint-text">
+        Bir YouTube videosunu açıp butona bas —<br />
+        AI senin için viral konsept üretsin.
+      </p>
+      <button id="btn-clone" class="btn btn--primary" type="button">
+        <span class="btn-icon">⚡</span>
+        Bu Videoyu Klonla
+      </button>
+    </section>
+
+    <!-- Loading state -->
+    <section id="view-loading" class="view">
+      <div class="spinner"></div>
+      <p class="loading-text">AI senaryoyu analiz ediyor<span class="dots-anim"></span></p>
+      <p class="loading-sub" id="loading-sub-text">Transcript çekiliyor...</p>
+    </section>
+
+    <!-- Result state -->
+    <section id="view-result" class="view">
+      <div class="result-badge">✅ Konsept Hazır!</div>
+      <div id="video-thumb-wrap" class="thumb-wrap" style="display:none">
+        <img id="video-thumb" class="thumb-img" src="" alt="thumbnail" />
+        <div id="video-meta" class="thumb-meta"></div>
+      </div>
+      <div id="result-content" class="result-content"></div>
+      <button id="btn-reset" class="btn btn--ghost" type="button">
+        ↩ Yeni Video
+      </button>
+    </section>
+
+    <!-- Error state -->
+    <section id="view-error" class="view">
+      <div class="error-icon">⚠️</div>
+      <p id="error-title" class="error-title">Bir hata oluştu</p>
+      <p id="error-msg" class="error-msg"></p>
+      <button id="btn-retry" class="btn btn--ghost" type="button">
+        ↩ Tekrar Dene
+      </button>
+    </section>
+
+  </main>
+
+  <!-- ── Footer ── -->
+  <footer class="footer">
+    <span>Sunucu: <code>127.0.0.1:8000</code></span>
+    <span id="server-status-label" class="server-status">Kontrol ediliyor...</span>
+  </footer>
+
+  <script src="popup.js"></script>
+</body>
+</html>

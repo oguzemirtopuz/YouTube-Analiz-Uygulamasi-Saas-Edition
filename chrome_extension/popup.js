@@ -116,13 +116,18 @@ async function cloneVideo() {
       func: extractYouTubeData,
     });
 
-    if (result?.error) {
-      showError('❌ Veri Çekme Hatası', result.error);
+    // executeScript dönüşü: { result: <fonksiyonun döndürdüğü değer> }
+    const extracted = result?.result;
+
+    // Fonksiyon içinden { error: "..." } geldiyse yakala
+    if (!extracted || extracted.error) {
+      showError('❌ Veri Çekme Hatası', extracted?.error || 'Sayfa verisi okunamadı.');
       return;
     }
 
-    videoData = result?.result;
-    if (!videoData?.url) {
+    videoData = extracted;
+
+    if (!videoData.videoId) {
       showError('❌ Video Verisi Bulunamadı', 'Sayfa henüz yüklenmiş olmayabilir. Video sayfasını yenileyin.');
       return;
     }
@@ -140,12 +145,20 @@ async function cloneVideo() {
 
   elLoadingSub.textContent = 'AI konsept üretiyor...';
 
-  // 6. Backend'e POST
+  // 6. Backend'e POST — yalnızca bilinen alanları gönder (422 önlemi)
+  const requestBody = {
+    url:       videoData.url       || '',
+    videoId:   videoData.videoId   || '',
+    title:     videoData.title     || 'Başlık Yok',
+    channel:   videoData.channel   || 'Bilinmeyen Kanal',
+    thumbnail: videoData.thumbnail || '',
+  };
+
   try {
     const resp = await fetch(`${SERVER}/api/extension/clone_video`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(videoData),
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+      body:    JSON.stringify(requestBody),
     });
 
     const data = await resp.json();

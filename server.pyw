@@ -29,6 +29,7 @@ from pathlib import Path
 import traceback
 from fastapi import FastAPI, UploadFile, File, Form, Request, HTTPException
 from pydantic import BaseModel, Field
+from pydantic import ConfigDict
 from fastapi.concurrency import run_in_threadpool
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, FileResponse, JSONResponse
@@ -2915,6 +2916,9 @@ Kurallar:
 
 class CloneVideoRequest(BaseModel):
     """Chrome eklentisinden gelen video metadata modeli."""
+    # extra='ignore': eklentiden gelen bilinmeyen alanlar (örn. 'error') 422 tetiklemez
+    model_config = ConfigDict(extra="ignore")
+
     url:       str = Field(default="", description="Tam YouTube video URL'si")
     videoId:   str = Field(default="", description="YouTube video ID (v= parametresi)")
     title:     str = Field(default="Başlık Yok", description="Video başlığı")

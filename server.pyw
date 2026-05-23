@@ -28,6 +28,7 @@ from typing import Optional, Dict, List
 from pathlib import Path
 import traceback
 from fastapi import FastAPI, UploadFile, File, Form, Request, HTTPException
+from pydantic import BaseModel, Field
 from fastapi.concurrency import run_in_threadpool
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, FileResponse, JSONResponse
@@ -2912,8 +2913,17 @@ Kurallar:
         raise ValueError(f"Groq API hatası: HTTP {resp.status_code}")
 
 
+class CloneVideoRequest(BaseModel):
+    """Chrome eklentisinden gelen video metadata modeli."""
+    url:       str = Field(default="", description="Tam YouTube video URL'si")
+    videoId:   str = Field(default="", description="YouTube video ID (v= parametresi)")
+    title:     str = Field(default="Başlık Yok", description="Video başlığı")
+    channel:   str = Field(default="Bilinmeyen Kanal", description="Kanal adı")
+    thumbnail: str = Field(default="", description="Thumbnail URL")
+
+
 @app.post("/api/extension/clone_video")
-async def extension_clone_video(request: Request):
+async def extension_clone_video(payload: CloneVideoRequest):
     """
     Chrome eklentisinden gelen video verilerini karşılar.
     1. Transcript çeker (youtube-transcript-api, thread-pool içinde)
@@ -2923,15 +2933,10 @@ async def extension_clone_video(request: Request):
     Beklenen JSON body:
         { "url": "...", "videoId": "...", "title": "...", "channel": "...", "thumbnail": "..." }
     """
-    try:
-        data = await request.json()
-    except Exception:
-        raise HTTPException(status_code=422, detail="Geçersiz JSON gövdesi.")
-
-    url      = (data.get("url") or "").strip()
-    video_id = (data.get("videoId") or "").strip()
-    title    = (data.get("title") or "Başlık Yok").strip()
-    channel  = (data.get("channel") or "Bilinmeyen Kanal").strip()
+    url      = payload.url.strip()
+    video_id = payload.videoId.strip()
+    title    = payload.title.strip() or "Başlık Yok"
+    channel  = payload.channel.strip() or "Bilinmeyen Kanal"
 
     if not video_id and "v=" in url:
         from urllib.parse import urlparse, parse_qs

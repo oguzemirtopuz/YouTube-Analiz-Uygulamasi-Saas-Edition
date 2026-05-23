@@ -444,6 +444,31 @@ def get_dynamic_timeout(video_path: str, min_timeout: int = 120) -> Optional[int
 
 app = FastAPI(title="YouTube Analiz Pro V4.0 — SaaS Edition")
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_credentials=True, allow_methods=["*"], allow_headers=["*"])
+
+# ── Pydantic 422 Validation hata detaylarını logla ──────────────────────────
+from fastapi.exceptions import RequestValidationError
+
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    """422 Pydantic validation hatalarını logla ve anlamlı JSON dön."""
+    try:
+        body = await request.body()
+        body_str = body.decode('utf-8', errors='replace')
+    except Exception:
+        body_str = "<okunamadı>"
+    app_logger.error(
+        f"[VALIDATION ERROR] endpoint={request.url.path}\n"
+        f"  Gelen body: {body_str}\n"
+        f"  Validation hataları: {exc.errors()}"
+    )
+    return JSONResponse(
+        status_code=422,
+        content={
+            "error": "Gönderilen veri formatı hatalı.",
+            "detail": exc.errors(),
+            "body": body_str
+        }
+    )
 # Statik dosyalar ve Template motoru (PyInstaller BUNDLE_DIR uyumlu)
 app.mount("/static", StaticFiles(directory=static_dir), name="static")
 app.mount("/shorts", StaticFiles(directory=str(output_dir)), name="shorts")
@@ -2972,6 +2997,9 @@ async def extension_clone_video(payload: CloneVideoRequest):
     Beklenen JSON body:
         { "url": "...", "videoId": "...", "title": "...", "channel": "...", "thumbnail": "..." }
     """
+    # ── Gelen veriyi tam olarak logla (debug) ─────────────────
+    app_logger.info(f"[clone_video] Eklentiden gelen veri: {payload.model_dump()}")
+
     url      = payload.url.strip()
     video_id = payload.videoId.strip()
     title    = payload.title.strip() or "Başlık Yok"
@@ -2984,7 +3012,7 @@ async def extension_clone_video(payload: CloneVideoRequest):
     if not video_id:
         raise HTTPException(status_code=400, detail="Video ID bulunamadı. Geçerli bir YouTube URL'si gönderin.")
 
-    app_logger.info(f"[clone_video] video_id={video_id} title='{title[:60]}'")
+    app_logger.info(f"[clone_video] video_id={video_id} title='{title[:60]}'") 
 
     # ── 1. Transcript ────────────────────────────────────────
     try:
@@ -2994,15 +3022,15 @@ async def extension_clone_video(payload: CloneVideoRequest):
         app_logger.error(f"[clone_video] Kütüphane hatası: {e}")
         raise HTTPException(status_code=503, detail=str(e))
     except ValueError as e:
-        # Altyazı yok veya erişilemiyor
+        # Altyazı yok veya erişilemiyor — 404 kullan (422 Pydantic'e ayrılmış)
         app_logger.warning(f"[clone_video] Transcript yok: {e}")
-        raise HTTPException(status_code=422, detail=f"altyazı: {e}")
+        raise HTTPException(status_code=404, detail=f"altyazı: {e}")
     except Exception as e:
         app_logger.error(f"[clone_video] Transcript beklenmeyen hata: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=f"Transcript alınamadı: {e}")
 
     if not transcript:
-        raise HTTPException(status_code=422, detail="altyazı: Boş transcript döndü.")
+        raise HTTPException(status_code=404, detail="altyazı: Boş transcript döndü.")
 
     # ── 2. Groq API anahtarı ─────────────────────────────────
     api_key = await get_groq_api_key()

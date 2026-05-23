@@ -2877,32 +2877,103 @@ async def test_gemini_ping():
 # ═══════════════════════════════════════════════════════════
 
 def _fetch_transcript_sync(video_id: str) -> str:
-    from youtube_transcript_api import YouTubeTranscriptApi
+    # 1. Aşama: YouTubeTranscriptApi ile tüm altyazıları çek (İlk tercih)
     try:
-        # Tüm altyazıların listesini al
+        from youtube_transcript_api import YouTubeTranscriptApi
         transcript_list = YouTubeTranscriptApi.list_transcripts(video_id)
-        
         transcript = None
-        # 1. Aşama: İstenilen dilleri sırayla dene (otomatik veya manuel fark etmez)
         for lang in ['tr', 'en', 'es', 'de', 'fr']:
             try:
                 transcript = transcript_list.find_transcript([lang])
                 break
             except:
                 continue
-                
-        # 2. Aşama: Eğer bu dillerde yoksa, listedeki İLK altyazıyı zorla al (dili ne olursa olsun)
         if transcript is None:
             transcript = next(iter(transcript_list))
-            
-        # İçeriği çek ve birleştir
         entries = transcript.fetch()
-        full_text = " ".join([t.get('text', '') for t in entries])
-        return full_text
+        return " ".join([t.get('text', '') for t in entries])
+    except Exception as api_err:
+        last_api_error = str(api_err)
         
+    # 2. Aşama: youtube-transcript-api hata verirse (örn: XML Parse Error), yt-dlp ile ZORLA ÇEK
+    try:
+        import yt_dlp
+        import requests
+        import json
+        import re
+        
+        ydl_opts = {
+            'skip_download': True,
+            'writesubtitles': True,
+            'writeautomaticsub': True,
+            'subtitleslangs': ['tr', 'en', 'es', 'de', 'fr', '.*'],
+            'quiet': True,
+            'no_warnings': True
+        }
+        
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            info = ydl.extract_info(video_id, download=False)
+            subs = info.get('requested_subtitles')
+            if not subs:
+                # yt-dlp de altyazı bulamadıysa, ilk kütüphanenin hatasını dön
+                raise ValueError(last_api_error)
+            
+            # Öncelikle istediğimiz dilleri ara
+            target_sub = None
+            for lang in ['tr', 'en', 'es', 'de', 'fr']:
+                if lang in subs:
+                    target_sub = subs[lang]
+                    break
+            
+            # Bulamazsa ilk gelen dili al
+            if not target_sub:
+                target_sub = next(iter(subs.values()))
+            
+            sub_url = target_sub.get('url')
+            if not sub_url:
+                raise ValueError(last_api_error)
+            
+            # Subtitle URL'sine istek at
+            resp = requests.get(sub_url, timeout=15)
+            if resp.status_code != 200:
+                raise ValueError(last_api_error)
+                
+            text_data = resp.text
+            
+            # YouTube genellikle JSON3 formatında subtitle döner
+            if 'events' in text_data:
+                try:
+                    data = json.loads(text_data)
+                    texts = []
+                    for event in data.get('events', []):
+                        if 'segs' in event:
+                            for seg in event['segs']:
+                                if 'utf8' in seg:
+                                    texts.append(seg['utf8'])
+                    if texts:
+                        return " ".join(texts).replace('\n', ' ').replace('\r', '')
+                except:
+                    pass
+            
+            # VTT formatı ise temizle
+            clean_lines = []
+            for line in text_data.split('\n'):
+                line = line.strip()
+                if not line or '-->' in line or line.isdigit() or line.startswith('WEBVTT') or line.startswith('Kind:') or line.startswith('Language:') or line.startswith('Style:'):
+                    continue
+                # VTT içindeki <c>, <00:00:00.000> gibi tagları regex ile sil
+                line = re.sub(r'<[^>]+>', '', line)
+                if line:
+                    clean_lines.append(line)
+            
+            result = " ".join(clean_lines)
+            if result.strip():
+                return result
+            raise ValueError(last_api_error)
+            
     except Exception as e:
-        # Hiçbir şekilde yoksa dürüstçe hata dön
-        raise ValueError(f"Altyazı çekilemedi: {str(e)}")
+        # Son çare olarak hataları döndür
+        raise ValueError(f"Altyazı çekilemedi. API Hatası: {last_api_error} | Yedek Motor Hatası: {e}")
 
 
 async def _call_groq_clone(api_key: str, title: str, channel: str, transcript: str) -> str:

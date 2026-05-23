@@ -194,8 +194,23 @@ function isYouTubeTab(tab) {
 function isYouTubeChannelTab(tab) {
     if (!tab || !tab.url) return false;
     const url = tab.url.toLowerCase();
-    // Eğer URL'de /@ veya /channel/ veya /c/ varsa bu bir kanal sayfasıdır.
-    return url.includes('/@') || url.includes('/channel/') || url.includes('/c/');
+    
+    // Açık kanal formatları
+    if (url.includes('/@') || url.includes('/channel/') || url.includes('/c/') || url.includes('/user/')) return true;
+    
+    // Özel URL'ler (örn: youtube.com/mendeburlemur)
+    try {
+        const u = new URL(url);
+        if (u.hostname.includes('youtube.com')) {
+            const path = u.pathname;
+            const excludePaths = ['/watch', '/results', '/feed', '/shorts', '/playlist', '/account', '/premium', '/gaming', '/trending'];
+            if (path.length > 1 && !excludePaths.some(p => path.startsWith(p))) {
+                return true;
+            }
+        }
+    } catch(e) {}
+    
+    return false;
 }
 
 // ── Savaş Raporu Ana Akışı (Kanal Analizi) ────────────────────────────────────

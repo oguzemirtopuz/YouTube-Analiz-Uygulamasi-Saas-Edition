@@ -2993,7 +2993,8 @@ Sana başarılı bir videonun altyazısı (transcript) ve başlığı verilecek.
 KURALLAR:
 1. UYGULANABİLİRLİK: Kullanıcının devasa bütçesi yok. Fikirler pratik olmalı.
 2. KOPYALAMA: Orijinal videodaki nesneleri (örn: Bazuka, Drone) kopyalama. Orijinal videonun HİSSİNİ ve KURGU İSKELETİNİ kopyalayıp kullanıcının sektörüne uyarla.
-3. SADECE JSON Array döndür: [{{"title":"...", "hook":"...", "thumbnail":"..."}}]"""
+3. CRITICAL THUMBNAIL RULE: NEVER generate fake image URLs or links (like https://example.com/...). The "thumbnail" field MUST contain a detailed text description of the thumbnail design. Example: "Arka planda patlayan bir araba, önde şaşkın bir ifade ve büyük sarı harflerle 'BUNU BEKLEMİYORDUK!' yazısı."
+4. SADECE JSON Array döndür: [{{"title":"...", "hook":"...", "thumbnail":"..."}}]"""
     else:
         prompt = f"""Sen elit bir YouTube İçerik Stratejistisin. Kullanıcının kanalı şu nişte: {content_type}. Amacı: {purpose}.
 Bu videonun altyazısı yok. Ancak başlığı: '{title}'. Sadece bu başlığa ve konseptine bakarak benim kanalım için 3 farklı viral başlık ve thumbnail fikri üret.
@@ -3001,7 +3002,8 @@ Bu videonun altyazısı yok. Ancak başlığı: '{title}'. Sadece bu başlığa 
 KURALLAR:
 1. UYGULANABİLİRLİK: Kullanıcının devasa bütçesi yok. Fikirler pratik olmalı.
 2. KOPYALAMA: Orijinal videodaki nesneleri kopyalama. Orijinal videonun HİSSİNİ ve KURGU İSKELETİNİ kopyalayıp kullanıcının sektörüne uyarla.
-3. SADECE JSON Array döndür: [{{"title":"...", "hook":"...", "thumbnail":"..."}}]"""
+3. CRITICAL THUMBNAIL RULE: NEVER generate fake image URLs or links (like https://example.com/...). The "thumbnail" field MUST contain a detailed text description of the thumbnail design. Example: "Arka planda patlayan bir araba, önde şaşkın bir ifade ve büyük sarı harflerle 'BUNU BEKLEMİYORDUK!' yazısı."
+4. SADECE JSON Array döndür: [{{"title":"...", "hook":"...", "thumbnail":"..."}}]"""
 
     def _post():
         resp = requests.post(

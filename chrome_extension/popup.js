@@ -170,6 +170,22 @@ function handleLogout() {
   });
 }
 
+// ── Aktif Sekme Tespiti (Tam Ekran Desteği İçin) ─────────────────────────────
+async function getActiveTab() {
+  const urlParams = new URLSearchParams(window.location.search);
+  const passedUrl = urlParams.get('url');
+  
+  if (passedUrl) {
+    let tabs = await chrome.tabs.query({ url: "*://*.youtube.com/*" });
+    let matchedTab = tabs.find(t => t.url === passedUrl) || tabs[0];
+    if (matchedTab) return matchedTab;
+    return { url: passedUrl, id: null };
+  }
+  
+  let [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+  return tab;
+}
+
 // ── YouTube Sekme Doğrulama ───────────────────────────────────────────────────
 function isYouTubeTab(tab) {
   return tab?.url?.match(/https:\/\/(www\.)?youtube\.com\/watch\?/);
@@ -190,7 +206,7 @@ async function analyzeChannel() {
     return;
   }
   
-  let [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+  let tab = await getActiveTab();
   if (!isYouTubeChannelTab(tab)) {
     showError('📺 Kanal Sayfası Gerekli', 'Bu işlem yalnızca YouTube kanal sayfalarında çalışır.');
     return;
@@ -293,7 +309,7 @@ async function cloneVideo() {
   }
 
   // 2. Aktif sekme YouTube'da mı?
-  let [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+  let tab = await getActiveTab();
   if (!isYouTubeTab(tab)) {
     showError(
       '📺 YouTube Sayfası Gerekli',
@@ -444,8 +460,10 @@ elBtnRabbit.addEventListener('click', findRabbitHole);
 
 const elBtnFullscreen = $('btn-fullscreen');
 if (elBtnFullscreen) {
-  elBtnFullscreen.addEventListener('click', () => {
-    chrome.tabs.create({ url: chrome.runtime.getURL('popup.html') });
+  elBtnFullscreen.addEventListener('click', async () => {
+    let tab = await getActiveTab();
+    let ytUrl = tab ? tab.url : '';
+    chrome.tabs.create({ url: chrome.runtime.getURL('popup.html') + '?url=' + encodeURIComponent(ytUrl) });
   });
 }
 
@@ -463,7 +481,7 @@ elBtnRetry.addEventListener('click', () => showView('idle'));
   elBtnClone.disabled = true; // sunucu kontrolü bitene kadar devre dışı
   await checkServer();
   
-  let [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+  let tab = await getActiveTab();
   const btnClone = document.getElementById('btn-clone');
   const btnAnalyze = document.getElementById('btn-analyze');
   

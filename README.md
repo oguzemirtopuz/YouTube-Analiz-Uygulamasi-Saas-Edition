@@ -6,6 +6,8 @@
 [![OpenCV](https://img.shields.io/badge/OpenCV-5C3EE8?style=for-the-badge&logo=opencv&logoColor=white)](https://opencv.org)
 [![TensorFlow](https://img.shields.io/badge/TensorFlow-FF6F00?style=for-the-badge&logo=tensorflow&logoColor=white)](https://tensorflow.org)
 [![Google Gemini](https://img.shields.io/badge/Google_Gemini-8E75C2?style=for-the-badge&logo=google-gemini&logoColor=white)](https://deepmind.google/technologies/gemini/)
+[![1-Click Install](https://img.shields.io/badge/1--Click_Install-✅_Windows-brightgreen?style=for-the-badge&logo=windows&logoColor=white)](#-1-click-kurulum-sadece-bir-tikla)
+[![FFmpeg](https://img.shields.io/badge/FFmpeg-Auto_Install-007808?style=for-the-badge&logo=ffmpeg&logoColor=white)](#-1-click-kurulum-sadece-bir-tikla)
 
 YouTube Analyzer Pro (SaaS Edition) is a **production-grade**, AI-powered analysis and optimization platform designed for content creators to maximize their video performance, SEO infrastructure, and visual content.
 
@@ -67,45 +69,81 @@ The biggest advantage of this application is that **your data and API keys are c
 
 ---
 
-## 📋 Requirements
+## ⚡ 1-Click Kurulum (Sadece Bir Tıkla!)
 
-> [!WARNING]
-> **CRITICAL: FFmpeg IS REQUIRED!**
-> This application uses FFmpeg to process videos and extract audio. If FFmpeg is not installed and added to your system's PATH, the application **WILL NOT WORK** and you will get an "FFmpeg not found" error when uploading videos.
+> [!IMPORTANT]
+> **Yeni! Tek tıkla kurulum artık mevcut.** Python dışında hiçbir şey kurmanıza gerek yok — FFmpeg, sanal ortam ve masaüstü kısayolu **otomatik** olarak ayarlanır.
 
-To run this application, the following must be installed on your system:
+### 🪟 Windows — En Kolay Yol
 
-*   **Python 3.10 or higher:** [Download Python](https://www.python.org/downloads/) (Make sure to check *"Add Python to PATH"* during installation!)
-*   **FFmpeg (For Video Analysis):** Must be added to your system's PATH environment variable.
-    *   *Easy Installation on Windows:* Open PowerShell as Administrator and run `winget install Gyan.FFmpeg` to install it in seconds.
-    *   *Manual Installation Video:* [How to Install FFmpeg on Windows](https://www.youtube.com/watch?v=JR36oH35Fgg)
+1. **Python 3.10+** yüklü olduğundan emin olun → [python.org/downloads](https://www.python.org/downloads/)  
+   *(Kurulumda **"Add Python to PATH"** kutucuğunu işaretlemeyi unutmayın!)*
+2. Repoyu klonlayın veya ZIP olarak indirin.
+3. Proje klasöründe **`install.bat`** dosyasına **çift tıklayın**.
+
+Script otomatik olarak şunları yapar:
+
+| Adım | İşlem | Açıklama |
+|------|-------|----------|
+| 1 | 🐍 Python kontrolü | Sürüm ve PATH doğrulaması |
+| 2 | 📦 venv + pip | İzole sanal ortam + tüm paketler |
+| 3 | 🎬 FFmpeg | Varsa kullanır, yoksa otomatik indirir |
+| 4 | 🖥️ Kısayol | Masaüstüne tek tıkla başlatıcı atar |
+
+Kurulum tamamlandığında masaüstünüzde **"YouTube Analiz Pro"** kısayolu hazır olacak.
 
 ---
 
-## 🚀 Step-by-Step Installation & Execution
+## 📋 Requirements
 
-### 1. Clone or Download the Repository
+> [!NOTE]
+> **`install.bat` kullanıyorsanız bu adımları atlayabilirsiniz** — script her şeyi otomatik halleder.
+
+Manuel kurulum yapmak isteyenler için:
+
+*   **Python 3.10 or higher:** [Download Python](https://www.python.org/downloads/) (Make sure to check *"Add Python to PATH"* during installation!)
+*   **FFmpeg (For Video Analysis):** Automatically installed by `install.bat`. For manual install:
+    *   *Easy:* `winget install Gyan.FFmpeg` (PowerShell as Admin)
+    *   *Manual:* [How to Install FFmpeg on Windows](https://www.youtube.com/watch?v=JR36oH35Fgg)
+
+---
+
+## 🚀 Installation & Launch Options
+
+### Option A — ⚡ 1-Click Install (RECOMMENDED)
+
+```
+Double-click  →  install.bat
+```
+
+That's it. The installer handles Python packages, FFmpeg, and creates a desktop shortcut automatically.
+
+### Option B — Manual Setup
+
+#### 1. Clone or Download the Repository
 ```bash
 git clone https://github.com/oguzemirtopuz/YouTube-Analiz-Uygulamasi-Saas-Edition.git
 cd YouTube-Analiz-Uygulamasi-Saas-Edition
 ```
 
-### 2. Install Required Python Packages
+#### 2. Create a Virtual Environment
 ```bash
+python -m venv venv
+venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
-### 3. Launch the Application
-For a native desktop experience and ease of use, **3 different launching options** are provided:
+#### 3. Launch the Application
+After installation, **3 different launching options** are available:
 
-*   **Option A (PowerShell - RECOMMENDED):** `Start-YouTubeAnalyzer.ps1` script. The most secure, stable, and quiet method that runs silently in the background of the terminal.
-*   **Option B (BAT):** Double-click the `BASLAT.bat` file in the folder to run it instantly.
-*   **Option C (VBScript):** `YouTube Analiz Pro.vbs` file. Launches the application completely silently in the background without opening any command prompt windows.
+*   **Option A (1-Click Shortcut):** Use the desktop shortcut created by `install.bat` — launches instantly.
+*   **Option B (BAT):** Double-click `BASLAT.bat` or `launch.bat` in the folder.
+*   **Option C (PowerShell):** Run `Start-YouTubeAnalyzer.ps1` for the most stable silent launch.
 
-> 💡 **Shortcut Wizard:** Simply double-click the `KISAYOL_OLUSTUR.bat` file in the folder to automatically create desktop shortcuts for these launchers.
+> 💡 **Shortcut Wizard:** Double-click `KISAYOL_OLUSTUR.bat` to create additional desktop shortcuts.
 
-### 4. Accessing the Interface
-When the application starts, a sleek, modern, built-in **PyWebView desktop window** will open. If you wish to access it from your web browser:
+### Accessing the Interface
+When the application starts, a sleek, modern **PyWebView desktop window** will open. Browser access:
 *   **Address:** [http://127.0.0.1:8000](http://127.0.0.1:8000)
 
 ---

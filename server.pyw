@@ -3034,15 +3034,13 @@ KURALLAR:
 def extract_channel_stats_sync(channel_url: str):
     import yt_dlp
     
-    # YouTube'un yeni yapısında sadece /videos sekmesinden doğru video listesi çekilebilir.
-    # Eğer URL'de alt sekmeler (/featured, /shorts, vb.) varsa temizleyip /videos ekliyoruz.
     if not channel_url.endswith('/videos'):
         base_url = channel_url.split('/featured')[0].split('/shorts')[0].split('/streams')[0].rstrip('/')
         channel_url = f"{base_url}/videos"
         
     opts = {
-        'extract_flat': False, # Gerçek izlenme sayısını almak için metadata indirmeliyiz
-        'playlist_end': 5,     # Hız için son 5 videoyu analiz ediyoruz
+        'extract_flat': True,
+        'playlist_end': 5,
         'quiet': True,
         'no_warnings': True
     }
@@ -3054,20 +3052,42 @@ def extract_channel_stats_sync(channel_url: str):
         
         total_views = 0
         count = 0
+        video_urls = []
         for v in entries:
-            # v olabilir veya yt-dlp None döndürebilir
+            if v and v.get('url'):
+                video_urls.append(v['url'])
             if v and v.get('view_count'):
                 total_views += v['view_count']
                 count += 1
                 
+        # Eğer extract_flat view_count'ları getirmediyse (None geldiyse),
+        # İlk 3 videonun meta verisini tekil olarak çekiyoruz (Daha hızlı ve stabil)
+        if count == 0 and video_urls:
+            single_opts = {
+                'extract_flat': False,
+                'quiet': True,
+                'no_warnings': True,
+                'socket_timeout': 5
+            }
+            with yt_dlp.YoutubeDL(single_opts) as ydl_single:
+                for v_url in video_urls[:3]:
+                    try:
+                        v_info = ydl_single.extract_info(v_url, download=False)
+                        if v_info and v_info.get('view_count'):
+                            total_views += v_info['view_count']
+                            count += 1
+                    except:
+                        pass
+                        
         if count == 0:
-            raise ValueError("Kanal videolarının izlenme sayıları okunamadı. YouTube yapısı değişmiş veya kanal boş olabilir.")
+            avg_views = "Bilinmiyor"
+        else:
+            avg_views = int(total_views / count)
             
-        avg_views = total_views / count
         return {
             "channel_name": info.get('uploader', info.get('title', 'Bilinmeyen Kanal')),
-            "avg_views": int(avg_views),
-            "video_count_analyzed": count
+            "avg_views": avg_views,
+            "video_count_analyzed": count if count > 0 else len(video_urls)
         }
 
 async def _call_groq_battle(api_key: str, my_data: dict, rival_data: dict) -> str:

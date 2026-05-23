@@ -1,269 +1,58 @@
-# 🎬 YouTube Analyzer Pro (SaaS Edition) 🚀
+<div align="center">
+  <h1>🚀 YT Analiz Pro - The Ultimate YouTube Hacking Ecosystem</h1>
+  <p><strong>A full-stack SaaS platform combining an AI-powered Desktop App with a Viral Cloning Chrome Extension.</strong></p>
+</div>
 
-[![FastAPI](https://img.shields.io/badge/FastAPI-005571?style=for-the-badge&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
-[![Python](https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org)
-[![SQLite](https://img.shields.io/badge/SQLite-003B57?style=for-the-badge&logo=sqlite&logoColor=white)](https://sqlite.org)
-[![OpenCV](https://img.shields.io/badge/OpenCV-5C3EE8?style=for-the-badge&logo=opencv&logoColor=white)](https://opencv.org)
-[![TensorFlow](https://img.shields.io/badge/TensorFlow-FF6F00?style=for-the-badge&logo=tensorflow&logoColor=white)](https://tensorflow.org)
-[![Google Gemini](https://img.shields.io/badge/Google_Gemini-8E75C2?style=for-the-badge&logo=google-gemini&logoColor=white)](https://deepmind.google/technologies/gemini/)
-[![1-Click Install](https://img.shields.io/badge/1--Click_Install-✅_Windows-brightgreen?style=for-the-badge&logo=windows&logoColor=white)](#-1-click-kurulum-sadece-bir-tikla)
-[![FFmpeg](https://img.shields.io/badge/FFmpeg-Auto_Install-007808?style=for-the-badge&logo=ffmpeg&logoColor=white)](#-1-click-kurulum-sadece-bir-tikla)
+<br>
 
-YouTube Analyzer Pro (SaaS Edition) is a **production-grade**, AI-powered analysis and optimization platform designed for content creators to maximize their video performance, SEO infrastructure, and visual content.
-
-Built entirely on an **asynchronous database architecture**, **hardware-based GPU acceleration**, and **advanced computer vision** technologies, this system aims to transform amateur content creators into professional channels.
+YT Analiz Pro is not just an analytics tool; it is a **YouTube Growth Ecosystem** designed to dissect videos mathematically, clone viral structures, and dominate competitor channels using advanced AI and computer vision.
 
 ---
 
-## 🆕 What's New in v2.0.0 — "Enterprise Architecture & 1-Click Install"
+## 🌟 Ecosystem Overview
 
-This major milestone upgrades the application to a high-performance, modular enterprise architecture and introduces an automated, hassle-free environment setup.
+The project is split into two perfectly synced engines:
 
-### 🏗️ 1. Enterprise Architecture & Service-Layer Decomposition (The Great Refactor)
-- **Monolithic code is gone:** Surgically refactored the massive 4,100+ lines `server.pyw` module, cleanly separating the business logic and database interactions into dedicated packages while maintaining 100% backward compatibility and zero API endpoint breakage.
-- **`app/database/db.py` (Database Layer):** Centralized SQLite WAL-mode async initialization, sessions, and migration pipelines.
-- **`app/services/security.py` (Security Service):** Encapsulated all cryptography routines, password hashing, and token operations.
-- **`app/services/email_service.py` (Notification Service):** Modularized SMTP configuration and automated localized PDF report email delivery.
-- **`app/services/ai_service.py` (AI Orchestrator):** Decoupled Groq (Llama 3.3 70B) and Gemini 2.0 Flash integrations.
-- **`app/services/competitor.py` (Competitor Intelligence):** Extracted specialized competitive analysis and keyword extraction logic.
-- **`app/services/analysis_engine.py` (Analysis Core):** Decoupled sound, video frame rate, and DeepFace/OpenCV analysis engines.
+### 1. The Core (Desktop Application)
+A heavy-duty backend built with **Python, FastAPI, and PyQt5**, powered by OpenCV and Librosa for deep, frame-by-frame video analysis.
+* **Computer Vision Analysis:** Detects scene cuts, fast-paced edits, and brightness variations using OpenCV.
+* **Audio & Silence Detection:** Uses Librosa to analyze audio tempo, dead air (silences), and decibel peaks.
+* **Retention Scoring Algorithm:** Calculates a highly accurate "Retention Score" based on hook momentum, frame density, and pacing.
+* **AI Coach (Groq & Gemini):** Analyzes thumbnails, reads video transcripts, and provides actionable, brutal feedback to improve content retention.
+* **Database & Security:** AES-encrypted API key storage (Groq/Gemini) with SQLite for tracking past analyses.
 
-### 🚀 2. Automated 1-Click Setup (`install.bat`)
-- Designed an enterprise-grade Windows batch installer that automates pre-requisite checks, virtual environment isolation (`venv`), Python dependency setups, FFmpeg automated binaries extraction, and creates a desktop launch shortcut.
-
-> 📜 **Full Version History:** See the [CHANGELOG.md](./CHANGELOG.md) for detailed release notes of past versions.
-
----
-
-## ✨ Advanced Highlighted Features
-
-### 🤖 1. AI Coach & Smart Recommendation Engine
-*   **Groq (Llama-3.3-70B) Integration:** Synthesizes channel-specific target audiences, categories, and performance scores to offer personalized, constructive, and directly actionable feedback.
-*   **Anti-Generic Rule System:** The AI never gives cliché advice like *"Be engaging in the first 10 seconds"*. Instead, it provides concrete scenarios and timestamp-coded editing examples on **"how"** to improve (*e.g., Application Example: At 00:02, add the text 'Secret Revealed!' on the screen along with a shake effect.*).
-*   **Intelligence Protection:** Algorithmically respects correctly entered tags and never flags them as "irrelevant," protecting the channel's hard work.
-
-### 👁️ 2. Computer Vision & Thumbnail Intelligence
-*   **Gemini 2.0 Flash Vision Integration:** Analyzes your thumbnail designs through the eyes of artificial intelligence.
-*   **Emotion & Contrast Analysis:** Evaluates facial expressions (using `deepface`), color palettes (using `colorthief`), contrast, text readability, and overall visual appeal to boost Click-Through Rate (CTR).
-*   **Video Flow & Pace Analysis:** Detects in-video scenes, frame transitions, and pacing peaks to map out exactly where viewers might get bored.
-
-### 🎙️ 3. Multimedia Audio & Pace Analysis Module
-*   **Librosa & Soundfile Integration:** Analyzes audio waves within video files.
-*   **Excitement & Pace Coefficient:** Identifies speech rate, volume peaks, and waves of excitement to map out a pacing graph. This optimizes audience retention throughout the video.
-
-### 📈 4. Asynchronous & High-Performance Infrastructure
-*   **aiosqlite & WAL Mode:** The SQLite database operates fully asynchronously with `Write-Ahead Logging (WAL)` mode enabled. This prevents UI or server freezes/lockups even when hundreds of analyses are run concurrently.
-*   **Performance Autopilot:** Automatically detects CPU cores, RAM size, and CUDA cores at startup to deploy optimal multi-threading and hardware acceleration.
-*   **GPU Hardware Acceleration:** The FFmpeg engine scans for NVIDIA (`h264_nvenc`), AMD (`h264_amf`), and Intel (`h264_qsv`) graphics cards to handle video processing at lightning speeds using GPU power.
-
-### 🌐 5. Global SaaS Standards
-*   **Multi-language Infrastructure (TR / EN / ES):** Excel-based dynamic localization (`translations.xlsx`) enables changing the entire interface, PDF reports, and AI analysis language to Turkish, English, or Spanish with a single click.
-*   **Advanced PDF Report Engine:** Generates professional, elegant, industry-standard reports using the `ReportLab` library. Features flawless custom fonts and character support (`arial.ttf` safe loading).
-*   **SMTP Mail Dispatcher:** Sends analysis results and PDF reports directly to the user's email address with a stylish template in just one click.
-*   **SaaS Security Layer:** Highest-level protection for user accounts and data via PBKDF2 hashing and secure session token management.
+### 2. The Weapon (Chrome Extension)
+A sleek, neon-themed **Chrome Extension** that injects directly into the YouTube interface and syncs with the Desktop App.
+* **Viral Cloning Engine:** With one click (`Clone This Video`), the extension extracts a viral video's transcript, structure, and psychological triggers, generating 3 unique content hooks tailored to your own niche.
+* **Channel Battles (Competitor Analysis):** Visit any competitor's channel page and click `Analyze Channel`. The extension bypasses YouTube's pagination, instantly pulls their real view counts using a hybrid `yt-dlp` engine, and pits their stats against your channel's Quality Score. The AI generates aggressive, guerrilla marketing tactics to steal their audience.
+* **Rabbit Hole (Niche Finder):** Stuck on what to film next? Search a broad keyword (e.g., "Crypto"), and the Rabbit Hole module will deep-dive into YouTube to find hidden "Outlier" videos with abnormally high View Velocities.
 
 ---
 
-## 🔒 Zero Knowledge & Privacy-First Policy
-
-The biggest advantage of this application is that **your data and API keys are completely secure:**
-1.  **Local Storage (Local DB):** All your analyses, history logs, and API keys are encrypted and stored locally in your computer's `channels.db` SQLite database rather than a remote SaaS server.
-2.  **Open Source Security:** Your API keys are never shared with external servers; they are only transmitted directly to the official Google Gemini and Groq API endpoints via secure HTTPS.
-3.  Supported by `.gitignore` rules, your database, API keys, or local log files will never be accidentally uploaded to public GitHub repositories.
-
----
-
-## ⚡ 1-Click Kurulum (Sadece Bir Tıkla!)
-
-> [!IMPORTANT]
-> **Yeni! Tek tıkla kurulum artık mevcut.** Python dışında hiçbir şey kurmanıza gerek yok — FFmpeg, sanal ortam ve masaüstü kısayolu **otomatik** olarak ayarlanır.
-
-### 🪟 Windows — En Kolay Yol
-
-1. **Python 3.10+** yüklü olduğundan emin olun → [python.org/downloads](https://www.python.org/downloads/)  
-   *(Kurulumda **"Add Python to PATH"** kutucuğunu işaretlemeyi unutmayın!)*
-2. Repoyu klonlayın veya ZIP olarak indirin.
-3. Proje klasöründe **`install.bat`** dosyasına **çift tıklayın**.
-
-Script otomatik olarak şunları yapar:
-
-| Adım | İşlem | Açıklama |
-|------|-------|----------|
-| 1 | 🐍 Python kontrolü | Sürüm ve PATH doğrulaması |
-| 2 | 📦 venv + pip | İzole sanal ortam + tüm paketler |
-| 3 | 🎬 FFmpeg | Varsa kullanır, yoksa otomatik indirir |
-| 4 | 🖥️ Kısayol | Masaüstüne tek tıkla başlatıcı atar |
-
-Kurulum tamamlandığında masaüstünüzde **"YouTube Analiz Pro"** kısayolu hazır olacak.
+## 🛠️ Tech Stack
+* **Backend:** Python 3.11, FastAPI, Uvicorn, yt-dlp, SQLite, Cryptography
+* **Frontend (Desktop):** PyQt5, QWebEngineView (Chart.js integration)
+* **Frontend (Extension):** HTML5, Vanilla CSS (Glassmorphism), JavaScript (Manifest V3)
+* **AI Integration:** Groq API (Llama-3.3-70b-versatile), Google Gemini 2.0 Flash (Vision)
+* **Audio/Video Processing:** OpenCV, Librosa, FFmpeg
 
 ---
 
-## 📋 Requirements
+## 🚀 Installation & Quick Start
 
-> [!NOTE]
-> **`install.bat` kullanıyorsanız bu adımları atlayabilirsiniz** — script her şeyi otomatik halleder.
+### 1-Click Desktop Installer
+We made setup completely frictionless. 
+1. Run `install.bat` on Windows.
+2. It will automatically install Python (if missing), create a virtual environment, install all dependencies (including FFmpeg via yt-dlp), and launch the server.
+3. Open the desktop app via `run.bat`!
 
-Manuel kurulum yapmak isteyenler için:
-
-*   **Python 3.10 or higher:** [Download Python](https://www.python.org/downloads/) (Make sure to check *"Add Python to PATH"* during installation!)
-*   **FFmpeg (For Video Analysis):** Automatically installed by `install.bat`. For manual install:
-    *   *Easy:* `winget install Gyan.FFmpeg` (PowerShell as Admin)
-    *   *Manual:* [How to Install FFmpeg on Windows](https://www.youtube.com/watch?v=JR36oH35Fgg)
-
----
-
-## 🚀 Installation & Launch Options
-
-### Option A — ⚡ 1-Click Install (RECOMMENDED)
-
-```
-Double-click  →  install.bat
-```
-
-That's it. The installer handles Python packages, FFmpeg, and creates a desktop shortcut automatically.
-
-### Option B — Manual Setup
-
-#### 1. Clone or Download the Repository
-```bash
-git clone https://github.com/oguzemirtopuz/YouTube-Analiz-Uygulamasi-Saas-Edition.git
-cd YouTube-Analiz-Uygulamasi-Saas-Edition
-```
-
-#### 2. Create a Virtual Environment
-```bash
-python -m venv venv
-venv\Scripts\activate
-pip install -r requirements.txt
-```
-
-#### 3. Launch the Application
-After installation, **3 different launching options** are available:
-
-*   **Option A (1-Click Shortcut):** Use the desktop shortcut created by `install.bat` — launches instantly.
-*   **Option B (BAT):** Double-click `BASLAT.bat` or `launch.bat` in the folder.
-*   **Option C (PowerShell):** Run `Start-YouTubeAnalyzer.ps1` for the most stable silent launch.
-
-> 💡 **Shortcut Wizard:** Double-click `KISAYOL_OLUSTUR.bat` to create additional desktop shortcuts.
-
-### Accessing the Interface
-When the application starts, a sleek, modern **PyWebView desktop window** will open. Browser access:
-*   **Address:** [http://127.0.0.1:8000](http://127.0.0.1:8000)
+### Chrome Extension Setup
+1. Open Google Chrome and navigate to `chrome://extensions/`.
+2. Enable **Developer mode** in the top right corner.
+3. Click **Load unpacked** and select the `chrome_extension` folder in this repository.
+4. Pin the 🚀 icon to your browser toolbar. *Make sure the Desktop App (FastAPI server) is running in the background so the extension can communicate with it.*
 
 ---
 
-## 🛠️ First Configuration & User Guide
-
-1.  **Create a User Account:** Upon entering the interface, create your encrypted local account and log in.
-2.  **Enter Your API Keys:** Enter your **Groq API Key** and **Google Gemini API Key** (which you can get for free) in the Settings panel. These keys are saved securely in your local SQLite database.
-3.  **Define a Channel:** Add your channel type (e.g., Gaming, Education, Vlog) and target audience in the *"Add Channel"* section.
-4.  **Start Analyzing:** Upload your video to the system (or enter the YouTube link/metadata details). The AI Coach will generate your complete report in seconds and can email it to you with a single click!
-
----
-
-## 🧩 Chrome Eklentisi — Viral Klonlama Motoru
-
-YT Analiz Pro'nun Chrome eklentisi, YouTube'da gezinirken herhangi bir videoyu **tek tıkla** AI ile klonlayıp viral konsept üretmenizi sağlar.
-
-### ✨ Özellikler
-
-| Özellik | Açıklama |
-|---------|----------|
-| 🎬 Video Metadata Çekme | Başlık, Kanal Adı, URL ve Thumbnail otomatik alınır |
-| 📝 Transcript Analizi | `youtube-transcript-api` ile senaryo çekilir (TR → EN öncelikli) |
-| 🤖 AI Konsept Üretimi | Groq Llama-3.3-70B ile 3 viral başlık, kanca ve thumbnail fikri |
-| ⚡ Fail-Fast UI | Sunucu kapalıysa, YouTube'da değilseniz veya altyazı yoksa anında şık hata mesajı |
-
-### 🛠️ Kurulum (Developer Mode)
-
-> [!IMPORTANT]
-> Chrome eklentisini kullanabilmek için YT Analiz Pro masaüstü uygulamasının **açık ve çalışır** durumda olması gerekir (`http://127.0.0.1:8000`).
-
-#### Adım 1 — Yeni Bağımlılığı Kur
-
-```bash
-pip install youtube-transcript-api>=0.6.2
-```
-
-#### Adım 2 — Chrome'u Aç
-
-1. Tarayıcı adres çubuğuna şunu yaz: `chrome://extensions`
-2. Sağ üst köşedeki **"Geliştirici modu"** (Developer mode) anahtarını **aç** (toggle ON).
-
-#### Adım 3 — Eklentiyi Yükle
-
-3. **"Paketlenmemiş öğe yükle"** (Load unpacked) butonuna tıkla.
-4. Açılan dosya seçici penceresinde şu klasörü seç:
-
-   ```
-   <proje-dizini>/chrome_extension/
-   ```
-
-5. **"Klasör Seç"** → Eklenti listesinde **"YT Analiz Pro — Viral Klonlama Motoru"** görünecek.
-
-#### Adım 4 — Kullan
-
-1. YouTube'da herhangi bir video sayfasını aç (`youtube.com/watch?v=...`).
-2. Tarayıcı araç çubuğundaki 🚀 ikonuna tıkla.
-3. **"Bu Videoyu Klonla"** butonuna bas.
-4. AI ~10-20 saniye içinde 3 viral konsept üretir ve ekranda gösterir.
-
-### ⚠️ Olası Hatalar ve Çözümleri
-
-| Hata Mesajı | Neden? | Çözüm |
-|-------------|--------|--------|
-| 🔴 Sunucu Çevrimdışı | FastAPI çalışmıyor | `BASLAT.bat` ile uygulamayı aç |
-| 📺 YouTube Sayfası Gerekli | Farklı bir sitede | YouTube video sayfasına git |
-| 📝 Altyazı Bulunamadı | Video altyazısı yok/kapalı | Altyazılı başka video dene |
-| Groq API Hatası | API anahtarı yok/geçersiz | Ayarlar panelinden Groq anahtarını gir |
-
----
-
-## 🔄 How to Update & Backup Guide
-
-### ⚠️ What Data to Back Up First
-Before upgrading your application to a new version, always back up the following critical files to avoid losing your configurations, history, or custom translations:
-1. **`channels.db`**: This is your local SQLite database located in the application directory. It contains all your local user accounts, channel configurations, historical analyses, and encrypted API keys.
-2. **`translations.xlsx`**: If you have customized any interface translations, dynamic texts, or PDF labels, keep a copy of this Excel file.
-
-### 🚀 Step-by-Step Update Process
-
-#### Method A: If Installed via Git (Recommended)
-1. **Back up your database:** Copy `channels.db` and `translations.xlsx` to a safe location outside the project folder.
-2. **Fetch and apply the latest changes:**
-   ```bash
-   git stash
-   git pull origin main
-   git stash pop
-   ```
-3. **Restore your database:** Copy your backed-up `channels.db` and `translations.xlsx` files back into the project folder (overwriting the default ones if necessary).
-4. **Update Python dependencies:**
-   ```bash
-   pip install -r requirements.txt --upgrade
-   ```
-5. **Run the application:** Launch it using your preferred method (PowerShell, BAT, or VBS).
-
-#### Method B: If Downloaded as a ZIP
-1. **Save your database:** Copy `channels.db` and `translations.xlsx` to a safe location outside the project directory.
-2. **Download and Extract:** Download the latest release ZIP from GitHub and extract it.
-3. **Merge/Replace Files:** Copy all the newly extracted files over your existing installation.
-4. **Restore Database:** Move your saved `channels.db` and `translations.xlsx` back into the main directory.
-5. **Update Dependencies:**
-   ```bash
-   pip install -r requirements.txt --upgrade
-   ```
-
----
-
-## 👤 About the Developer
-
-This project was developed by **Oğuz Emir Topuz**.
-
-*   **Age:** 14
-*   **Interests & Passions:** Football enthusiast and an advanced software developer.
-*   **Work & Focus:** Building SaaS applications, modern and elegant websites, and 3D games.
-*   **Contact & Portfolio:** [My GitHub Profile](https://github.com/oguzemirtopuz)
-
----
-
-⭐ If you liked this project, don't forget to give it a star! It will continue to be developed with new SaaS features.
+## 🛡️ License
+This project is licensed under the MIT License. See the `LICENSE` file for details.

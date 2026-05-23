@@ -2981,7 +2981,8 @@ async def _call_groq_clone(api_key: str, title: str, channel: str, transcript: s
     Groq Llama-3 ile viral klonlama konsepti üretir.
     Senkron requests çağrısını run_in_threadpool ile sarmalar.
     """
-    prompt = f"""Sen elit bir YouTube İçerik Stratejistisin. Kullanıcının kanalı şu nişte: {content_type}. Amacı: {purpose}.
+    if transcript:
+        prompt = f"""Sen elit bir YouTube İçerik Stratejistisin. Kullanıcının kanalı şu nişte: {content_type}. Amacı: {purpose}.
 Sana başarılı bir videonun altyazısı (transcript) ve başlığı verilecek. Senden bu videonun başarısının altındaki psikolojik iskeleti (Kısıtlama, Merak Boşluğu, Zıtlık vb.) bulmanı ve bunu KULLANICININ KENDİ KANAL NİŞİNE uyarlayarak 3 yepyeni video fikri üretmeni istiyorum.
 
 📌 Orijinal Başlık: {title}
@@ -2992,6 +2993,14 @@ Sana başarılı bir videonun altyazısı (transcript) ve başlığı verilecek.
 KURALLAR:
 1. UYGULANABİLİRLİK: Kullanıcının devasa bütçesi yok. Fikirler pratik olmalı.
 2. KOPYALAMA: Orijinal videodaki nesneleri (örn: Bazuka, Drone) kopyalama. Orijinal videonun HİSSİNİ ve KURGU İSKELETİNİ kopyalayıp kullanıcının sektörüne uyarla.
+3. SADECE JSON Array döndür: [{{"title":"...", "hook":"...", "thumbnail":"..."}}]"""
+    else:
+        prompt = f"""Sen elit bir YouTube İçerik Stratejistisin. Kullanıcının kanalı şu nişte: {content_type}. Amacı: {purpose}.
+Bu videonun altyazısı yok. Ancak başlığı: '{title}'. Sadece bu başlığa ve konseptine bakarak benim kanalım için 3 farklı viral başlık ve thumbnail fikri üret.
+
+KURALLAR:
+1. UYGULANABİLİRLİK: Kullanıcının devasa bütçesi yok. Fikirler pratik olmalı.
+2. KOPYALAMA: Orijinal videodaki nesneleri kopyalama. Orijinal videonun HİSSİNİ ve KURGU İSKELETİNİ kopyalayıp kullanıcının sektörüne uyarla.
 3. SADECE JSON Array döndür: [{{"title":"...", "hook":"...", "thumbnail":"..."}}]"""
 
     def _post():
@@ -3203,12 +3212,12 @@ async def extension_clone_video(payload: CloneVideoRequest):
     try:
         transcript = await run_in_threadpool(_fetch_transcript_sync, video_id)
     except Exception as e:
-        app_logger.error(f"[clone_video] Transcript çağrısında beklenmeyen hata: {e}", exc_info=True)
-        return JSONResponse(status_code=400, content={"success": False, "error": f"Altyazı çekilemedi: {e}"})
+        app_logger.warning(f"[clone_video] Transcript çağrısında hata (Fallback kullanılacak): {e}")
+        transcript = ""
 
     if not transcript or transcript.startswith("HATA:"):
-        app_logger.warning(f"[clone_video] Transcript alınamadı: {transcript}")
-        return JSONResponse(status_code=400, content={"success": False, "error": "Bu videoda altyazı bulunamadı veya okunamadı."})
+        app_logger.warning(f"[clone_video] Transcript alınamadı (Fallback kullanılacak): {transcript}")
+        transcript = ""
 
     # ── 2. Groq API anahtarı ─────────────────────────────────
     api_key = await get_groq_api_key()

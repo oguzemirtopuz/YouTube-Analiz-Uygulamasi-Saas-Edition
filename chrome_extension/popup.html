@@ -8,7 +8,7 @@
 </head>
 <body>
   <!-- ── Header ── -->
-  <header class="header">
+  <header class="header" style="display:flex; justify-content:space-between; align-items:center;">
     <div class="logo-wrap">
       <span class="logo-icon">🚀</span>
       <div>
@@ -16,7 +16,10 @@
         <div class="logo-sub">Viral Klonlama Motoru</div>
       </div>
     </div>
-    <div id="status-dot" class="dot dot--checking" title="Sunucu durumu kontrol ediliyor..."></div>
+    <div style="display:flex; align-items:center; gap:10px;">
+      <button id="btn-fullscreen" type="button" title="Tam Ekran Aç" style="background:transparent; border:none; color:#a855f7; font-size:18px; cursor:pointer; transition: color 0.2s;">⛶</button>
+      <div id="status-dot" class="dot dot--checking" title="Sunucu durumu kontrol ediliyor..."></div>
+    </div>
   </header>
 
   <!-- ── Main Content ── -->

@@ -176,7 +176,7 @@ function isYouTubeTab(tab) {
 }
 
 function isYouTubeChannelTab(tab) {
-  return tab?.url?.match(/https:\/\/(www\.)?youtube\.com\/(@|channel\/|c\/)/);
+  return tab?.url?.match(/https:\/\/(www\.)?youtube\.com\/(@[^\/]+|channel\/[^\/]+|c\/[^\/]+|user\/[^\/]+)/);
 }
 
 // ── Savaş Raporu Ana Akışı (Kanal Analizi) ────────────────────────────────────
@@ -200,7 +200,7 @@ async function analyzeChannel() {
   }
   
   showView('loading');
-  elLoadingSub.textContent = 'Kanal verileri çekiliyor ve Savaş Raporu oluşturuluyor... (Bu işlem biraz sürebilir)';
+  elLoadingSub.textContent = 'Rakip verileri sömürülüyor... Savaş Raporu hazırlanıyor!';
   
   try {
     const resp = await fetch(`${SERVER}/api/extension/analyze_channel`, {
@@ -237,7 +237,7 @@ async function findRabbitHole() {
   }
   
   showView('loading');
-  elLoadingSub.textContent = 'Derinlere iniliyor... (Bu işlem biraz sürebilir)';
+  elLoadingSub.textContent = "YouTube'un derinliklerine iniliyor... (Bu işlem 15-30 sn sürebilir)";
   
   try {
     const resp = await fetch(`${SERVER}/api/extension/rabbit_hole`, {
@@ -256,7 +256,7 @@ async function findRabbitHole() {
     
     data.outliers.forEach(v => {
       htmlCards += `
-<div style="background: rgba(10,20,30,0.8); border: 1px solid #06b6d4; border-radius: 12px; padding: 15px; margin-bottom: 15px;">
+<div class="rabbit-card" style="background: rgba(10,20,30,0.8); border: 1px solid #06b6d4; border-radius: 12px; padding: 15px; margin-bottom: 15px;">
     <h4 style="color: white; margin-bottom: 8px; font-size: 1.05rem; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">${v.title}</h4>
     <div style="margin-bottom: 8px; font-size: 0.85rem; color: #94a3b8;">
         Kanal: <span style="color: #cbd5e1;">${v.channel}</span>
@@ -438,6 +438,13 @@ elBtnLogout.addEventListener('click', handleLogout);
 elBtnClone.addEventListener('click', cloneVideo);
 elBtnAnalyze.addEventListener('click', analyzeChannel);
 elBtnRabbit.addEventListener('click', findRabbitHole);
+
+const elBtnFullscreen = $('btn-fullscreen');
+if (elBtnFullscreen) {
+  elBtnFullscreen.addEventListener('click', () => {
+    chrome.tabs.create({ url: chrome.runtime.getURL('popup.html') });
+  });
+}
 
 elBtnReset.addEventListener('click', () => {
   elThumbWrap.style.display = 'none';

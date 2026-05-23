@@ -3053,9 +3053,12 @@ def extract_channel_stats_sync(channel_url: str):
         total_views = 0
         count = 0
         video_urls = []
+        recent_titles = []
         for v in entries:
             if v and v.get('url'):
                 video_urls.append(v['url'])
+            if v and v.get('title'):
+                recent_titles.append(v['title'])
             if v and v.get('view_count'):
                 total_views += v['view_count']
                 count += 1
@@ -3087,6 +3090,7 @@ def extract_channel_stats_sync(channel_url: str):
         return {
             "channel_name": info.get('uploader', info.get('title', 'Bilinmeyen Kanal')),
             "avg_views": avg_views,
+            "recent_titles": recent_titles[:5],
             "video_count_analyzed": count if count > 0 else len(video_urls)
         }
 
@@ -3094,23 +3098,24 @@ async def _call_groq_battle(api_key: str, my_data: dict, rival_data: dict) -> st
     import requests
     
     prompt = f"""
-Sen acımasız, elit ve son derece zeki bir YouTube Strateji Uzmanısın. Kullanıcı senden rakip bir kanal ile kendi kanalının kıyaslamasını istiyor.
+Sen acımasız, elit ve şeytani zekaya sahip bir YouTube Strateji Uzmanısın. Jenerik kurumsal dilden ("SEO'yu artır", "Kaliteyi yükselt") nefret edersin.
 
 [KULLANICININ VERİLERİ]
-- Toplam Analiz Edilen Kendi Videosu: {my_data.get('analyzed_videos_count', 0)}
-- Kanalın Kalite Puanı (Ortalama): {my_data.get('avg_score', 0)} / 10 (Bu puan kullanıcının SEO, Kanca ve Elde Tutma metriklerinin başarı ortalamasıdır).
+- Kanalın Kalite Puanı: {my_data.get('avg_score', 0)} / 10
 
-[RAKİP KANALIN VERİLERİ]
-- Rakip Kanal Adı: {rival_data.get('channel_name', 'Bilinmiyor')}
-- Rakibin Son Videolarındaki Ortalama İzlenmesi: {rival_data.get('avg_views', 0)} (Bu sayı rakibin anlık ivmesini (momentum) gösterir, toplam video sayısı DEĞİLDİR).
+[RAKİP KANAL: {rival_data.get('channel_name', 'Bilinmiyor')}]
+- Ortalama İzlenme: {rival_data.get('avg_views', 0)}
+- Son Yüklediği Videolar: {', '.join(rival_data.get('recent_titles', []))}
 
 [GÖREVİN]
-Kullanıcıya 'elma ile armutu karşılaştıran' saçma analizler YAPMA (Örn: "Rakibin 600 bin izlenmesi var, senin puanın 6, demek ki o daha iyi" deme). Kullanıcının Kalite Puanı onun içerik potansiyelini, rakibin İzlenme Sayısı ise rakibin pazar payını gösterir.
+Bana "Savaş Raporu" formatında kısa, vurucu ve acımasız bir analiz yaz. Kurumsal ChatGPT ağzını ASLA kullanma.
+Aşağıdaki formatın DIŞINA ÇIKMA:
 
-Bana 'Savaş Raporu' başlığı altında, YouTube algoritmasını ve izleyici psikolojisini temel alan acımasız ve net bir analiz yaz. 
-1. Rakibin izlenme ivmesini yorumla (Nasıl bu kadar izleniyor?).
-2. Kullanıcı, mevcut kalite puanını kullanarak rakibin izleyicisini (audience) nasıl kendi kanalına çekebilir? (İçerik açıkları, rakibin yapmadığı ama kullanıcının yapabileceği şeyler).
-3. "İçerik kalitesini artır" gibi jenerik cümleler KURMA. Çok spesifik, gerilla taktikleri içeren 3 maddelik acımasız bir eylem planı ver.
+⚔️ RAKİP ANALİZİ:
+(Rakibin son videolarına bakarak ne tarz bir kitleyi elinde tuttuğunu 1-2 cümleyle, net ve sivri bir dille özetle. Örn: "Rakip sürekli teknoloji incelemeleriyle kolaya kaçıyor.")
+
+🔥 GERİLLA TAKTİKLERİ:
+(Kullanıcının kalite puanı {my_data.get('avg_score', 0)}. Rakibin 'Son Yüklediği Videolar' listesinden bir videoyu hedef alarak, kullanıcının o konunun TAM TERSİ BİR AÇIYLA (Zıtlık, Eleştiri, Kışkırtma veya Merak Boşluğu) rakibin izleyicisini nasıl çalabileceğine dair 2 spesifik video fikri/kancası ver. Kesinlikle "kaliteyi artır", "sosyal medya kullan" gibi genel geçer şeyler yazma! Doğrudan "Şu videonun başlığını şöyle çevir" de.)
 """
     headers = {
         "Authorization": f"Bearer {api_key}",

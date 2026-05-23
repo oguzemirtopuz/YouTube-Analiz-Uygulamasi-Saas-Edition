@@ -283,6 +283,8 @@ async function cloneVideo() {
 
   elLoadingSub.textContent = 'AI konsept üretiyor...';
 
+  const { user_id } = await chrome.storage.local.get(['user_id']);
+
   // 6. Backend'e POST — yalnızca bilinen alanları gönder (422 önlemi)
   const requestBody = {
     url:       videoData.url       || '',
@@ -290,6 +292,7 @@ async function cloneVideo() {
     title:     videoData.title     || 'Başlık Yok',
     channel:   videoData.channel   || 'Bilinmeyen Kanal',
     thumbnail: videoData.thumbnail || '',
+    user_id:   user_id || 0
   };
 
   try {

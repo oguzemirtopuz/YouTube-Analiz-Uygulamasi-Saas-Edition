@@ -2976,31 +2976,23 @@ def _fetch_transcript_sync(video_id: str) -> str:
         raise ValueError(f"Altyazı çekilemedi. API Hatası: {last_api_error} | Yedek Motor Hatası: {e}")
 
 
-async def _call_groq_clone(api_key: str, title: str, channel: str, transcript: str) -> str:
+async def _call_groq_clone(api_key: str, title: str, channel: str, transcript: str, content_type: str, purpose: str) -> str:
     """
-    Groq Llama-3.3-70B ile viral klonlama konsepti üretir.
+    Groq Llama-3 ile viral klonlama konsepti üretir.
     Senkron requests çağrısını run_in_threadpool ile sarmalar.
     """
-    prompt = f"""Aşağıda bir YouTube videosunun başlığı, kanal adı ve senaryosu (transcript) yer almaktadır.
+    prompt = f"""Sen elit bir YouTube İçerik Stratejistisin. Kullanıcının kanalı şu nişte: {content_type}. Amacı: {purpose}.
+Sana başarılı bir videonun altyazısı (transcript) ve başlığı verilecek. Senden bu videonun başarısının altındaki psikolojik iskeleti (Kısıtlama, Merak Boşluğu, Zıtlık vb.) bulmanı ve bunu KULLANICININ KENDİ KANAL NİŞİNE uyarlayarak 3 yepyeni video fikri üretmeni istiyorum.
 
-📌 Başlık  : {title}
-📺 Kanal   : {channel}
+📌 Orijinal Başlık: {title}
+📺 Orijinal Kanal: {channel}
 📝 Senaryo (ilk 2000 karakter):
 {transcript[:2000]}
 
-Görevin:
-1. Videonun kurgu iskeletini 3-4 madde hâlinde çıkar (Ana Yapı).
-2. Bu videonun başarısını kopyalayan, benim kanalım için 3 FARKLI viral konsept üret.
-   Her konsept için şunları ver:
-   - 🎯 Viral Başlık
-   - 🪝 Kanca (Hook) — İlk 5 saniyede söylenecek cümle
-   - 🖼️ Thumbnail Fikri — Renk, duygu ve metin önerisi
-
-Kurallar:
-- Türkçe yaz.
-- Klişe tavsiyelerden kaçın; somut ve uygulanabilir ol.
-- Başlıklar SEO uyumlu ve merak uyandırıcı olsun.
-- Thumbnail fikirleri görsel olarak net ve dikkat çekici olsun."""
+KURALLAR:
+1. UYGULANABİLİRLİK: Kullanıcının devasa bütçesi yok. Fikirler pratik olmalı.
+2. KOPYALAMA: Orijinal videodaki nesneleri (örn: Bazuka, Drone) kopyalama. Orijinal videonun HİSSİNİ ve KURGU İSKELETİNİ kopyalayıp kullanıcının sektörüne uyarla.
+3. SADECE JSON Array döndür: [{{"title":"...", "hook":"...", "thumbnail":"..."}}]"""
 
     def _post():
         resp = requests.post(
@@ -3008,9 +3000,10 @@ Kurallar:
             headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
             json={
                 "model": "llama-3.3-70b-versatile",
-                "messages": [{"role": "user", "content": prompt}],
-                "max_tokens": 900,
-                "temperature": 0.8,
+                "messages": [{"role": "system", "content": "Sen elit bir YouTube İçerik Stratejistisin. Sadece JSON formatında çıktı verirsin."}, 
+                             {"role": "user", "content": prompt}],
+                "max_tokens": 1024,
+                "temperature": 0.7,
             },
             timeout=30,
         )
@@ -3099,6 +3092,7 @@ class CloneVideoRequest(BaseModel):
     title:     str = Field(default="Başlık Yok", description="Video başlığı")
     channel:   str = Field(default="Bilinmeyen Kanal", description="Kanal adı")
     thumbnail: str = Field(default="", description="Thumbnail URL")
+    user_id:   int = Field(default=0, description="Kullanıcı ID")
 
 class AnalyzeChannelRequest(BaseModel):
     channel_url: str
@@ -3225,8 +3219,21 @@ async def extension_clone_video(payload: CloneVideoRequest):
         )
 
     # ── 3. AI Konsept Üretimi ────────────────────────────────
+    db = await get_async_db()
+    content_type = "Genel İçerik"
+    purpose = "İzleyici Eğlendirmek"
+    if payload.user_id:
+        try:
+            async with db.execute("SELECT content_type, purpose FROM channels WHERE user_id = ? LIMIT 1", (payload.user_id,)) as c:
+                channel_row = await c.fetchone()
+                if channel_row:
+                    content_type = channel_row['content_type'] or content_type
+                    purpose = channel_row['purpose'] or purpose
+        finally:
+            await db.close()
+
     try:
-        result = await _call_groq_clone(api_key, title, channel, transcript)
+        result = await _call_groq_clone(api_key, title, channel, transcript, content_type, purpose)
     except ValueError as e:
         app_logger.warning(f"[clone_video] Groq hatası: {e}")
         raise HTTPException(status_code=502, detail=str(e))

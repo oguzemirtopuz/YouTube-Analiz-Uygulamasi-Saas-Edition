@@ -2879,19 +2879,30 @@ async def test_gemini_ping():
 def _fetch_transcript_sync(video_id: str) -> str:
     from youtube_transcript_api import YouTubeTranscriptApi
     try:
-        # 1. Aşama: Belirli dilleri dene
-        transcript_list = YouTubeTranscriptApi.get_transcript(video_id, languages=['tr', 'en', 'es', 'de', 'fr'])
-    except:
-        try:
-            # 2. Aşama: Dili boşver, videonun varsayılan altyazısını (manuel veya otomatik) zorla çek
-            transcript_list = YouTubeTranscriptApi.get_transcript(video_id)
-        except Exception as e:
-            # Hiçbir şekilde yoksa dürüstçe hata dön
-            raise ValueError(f"Altyazı çekilemedi: {str(e)}")
+        # Tüm altyazıların listesini al
+        transcript_list = YouTubeTranscriptApi.list_transcripts(video_id)
+        
+        transcript = None
+        # 1. Aşama: İstenilen dilleri sırayla dene (otomatik veya manuel fark etmez)
+        for lang in ['tr', 'en', 'es', 'de', 'fr']:
+            try:
+                transcript = transcript_list.find_transcript([lang])
+                break
+            except:
+                continue
+                
+        # 2. Aşama: Eğer bu dillerde yoksa, listedeki İLK altyazıyı zorla al (dili ne olursa olsun)
+        if transcript is None:
+            transcript = next(iter(transcript_list))
             
-    # Altyazı parçalarını tek bir metinde birleştir
-    full_text = " ".join([t['text'] for t in transcript_list])
-    return full_text
+        # İçeriği çek ve birleştir
+        entries = transcript.fetch()
+        full_text = " ".join([t.get('text', '') for t in entries])
+        return full_text
+        
+    except Exception as e:
+        # Hiçbir şekilde yoksa dürüstçe hata dön
+        raise ValueError(f"Altyazı çekilemedi: {str(e)}")
 
 
 async def _call_groq_clone(api_key: str, title: str, channel: str, transcript: str) -> str:

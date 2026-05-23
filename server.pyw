@@ -3111,7 +3111,7 @@ class AnalyzeChannelRequest(BaseModel):
 
 @app.post("/api/extension/analyze_channel")
 async def extension_analyze_channel(payload: AnalyzeChannelRequest):
-    api_key = get_groq_api_key()
+    api_key = await get_groq_api_key()
     if not api_key:
         return {"error": "Groq API anahtarı ayarlanmamış."}
         

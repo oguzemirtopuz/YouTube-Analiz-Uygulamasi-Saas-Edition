@@ -86,5 +86,11 @@ We made setup completely frictionless.
 
 ---
 
+## 🌌 Connected Projects & Sister Ecosystems
+If you like **YT Analiz Pro**, make sure to check out my other advanced AI cognitive architecture:
+* **[JARVIS-Cognitive-OS](https://github.com/oguzemirtopuz/JARVIS-Cognitive-OS):** An ultra-advanced Autonomous Cognitive Operating System built with a custom semantic router, hot-reloaded tool synthesis, low-energy Whisper voice pipelines, and AST-level sandbox execution environments. 🚀
+
+---
+
 ## 🛡️ License
 This project is licensed under the MIT License. See the `LICENSE` file for details.

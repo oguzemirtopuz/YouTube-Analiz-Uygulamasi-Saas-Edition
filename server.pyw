@@ -992,6 +992,8 @@ async def get_gemini_key():
 @app.post("/api/settings/gemini")
 async def set_gemini_key(key: str = Form(...)):
     key = key.strip()
+    if key == "(kayıtlı)":
+        return {"success": True}
     if not key:
         return {"success": False, "error": "Geçersiz Gemini API Anahtarı"}
     try:
@@ -2415,6 +2417,8 @@ async def get_groq_key():
 
 @app.post("/api/settings/groq")
 async def set_groq_key(key: str = Form(...)):
+    if key.strip() == "(kayıtlı)":
+        return {"success": True}
     db = await get_async_db()
     try:
         await db.execute("INSERT OR REPLACE INTO app_settings (key, value) VALUES ('groq_api_key', ?)", (CryptoManager.encrypt(key.strip()),))

@@ -3022,40 +3022,38 @@ async def _call_groq_clone(api_key: str, title: str, channel: str, transcript: s
     Groq Llama-3 ile viral klonlama konsepti üretir.
     Senkron requests çağrısını run_in_threadpool ile sarmalar.
     """
-    # BUG FIX: Thumbnail kuralı artık content_type'a göre dinamik seçiliyor.
     thumbnail_rule = _build_thumbnail_rule(content_type)
 
-    if transcript:
-        prompt = f"""Sen elit bir YouTube İçerik Stratejistisin. Kullanıcının kanalı şu nişte: {content_type}. Amacı: {purpose}.
-Sana başarılı bir videonun altyazısı (transcript) ve başlığı verilecek. Senden bu videonun başarısının altındaki psikolojik iskeleti (Kısıtlama, Merak Boşluğu, Zıtlık vb.) bulmanı ve bunu KULLANICININ KENDİ KANAL NİŞİNE uyarlayarak 3 yepyeni video fikri üretmeni istiyorum.
+    prompt = f"""Sen üst düzey bir YouTube Algoritma Uzmanı ve Viral İçerik Stratejistisin. 
+
+KULLANICI PROFİLİ: 
+Bu analizi isteyen kullanıcının kanalı 'BabaClutch'. Konsepti: Oyun (Minecraft, Rocket League vb.), Kaos, Rage, Arkadaş Kavgası ve Yüksek Enerji.
+
+GÖREVİN: 
+Sana verilen orijinal video başlığı ve altyazı (transcript) verilerini analiz ederek, bu videonun başarısını klonlayacak 3 yeni, özgün ve yüksek potansiyelli video fikri üretmek.
 
 📌 Orijinal Başlık: {title}
 📺 Orijinal Kanal: {channel}
 📝 Senaryo (ilk 2000 karakter):
-{transcript[:2000]}
+{transcript[:2000] if transcript else "Altyazı bulunamadı. Sadece başlığa göre analiz yap."}
 
 KURALLAR:
-1. UYGULANABİLİRLİK: Kullanıcının devasa bütçesi yok. Fikirler pratik olmalı.
-2. KOPYALAMA: Orijinal videodaki nesneleri (örn: Bazuka, Drone) kopyalama. Orijinal videonun HİSSİNİ ve KURGU İSKELETİNİ kopyalayıp kullanıcının sektörüne uyarla.
+1. VİRAL ANATOMİ: Videonun neden viral olduğunu (psikolojik tetikleyici ve kanca) analiz et.
+2. FİKİR ÜRETİMİ: Orijinal videonun ruhunu kopyalayan 3 farklı video fikri sun.
 {thumbnail_rule}
-4. SADECE JSON Array döndür: [{{
-   "title": "...",
-   "hook": "...",
-   "thumbnail": "...(thumbnail tasarımının detaylı metin açıklaması — asla URL değil)..."
-}}]"""
-    else:
-        prompt = f"""Sen elit bir YouTube İçerik Stratejistisin. Kullanıcının kanalı şu nişte: {content_type}. Amacı: {purpose}.
-Bu videonun altyazısı yok. Ancak başlığı: '{title}'. Sadece bu başlığa ve konseptine bakarak benim kanalım için 3 farklı viral başlık ve thumbnail fikri üret.
-
-KURALLAR:
-1. UYGULANABİLİRLİK: Kullanıcının devasa bütçesi yok. Fikirler pratik olmalı.
-2. KOPYALAMA: Orijinal videodaki nesneleri kopyalama. Orijinal videonun HİSSİNİ ve KURGU İSKELETİNİ kopyalayıp kullanıcının sektörüne uyarla.
-{thumbnail_rule}
-4. SADECE JSON Array döndür: [{{
-   "title": "...",
-   "hook": "...",
-   "thumbnail": "...(thumbnail tasarımının detaylı metin açıklaması — asla URL değil)..."
-}}]"""
+3. NİŞ UYARISI: Analiz ettiğin video, kullanıcının "Oyun/Kaos" konseptiyle uyuşmuyorsa bir uyarı metni yaz. Uyuşuyorsa boş bırak.
+4. KESİN FORMAT KURALI: Çıktın KESİNLİKLE bir dizi (array) [...] OLAMAZ. Çıktın KESİNLİKLE bir obje (object) {{...}} olmak zorundadır. Objenin içinde "viral_anatomi", "nis_uyarisi" ve "fikirler" anahtarları ZORUNLUDUR. SADECE AŞAĞIDAKİ JSON FORMATINDA ÇIKTI VER (Başka hiçbir düz metin yazma):
+{{
+  "viral_anatomi": "Videonun neden patladığını anlatan 2-3 cümlelik psikolojik analiz.",
+  "nis_uyarisi": "Oyun/kaos dışındaysa uyarı metni, yoksa boş string",
+  "fikirler": [
+    {{
+       "title": "...",
+       "hook": "...",
+       "thumbnail": "..."
+    }}
+  ]
+}}"""
 
     def _post():
         resp = requests.post(
@@ -3063,7 +3061,7 @@ KURALLAR:
             headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
             json={
                 "model": "llama-3.3-70b-versatile",
-                "messages": [{"role": "system", "content": "Sen elit bir YouTube İçerik Stratejistisin. Sadece JSON formatında çıktı verirsin."}, 
+                "messages": [{"role": "system", "content": "Sen elit bir YouTube İçerik Stratejistisin. YALNIZCA geçerli bir JSON döndürürsün, başka hiçbir şey yazmazsın."}, 
                              {"role": "user", "content": prompt}],
                 "max_tokens": 1024,
                 "temperature": 0.7,
@@ -3133,9 +3131,9 @@ def calculate_chaos_score(transcript: str, titles: list[str]) -> dict:
     # BabaClutch Hükmü
     if final_score < 6:
         potential = int((6 - final_score) * 15)
-        verdict = f"Rakipte yeterince kaos yok. BabaClutch tarzı rage eklenirse tahminen %{potential} daha fazla izlenme potansiyeli var."
+        verdict = f"Rakipte yeterince kaos yok. Kendi tarzınızı eklerseniz tahminen %{potential} daha fazla izlenme potansiyeli var.\n<br><span style='font-size:11px; color:#94a3b8; font-style:italic;'>(Not: Bu oran; rakibinizin başlıklarındaki agresifliği, videodaki konuşma hızını ve duygu yüklü kelime sayısını analiz eden matematiksel algoritmamız tarafından hesaplanmıştır.)</span>"
     else:
-        verdict = "Rakip de kaotik! BabaClutch'ın avantajı niş uzmanlığında."
+        verdict = "Rakip de sizin kadar agresif bir tarzda! Avantajınız niş uzmanlığında."
 
     return {
         "score": final_score,
@@ -3456,6 +3454,23 @@ def extract_rabbit_hole_sync(query: str):
 
 class RabbitHoleRequest(BaseModel):
     query: str
+    user_id: int = 0
+
+async def analyze_rabbit_hole_compatibility(api_key: str, title: str, channel: str, content_type: str, purpose: str) -> str:
+    import requests
+    prompt = f"Kullanıcının kanalı konsepti: {content_type} (Amaç: {purpose}). Bulunan bu trend video (Başlık: {title}, Kanal: {channel}) kullanıcının konseptine uygun mu? Eğer uyumsuzsa (Örn: Espor turnuvası, resmi duyuru veya ciddi bir rehber videosu vs.) 'Uyumsuz' de ve nedenini açıkla. Eğer konseptle örtüşüyorsa 'Uyumlu' de. Çıktın maksimum 2 kısa cümle olsun."
+    
+    headers = {"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"}
+    payload = {
+        "model": "llama-3.3-70b-versatile",
+        "messages": [{"role": "user", "content": prompt}],
+        "temperature": 0.2,
+        "max_tokens": 100
+    }
+    resp = await run_in_threadpool(lambda: requests.post("https://api.groq.com/openai/v1/chat/completions", headers=headers, json=payload, timeout=10))
+    if resp.status_code == 200:
+        return resp.json()["choices"][0]["message"]["content"].strip()
+    return "Analiz yapılamadı."
 
 @app.post("/api/extension/rabbit_hole")
 async def extension_rabbit_hole(payload: RabbitHoleRequest):
@@ -3463,6 +3478,26 @@ async def extension_rabbit_hole(payload: RabbitHoleRequest):
         top_outliers = await run_in_threadpool(extract_rabbit_hole_sync, payload.query)
         if not top_outliers:
             return {"error": "Bu nişte aykırı bir trend bulunamadı."}
+            
+        api_key = await get_groq_api_key()
+        if api_key:
+            content_type = "Genel İçerik"
+            purpose = "İzleyici Eğlendirmek"
+            if payload.user_id:
+                db = await get_async_db()
+                try:
+                    async with db.execute("SELECT content_type, purpose FROM channels WHERE user_id = ? LIMIT 1", (payload.user_id,)) as c:
+                        channel_row = await c.fetchone()
+                        if channel_row:
+                            content_type = channel_row['content_type'] or content_type
+                            purpose = channel_row['purpose'] or purpose
+                finally:
+                    await db.close()
+
+            for v in top_outliers:
+                analysis = await analyze_rabbit_hole_compatibility(api_key, v['title'], v['channel'], content_type, purpose)
+                v['uyumluluk'] = analysis
+                
         return {"success": True, "outliers": top_outliers}
     except Exception as e:
         app_logger.error(f"Rabbit Hole Hatası: {e}", exc_info=True)
@@ -3688,33 +3723,51 @@ Kurallar:
     idea_b = _parse_persona_json(raw_b, "Persona B (Büyücü)")
 
     # ── Hakem AI: Kazananı Seç veya Harmanlayıp Tek Fikir Üret ──────────────
-    prompt_judge = f"""Sen tarafsız ve kıyasıya dürüst bir YouTube İçerik Hakemisin.
-İki farklı strateji ajananın ürettiği fikirleri değerlendir ve TEK BİR KAZANAN fikir üret.
+    prompt_judge = f"""Sen acımasız ve vizyoner bir YouTube İçerik Hakemi ve Algoritma Uzmanısın.
+
+KULLANICI PROFİLİ: 
+Kullanıcının kanalı 'BabaClutch'. Konsepti: Oyun (Minecraft, Rocket League vb.), Kaos, Rage, Arkadaş Kavgası ve Yüksek Enerji.
+
+GÖREVİN:
+Sana verilen orijinal video verilerini ve diğer yapay zekaların ürettiği fikirleri analiz edip, en viral olmaya yatkın sonucu sentezlemek.
 
 📌 Analiz Edilen Video: {title} ({channel})
 🎯 Kanal Nişi: {content_type}
+📝 Altyazı: {transcript_excerpt}
 
---- AJAN A (Acımasız Eleştirmen — CTR odaklı) ---
+--- AJAN A (Eleştirmen) ---
 Başlık  : {idea_a.get('title', '')}
 Kanca   : {idea_a.get('hook', '')}
 Thumbnail: {idea_a.get('thumbnail', '')}
 
---- AJAN B (Viral Büyücü — Clickbait odaklı) ---
+--- AJAN B (Büyücü) ---
 Başlık  : {idea_b.get('title', '')}
 Kanca   : {idea_b.get('hook', '')}
 Thumbnail: {idea_b.get('thumbnail', '')}
 
-GÖREVİN:
-1. A'nın ve B'nin fikirlerini kıyasla (eleştirmen_fikri ve buyucu_fikri alanlarına 1 cümlelik özet yaz).
-2. En güçlü olanı seç VEYA ikisinin en iyi yönlerini harmanlayarak kusursuz bir fikir üret.
-3. {thumbnail_rule}
-4. YALNIZCA şu JSON formatında döndür (başka hiçbir şey yazma):
+KURAL 1 (ZORUNLU BAŞLANGIÇ): 
+Bu videonun başarısının altındaki psikolojik tetikleyiciyi "viral_anatomi" alanında açıkla.
+
+KURAL 2 (SENTEZ): 
+Ajanların fikirlerini "eleştirmen_fikri" ve "buyucu_fikri" alanlarında özetle.
+Sonra bu fikirleri harmanlayıp EN GÜÇLÜ TEK BİR VİDEO FİKRİ sun (kazanan_baslik, kazanan_kanca, kazanan_thumbnail).
+{thumbnail_rule}
+
+KURAL 3 (KESİN NİŞ UYARISI): 
+Analiz ettiğin orijinal videonun kategorisi kullanıcının "Oyun/Kaos" konseptiyle uyuşmuyorsa, "nis_uyarisi" alanına KESİNLİKLE şu uyarıyı ekle: "⚠️ NİŞ UYARISI: Bu kanalın konsepti senin kanalının (Oyun/Kaos) konseptiyle uyuşmuyor. Klonlama yaparken konsepti kendi nişine uyarlamaya dikkat et!" (Uyuşuyorsa boş bırak).
+
+KURAL 4 (KESİN FORMAT KURALI): 
+Çıktın KESİNLİKLE bir dizi (array) [...] OLAMAZ. Çıktın KESİNLİKLE bir obje (object) {{...}} olmak zorundadır. Objenin içinde "viral_anatomi", "eleştirmen_fikri", "buyucu_fikri", "kazanan_baslik", "kazanan_kanca", "kazanan_thumbnail" ve "nis_uyarisi" anahtarları ZORUNLUDUR. 
+
+YALNIZCA şu JSON formatında döndür (başka hiçbir şey yazma):
 {{
-  "eleştirmen_fikri": "A'nın fikrinin 1 cümlelik özeti ve güçlü/zayıf yanı",
-  "buyucu_fikri": "B'nin fikrinin 1 cümlelik özeti ve güçlü/zayıf yanı",
+  "viral_anatomi": "...",
+  "eleştirmen_fikri": "...",
+  "buyucu_fikri": "...",
   "kazanan_baslik": "...",
   "kazanan_kanca": "...",
-  "kazanan_thumbnail": "..."
+  "kazanan_thumbnail": "...",
+  "nis_uyarisi": "..."
 }}"""
 
     def _post_judge():

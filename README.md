@@ -5,19 +5,22 @@
 
 ---
 
-✨ **Latest Release (v4.2.0)**
+✨ **Latest Release (v4.3.0)**
 > [!IMPORTANT]
-> **v4.2.0 - The Chaos & Debate Update 🚀**
+> **v4.3.0 - The Precision Update 🎯**
 > 
-> * **[AI Debate] A/B Test Simulator:** Introduced a Multi-Agent Debate engine (`_call_groq_debate`). Persona A (The Critic) and Persona B (The Wizard) now run in parallel to argue over the best viral strategy. The AI Referee evaluates their concepts and crowns a winner, complete with a golden neon UI card! ⚔️
-> * **[Analytics] BabaClutch Chaos Metric:** A custom, 100% local, pure Python NLP algorithm (`calculate_chaos_score`) that measures the "Rage Density" and "Tempo Variance" of a competitor's transcript. Zero API cost. Predicts the potential view surge based on psychological chaos. Features a brand-new red glitch-effect UI! 🌪️
-> * **[DB & Crypto] Fail-Fast Architecture:** The `CryptoManager` now strictly throws an HTTP 500 error on corrupted keys rather than failing silently. Enabled SQLite WAL (Write-Ahead Logging) mode for robust concurrent performance.
-> * **[Data Leak] Empty URL Patch:** Sealed a vulnerability that allowed empty or invalid URL submissions to bypass validation.
-> * **[Extension] SPA Navigation Blindness:** Solved the YouTube Single Page Application (SPA) navigation bug using a 3-layered event listener architecture.
-> * **[Scraping] HTTP 429 Exponential Backoff:** Added robust exponential backoff logic for `yt-dlp` to prevent aggressive rate-limiting bans.
-> * **[AI Prompt] Anti-Hallucination Directives:** Injected a strict "Human Face Ban" rule (`_build_thumbnail_rule`) across all agents for Gaming channels, completely stopping AI from hallucinating fake human emotions in thumbnail prompts.
+> * **[Rabbit Hole] Dynamic Niche Compatibility:** The Rabbit Hole module now dynamically pulls your channel's exact content type and purpose directly from the localized SQLite database, providing surgically precise "Compatible/Incompatible" tags for outlier videos. 🐇
+> * **[Extension] Robust AI JSON Parsing:** Completely overhauled the clone and debate JSON parsing engine (`popup.js`) to strip markdown blocks safely and render "Viral Anatomy" and "Hook" cards flawlessly under all edge cases. 🛡️
+> * **[Analytics] Gamified Chaos Explanation:** Added a user-friendly UI explanation to the Chaos Metric, dynamically calculating the exact percentage of view-potential based on tempo, rage density, and aggressive titling. 🌪️
+> * **[AI Prompt] Context Restoration:** Restored the high-quality, persona-driven cloning prompt while successfully enforcing strict JSON formatting to maintain frontend stability without sacrificing AI creativity. 🎭
 
 ### 📜 Changelog
+#### 🎯 v4.3.0 — The Precision Update
+- **[Rabbit Hole] Dynamic Compatibility:** SQLite integrated dynamic context fetching for niche compatibility.
+- **[Extension] Robust JSON Parser:** Strips markdown and renders UI cards securely.
+- **[Analytics] Chaos Metric UI:** Added human-readable explanation for the 10-point mathematical calculation.
+- **[AI Prompt] Strict Format & Creativity:** Re-tuned `_call_groq_clone` to preserve high-creativity ideas while enforcing `{...}` JSON format.
+
 #### 🌪️ v4.2.0 — The Chaos & Debate Update
 - **[AI Debate] A/B Test Simulator:** AI Persona debate engine with Referee evaluation.
 - **[Analytics] Chaos Metric:** Pure Python NLP algorithm to calculate transcript Rage/Tempo.

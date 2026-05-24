@@ -297,7 +297,7 @@ async function findRabbitHole() {
     const resp = await fetch(`${SERVER}/api/extension/rabbit_hole`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ query })
+      body: JSON.stringify({ query, user_id: user_id || 0 })
     });
     
     const data = await resp.json();
@@ -309,6 +309,17 @@ async function findRabbitHole() {
     let htmlCards = `<h4 style="color:#e0b0ff; margin-bottom:15px;">🐇 '${query}' İçin Aykırı Videolar</h4>`;
     
     data.outliers.forEach(v => {
+      let uyumlulukHtml = '';
+      if (v.uyumluluk) {
+        const isUyumlu = v.uyumluluk.toLowerCase().includes('uyumlu') && !v.uyumluluk.toLowerCase().includes('uyumsuz');
+        const color = isUyumlu ? '#22c55e' : '#ef4444'; // Yeşil veya Kırmızı
+        const icon = isUyumlu ? '✅' : '⚠️';
+        uyumlulukHtml = `
+        <div style="margin-top: 10px; padding: 8px; background: rgba(0,0,0,0.4); border-left: 3px solid ${color}; border-radius: 4px; font-size: 0.8rem; color: #e2e8f0; line-height: 1.4;">
+            <strong>${icon} Uyumluluk Analizi:</strong> ${v.uyumluluk}
+        </div>`;
+      }
+
       htmlCards += `
 <div class="rabbit-card" style="background: rgba(10,20,30,0.8); border: 1px solid #06b6d4; border-radius: 12px; padding: 15px; margin-bottom: 15px;">
     <h4 style="color: white; margin-bottom: 8px; font-size: 1.05rem; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">${v.title}</h4>
@@ -321,6 +332,7 @@ async function findRabbitHole() {
         </span>
         <a href="${v.url}" target="_blank" style="color: #38bdf8; text-decoration: none; font-size: 0.8rem; font-weight: bold;">İzle ↗</a>
     </div>
+    ${uyumlulukHtml}
 </div>`;
     });
     
@@ -432,6 +444,24 @@ async function debateVideo() {
     document.getElementById('debate-winner-hook').textContent     = d.kazanan_kanca     || '—';
     document.getElementById('debate-winner-thumb').textContent    = d.kazanan_thumbnail || '—';
 
+    // Dinamik alanlar
+    const winnerCard = document.querySelector('.debate-winner-card');
+    if (winnerCard) {
+        const oldExtra = winnerCard.querySelector('.dynamic-debate-extras');
+        if (oldExtra) oldExtra.remove();
+        
+        let extraHtml = '';
+        if (d.viral_anatomi) extraHtml += `<div style="margin-bottom:10px; padding-bottom:10px; border-bottom:1px solid rgba(255,255,255,0.1);"><strong style="color:#fbbf24;">[VİRAL ANATOMİ: Bu Video Neden Patladı?]</strong><br><span style="font-size:11px; color:#e2e8f0;">${d.viral_anatomi}</span></div>`;
+        if (d.nis_uyarisi) extraHtml += `<div style="margin-top:10px; padding-top:10px; border-top:1px solid rgba(239,68,68,0.3); color:#fca5a5; font-size:11px;"><strong>${d.nis_uyarisi}</strong></div>`;
+        
+        if (extraHtml) {
+            const extraDiv = document.createElement('div');
+            extraDiv.className = 'dynamic-debate-extras';
+            extraDiv.innerHTML = extraHtml;
+            winnerCard.insertBefore(extraDiv, winnerCard.firstChild); // Üste ekle
+        }
+    }
+
     showView('debate');
 
   } catch (fetchErr) {
@@ -541,30 +571,31 @@ async function cloneVideo() {
 
     // 7. Sonucu göster
     try {
-      const ideas = JSON.parse(data.result);
-      if (Array.isArray(ideas)) {
-        let htmlCards = '';
-        ideas.forEach(idea => {
-          htmlCards += `
-<div style="background: rgba(30,20,50,0.8); border: 1px solid #a855f7; border-radius: 12px; padding: 15px; margin-bottom: 15px;">
-    <h4 style="color: white; margin-bottom: 8px; font-size: 1.1rem;">💡 ${idea.title || 'Başlık Yok'}</h4>
-    <div style="margin-bottom: 8px;">
-        <span style="color: #f59e0b; font-size: 0.8rem; font-weight: bold;">KANCA (HOOK)</span><br>
-        <span style="color: #d8b4fe; font-size: 0.9rem;">"${idea.hook || 'Kanca Yok'}"</span>
-    </div>
-    <div>
-        <span style="color: #10b981; font-size: 0.8rem; font-weight: bold;">THUMBNAIL</span><br>
-        <span style="color: #94a3b8; font-size: 0.85rem;">${idea.thumbnail || 'Thumbnail önerisi yok'}</span>
-    </div>
-</div>`;
-        });
-        elResultBox.innerHTML = htmlCards;
-      } else {
-        throw new Error("Dizi değil");
+      let rawText = data.result.trim();
+      if (rawText.startsWith('```json')) rawText = rawText.replace(/^```json/, '').replace(/```$/, '').trim();
+      else if (rawText.startsWith('```')) rawText = rawText.replace(/^```/, '').replace(/```$/, '').trim();
+
+      const parsed = JSON.parse(rawText);
+      let htmlCards = '';
+      let fikirler = Array.isArray(parsed) ? parsed : (parsed.fikirler || []);
+
+      if (!Array.isArray(parsed) && parsed.viral_anatomi) {
+        htmlCards += `<div style="margin-bottom:15px; padding-bottom:10px; border-bottom:1px solid rgba(255,255,255,0.1);"><strong style="color:#fbbf24;">[VİRAL ANATOMİ: Bu Video Neden Patladı?]</strong><br><span style="font-size:13px; color:#e2e8f0; line-height:1.6;">${parsed.viral_anatomi}</span></div>`;
       }
+
+      if (fikirler.length > 0) {
+        fikirler.forEach(idea => {
+          htmlCards += `<div style="background: rgba(30,20,50,0.8); border: 1px solid #a855f7; border-radius: 12px; padding: 15px; margin-bottom: 15px;"><h4 style="color: white; margin-bottom: 8px; font-size: 1.1rem;">💡 ${idea.title || 'Başlık Yok'}</h4><div style="margin-bottom: 8px;"><span style="color: #f59e0b; font-size: 0.8rem; font-weight: bold;">KANCA (HOOK)</span><br><span style="color: #d8b4fe; font-size: 0.9rem;">"${idea.hook || 'Kanca Yok'}"</span></div><div><span style="color: #10b981; font-size: 0.8rem; font-weight: bold;">THUMBNAIL</span><br><span style="color: #94a3b8; font-size: 0.85rem;">${idea.thumbnail || 'Thumbnail önerisi yok'}</span></div></div>`;
+        });
+      }
+
+      if (!Array.isArray(parsed) && parsed.nis_uyarisi && parsed.nis_uyarisi.trim() !== "") {
+        htmlCards += `<div style="margin-top:15px; padding:10px; border-left:4px solid #ef4444; background:rgba(239,68,68,0.1); color:#fca5a5; font-size:13px;"><strong>${parsed.nis_uyarisi}</strong></div>`;
+      }
+      
+      elResultBox.innerHTML = htmlCards || '<div style="color:white;">Fikir bulunamadı.</div>';
     } catch (e) {
-      // JSON.parse hata verirse ham metni göster
-      elResultBox.textContent = data.result || '(Boş yanıt)';
+      elResultBox.innerHTML = `<div style="color: #e2e8f0; font-size: 14px; white-space: pre-wrap;">${data.result}</div>`;
     }
     showView('result');
 

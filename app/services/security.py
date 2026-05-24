@@ -89,4 +89,5 @@ def verify_password(password: str, stored_hash: str) -> bool:
 # ─── E-posta doğrulama kodu üreteci ──────────────────────────────────────────
 
 def generate_verification_code() -> str:
-    return str(random.randint(100000, 999999))
+    """6 haneli kriptografik olarak güvenli doğrulama kodu üretir."""
+    return str(secrets.randbelow(900000) + 100000)

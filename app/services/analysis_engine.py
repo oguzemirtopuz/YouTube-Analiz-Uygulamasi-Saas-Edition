@@ -164,7 +164,9 @@ class AnalysisEngine:
                         del thresh
                     prev_frame = gray
                     del frame, small_frame
-                    if len(current_sec_diffs) >= (fps if pro_mode else 2):
+                    # Her en az 1 değer toplandığında (ya da pro modda fps kadar) tempo haritasına ekle
+                    threshold_count = int(fps) if pro_mode else 1
+                    if len(current_sec_diffs) >= threshold_count:
                         tempo_map.append(round(float(np.mean(current_sec_diffs)), 2))
                         current_sec_diffs = []
                     gc_counter += 1
@@ -557,7 +559,9 @@ class AnalysisEngine:
                        result.get("viral_score", 0), result.get("dynamic_feedback", ""),
                        comp_str, duration_sec, user_id))
 
-            analysis_id = db.last_insert_rowid()
+            async with db.execute("SELECT last_insert_rowid()") as cursor:
+                row = await cursor.fetchone()
+                analysis_id = row[0]
             await db.commit()
             return analysis_id
         finally:
@@ -728,13 +732,10 @@ class AnalysisEngine:
         def safe_round(val):
             return round(float(val), 1) if val is not None else 0.0
 
-        if row and row[0] is not None:
-            return {
-                "avg_overall": safe_round(row[0]),
-                "avg_retention": safe_round(row[1]),
-                "avg_tech": safe_round(row[2]),
-                "avg_seo": safe_round(row[3]),
-                "avg_thumb": safe_round(row[4])
-            }
-        def _sr(v): return round(float(v), 1) if v is not None else 0.0
-        return {"avg_overall": _sr(row[0]), "avg_retention": _sr(row[1]), "avg_tech": _sr(row[2]), "avg_seo": _sr(row[3]), "avg_thumb": _sr(row[4])}
+        return {
+            "avg_overall": safe_round(row[0] if row else None),
+            "avg_retention": safe_round(row[1] if row else None),
+            "avg_tech": safe_round(row[2] if row else None),
+            "avg_seo": safe_round(row[3] if row else None),
+            "avg_thumb": safe_round(row[4] if row else None)
+        }

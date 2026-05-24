@@ -110,13 +110,24 @@ class CompetitorAnalyzer:
                     search_query = f"{short_cat} {short_tags}".strip()
                     if not search_query or len(search_query) < 3:
                         search_query = "YouTube trend"
-                    info = ydl.extract_info(f"ytsearch3:{search_query}", download=False)
+                    # ytsearch5: daha fazla aday al, kendi kanalı filtrele
+                    info = ydl.extract_info(f"ytsearch5:{search_query}", download=False)
                     if 'entries' in info and len(info['entries']) > 0:
                         entry = None
+                        own_channel_lower = channel_name.lower().strip() if channel_name else ""
                         for candidate in info['entries']:
-                            uploader = candidate.get('uploader', '') or candidate.get('channel', '')
-                            if channel_name and uploader.lower().strip() == channel_name.lower().strip():
-                                continue  # Kendi kanalını atla
+                            if not candidate:
+                                continue
+                            uploader = (candidate.get('uploader') or candidate.get('channel') or '').lower().strip()
+                            channel_id_str = (candidate.get('channel_id') or candidate.get('uploader_id') or '').lower().strip()
+                            # Kendi kanalını birden fazla alanla kontrol ederek atla
+                            if own_channel_lower and (
+                                uploader == own_channel_lower or
+                                own_channel_lower in uploader or
+                                uploader in own_channel_lower
+                            ):
+                                _logger.debug(f"Rakip araması: kendi kanalı atlandı → {uploader}")
+                                continue
                             entry = candidate
                             break
                         if entry is None:
@@ -141,3 +152,37 @@ class CompetitorAnalyzer:
         except Exception as e:
             traceback.print_exc()
             return fallback_data
+
+
+# ─── check_content_consistency ───────────────────────────────────────────────
+
+def check_content_consistency(title: str, tags: str, description: str) -> dict:
+    """
+    Başlık, etiket ve açıklama arasındaki tutarlılığı kontrol eder.
+    Sonuç: {'ok': bool, 'issues': list[str]}
+    """
+    issues = []
+    title_kw = extract_core_keywords(title)
+
+    # Etiket kontrolü
+    if not tags or not tags.strip():
+        issues.append('no_tags')
+    else:
+        tag_text = tags.replace(',', ' ')
+        tag_kw = extract_core_keywords(tag_text)
+        if title_kw and tag_kw:
+            overlap = sum(1 for tk in title_kw for tagk in tag_kw if tk in tagk or tagk in tk)
+            if overlap == 0:
+                issues.append('title_tags_mismatch')
+
+    # Açıklama kontrolü
+    if not description or not description.strip():
+        issues.append('no_desc')
+    else:
+        desc_kw = extract_core_keywords(description)
+        if title_kw and desc_kw:
+            overlap = sum(1 for tk in title_kw for dk in desc_kw if tk in dk or dk in tk)
+            if overlap == 0:
+                issues.append('title_desc_mismatch')
+
+    return {'ok': len(issues) == 0, 'issues': issues}

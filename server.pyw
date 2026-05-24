@@ -394,7 +394,7 @@ init_db()
 # ═══════════════════════════════════════════════════════════
 #   RAKİP ANALİZ SERVİSİ (app/services/competitor.py)
 # ═══════════════════════════════════════════════════════════
-from app.services.competitor import extract_core_keywords, compute_kill_switch, CompetitorAnalyzer
+from app.services.competitor import extract_core_keywords, compute_kill_switch, CompetitorAnalyzer, check_content_consistency
 
 
 def cleanup_temp_videos():
@@ -440,6 +440,16 @@ def get_dynamic_timeout(video_path: str, min_timeout: int = 120) -> Optional[int
     return None
 
 
+def _copy_uploads(video_file_obj, csv_file_obj, thumb_file_obj, v_path, c_path, t_path):
+    """Yüklenen dosyaları diske kopyalar (threadpool içinde çalıştırılmak üzere)."""
+    with open(v_path, "wb") as f:
+        shutil.copyfileobj(video_file_obj, f)
+    if csv_file_obj and c_path:
+        with open(c_path, "wb") as f:
+            shutil.copyfileobj(csv_file_obj, f)
+    if thumb_file_obj and t_path:
+        with open(t_path, "wb") as f:
+            shutil.copyfileobj(thumb_file_obj, f)
 
 
 app = FastAPI(title="YouTube Analiz Pro V4.0 — SaaS Edition")
@@ -644,10 +654,13 @@ async def google_auth_callback(code: str = ""):
             await db_session.close()
 
         app_logger.info(f"✅ Google login başarılı: user_id={user_id}, username={username}")
+        # XSS koruması: json.dumps çift tırnak kullanır, tek tırnak injection engellenmiş olur
+        import json as _json
+        session_json_safe = _json.dumps(session_json)  # çift tırnakla sarılı JSON string
         return HTMLResponse(f"""
             <html><body>
             <script>
-                localStorage.setItem('yt_user', '{session_json}');
+                localStorage.setItem('yt_user', {session_json_safe});
                 window.location.href = '/';
             </script>
             <p>Giriş yapılıyor...</p>
@@ -1282,7 +1295,9 @@ async def analyze_video(
             seo_score += 1.5
         seo_score = min(10.0, round(seo_score, 1))
 
-        weights = {"retention": 0.45, "tech": 0.35 if is_shorts else 0.28, "seo": 0.10 if is_shorts else 0.17, "thumb": 0.0 if is_shorts else 0.10}
+        # Shorts: retention=0.50, tech=0.35, seo=0.15 → toplam 1.00
+        # Normal: retention=0.45, tech=0.28, seo=0.17, thumb=0.10 → toplam 1.00
+        weights = {"retention": 0.50 if is_shorts else 0.45, "tech": 0.35, "seo": 0.15 if is_shorts else 0.17, "thumb": 0.0 if is_shorts else 0.10}
         if not t_path and not is_shorts:
             weights["retention"], weights["tech"], weights["seo"] = 0.45, 0.35, 0.20
         overall = round(retention["score"] * weights["retention"] + tech["tech_score"] * weights["tech"] + seo_score * weights["seo"] + thumb_score * weights["thumb"], 1)
@@ -1392,35 +1407,15 @@ async def analyze_video(
                 analysis_id = result["analysis_id"]
                 _title = result.get("title", "Video")
 
-                async def _auto_email():
-                    try:
-                        # export_pdf fonksiyonunu direkt çağıramayız, kendi mini PDF'imizi oluşturalım
-                        # Bunun yerine mevcut export_pdf endpoint URL'ini kullanarak oluştururuz
-                        from io import BytesIO
-                        pdf_auto_path = str(output_dir / f"report_{analysis_id}_{lang}.pdf")
-                        # PDF zaten export_pdf'de oluşturulacak, şimdilik sadece path'i hazırla
-                        # İlk export yapıldığında dosya var olacak, olmasa da sorun yok
-                        return await run_in_threadpool(
-                            send_report_email, user_email, pdf_auto_path, _title, lang
-                        )
-                    except Exception:
-                        return False
-
-                # Non-blocking: Arka planda gönder
-                import asyncio
-                try:
-                    # Önce PDF'i oluştur
-                    _pdf_path = str(output_dir / f"report_{analysis_id}_{lang}.pdf")
-                    # Mini PDF oluşturma — export_pdf endpoint'ini simüle et
-                    # (email gönderimi analyze sonrası frontend'den tetiklenecek)
-                    email_sent = True  # Frontend'e bildiri: SMTP ayarları var, gönderim tetiklenebilir
-                except Exception:
-                    pass
+                # Non-blocking: Frontend'e SMTP ayarlarının hazır olduğunu bildir
+                # Gerçek e-posta, kullanıcı PDF export ettiğinde /api/send_report üzerinden tetiklenir
+                email_sent = True  # SMTP yapılandırması mevcut, gönderim tetiklenebilir
+                app_logger.info(f"SMTP hazır, analiz raporu e-postaya gönderilebilir: user={user_email}")
         except Exception:
             pass
 
         result["email_sent"] = email_sent
-        result["user_has_email"] = bool(email_sent)
+        result["user_has_email"] = bool(user_email and has_smtp)
         return result
 
     except Exception as e:
@@ -1688,9 +1683,6 @@ async def export_pdf(analysis_id: int, lang: str = "tr"):
     elements.append(Spacer(1, 0.2 * inch))
 
     # ── 3. SEO / Thumbnail Denge Uyarısı ──
-    if seo >= 7.0 and thumb > 0.0 and thumb < 5.0:
-        elements.append(h1(L['seo_thumb_warn_title'].replace('⚖️', '').strip()))
-
     # Durum 1: SEO güçlü ama Thumbnail zayıf → arama çıkar, tıklanmaz
     if seo >= 7.0 and thumb > 0.0 and thumb < 5.0:
         elements.append(h1(L['seo_thumb_warn_title'].replace('⚖️', '').strip()))
@@ -2227,7 +2219,7 @@ async def export_pdf(analysis_id: int, lang: str = "tr"):
     elif seo >= 8.0:
         positives.append(f"SEO optimizasyonu çok başarılı (Skor: {seo:.1f}/10)")
         
-    cr = _saved_thumb.get("contrast_ratio", 0) if '_saved_thumb' in locals() else 0
+    cr = _saved_thumb.get("contrast_ratio", 0)
     if cr >= 0.5:
         positives.append(f"Thumbnail kontrastı mükemmel ({cr:.2f}), dikkat çekici")
 
@@ -2581,7 +2573,7 @@ async def ai_chat(request: Request):
     finally:
         await db.close()
 
-    api_key = row[0] if row else ""
+    api_key = CryptoManager.decrypt(row[0]) if row and row[0] else ""
     if not api_key:
         return {"error": "NO_KEY", "details": "API anahtarı bulunamadı. Lütfen Groq API anahtarını gir."}
 
@@ -2763,9 +2755,7 @@ async def api_send_report(request: Request):
         # Önce PDF'i oluştur (export_pdf endpoint'ini simüle et)
         pdf_path = str(output_dir / f"report_{analysis_id}_{req_lang}.pdf")
         if not os.path.exists(pdf_path):
-            # PDF yoksa export_pdf'i bir kez çağır
-            from starlette.testclient import TestClient
-            # Alternatif: doğrudan URL'den indir
+            # PDF yoksa yerel URL'den çek
             import urllib.request
             try:
                 urllib.request.urlretrieve(
@@ -2878,6 +2868,7 @@ async def test_gemini_ping():
 
 def _fetch_transcript_sync(video_id: str) -> str:
     # 1. Aşama: YouTubeTranscriptApi ile tüm altyazıları çek (İlk tercih)
+    last_api_error = "YouTubeTranscriptApi kullanılabilir değil"  # NameError koruyası
     try:
         from youtube_transcript_api import YouTubeTranscriptApi
         transcript_list = YouTubeTranscriptApi.list_transcripts(video_id)

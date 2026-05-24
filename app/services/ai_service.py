@@ -65,9 +65,25 @@ async def generate_ai_game_feedback(c_type: str, c_aud: str, c_purp: str, tech_s
 
     lang_instr = {"tr": "Türkçe yaz", "es": "Escribe en Español"}.get(lang, "Write in English")
 
+    # Thumbnail gerçeğini belirle — AI asla yanlış yüz bilgisi üretmesin
+    thumb_face_fact = ""
+    if visual_insights:
+        if "No face detected" in visual_insights or "face detected" not in visual_insights.lower():
+            thumb_face_fact = (
+                "ABSOLUTE THUMBNAIL FACT: The thumbnail analysis confirmed NO HUMAN FACE was detected. "
+                "You MUST NOT mention any face, emotion, or expression about the thumbnail. "
+                "Do NOT say things like 'mutlu yüz', 'yüz tespiti', 'emotion detected'. "
+                "If you mention the thumbnail, only reference its colors, contrast, or text space. "
+            )
+        else:
+            thumb_face_fact = (
+                "THUMBNAIL FACE FACT: A face WAS detected in the thumbnail. "
+                "You may reference the detected emotion and gaze from the Visual Insights data. "
+            )
+
     visual_block = ""
     if visual_insights:
-        visual_block = f"\n\nVisual Insights:\n{visual_insights}\n"
+        visual_block = f"\n\nVisual Insights (FACTUAL DATA - DO NOT CONTRADICT):\n{visual_insights}\n"
 
     prompt = (
         f"You are a YouTube coach specialized in content strategy. "
@@ -76,6 +92,7 @@ async def generate_ai_game_feedback(c_type: str, c_aud: str, c_purp: str, tech_s
         f"Target audience: '{c_aud if c_aud else 'viewers'}'. "
         f"Video performance: {perf}."
         f"{visual_block}\n\n"
+        f"{thumb_face_fact}"
         f"{lang_instr}. "
         f"Write a SHORT, SPECIFIC coaching tip. "
         f"MEMORY & CONTEXT: If the user has high scores (e.g. 8.5+ in tech/retention/seo), start by congratulating them before giving advice. Do not just focus on weaknesses. "
@@ -87,10 +104,11 @@ async def generate_ai_game_feedback(c_type: str, c_aud: str, c_purp: str, tech_s
         f"Start with an emoji + 'ANALİZ PRO KOÇU: ' "
         f"(ES='ENTRENADOR PRO: ', EN='PRO COACH: '). "
         f"Be actionable and punchy. "
-        f"If visual insights are provided, reference them (e.g., thumbnail emotion, contrast quality). "
+        f"If visual insights are provided, reference them ONLY if they are factually confirmed (e.g., contrast ratio, color match - NOT face if no face was detected). "
         f"Focus on what editing or hook technique works best for THIS content's audience. "
         f"HOOK FORMULA: Always end your advice with an 'Uygulama Örneği' (Application Example). Be extremely concrete. Example: 'Uygulama Örneği: 00:01'de ekran sallantı efektiyle (camera shake) birlikte \"Bunu Beklemiyorduk!\" yazısını belirgin bir fontla ekrana getir'. "
     )
+
 
     try:
         resp = requests.post(
@@ -169,4 +187,3 @@ async def analyze_image_with_gemini(image_base64: str, mime_type: str) -> str:
     except Exception as e:
         print(f"GEMINI HATA: {type(e).__name__}: {e}")
         return f"SİSTEM BİLGİSİ: Görsel okuma sistemi çöktü: {str(e)}"
-    return ""

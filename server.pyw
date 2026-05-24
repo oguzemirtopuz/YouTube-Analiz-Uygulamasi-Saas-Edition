@@ -1148,7 +1148,7 @@ Devuelve SOLO un Array JSON, responde en Español:
                             ai_text = ai_text.split("```")[1].split("```")[0]
                         match = re.search(r'\[.*\]', ai_text, re.DOTALL)
                         if match:
-                            ai_ideas = json.loads(match.group())
+                            ai_ideas = json.loads(match.group(), strict=False)
                 except Exception:
                     traceback.print_exc()
 
@@ -3676,7 +3676,7 @@ Kurallar:
                 detail=f"{label} geçerli bir JSON döndürmedi. Ham yanıt: {raw[:200]}"
             )
         try:
-            return json.loads(match.group())
+            return json.loads(match.group(), strict=False)
         except json.JSONDecodeError as exc:
             app_logger.error(f"[clone_debate] {label} JSON decode hatası: {exc} | Ham: {raw[:300]}")
             raise HTTPException(
@@ -3754,7 +3754,7 @@ GÖREVİN:
             detail=f"Hakem AI geçerli bir JSON döndürmedi. Ham yanıt: {raw_judge[:200]}"
         )
     try:
-        result_dict = json.loads(match_judge.group())
+        result_dict = json.loads(match_judge.group(), strict=False)
     except json.JSONDecodeError as exc:
         app_logger.error(f"[clone_debate] Hakem JSON decode hatası: {exc} | Ham: {raw_judge[:300]}")
         raise HTTPException(

@@ -76,7 +76,7 @@ A sleek, neon-themed **Chrome Extension** that injects directly into the YouTube
 We made setup completely frictionless. 
 1. Run `install.bat` on Windows.
 2. It will automatically install Python (if missing), create a virtual environment, install all dependencies (including FFmpeg via yt-dlp), and launch the server.
-3. Open the desktop app via `run.bat`!
+3. Open the desktop app via `BASLAT.bat`!
 
 ### Chrome Extension Setup
 1. Open Google Chrome and navigate to `chrome://extensions/`.

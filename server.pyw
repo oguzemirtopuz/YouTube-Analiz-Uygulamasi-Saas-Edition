@@ -95,7 +95,7 @@ LOGS_DIR.mkdir(exist_ok=True)
 # ═══════════════════════════════════════════════════════════
 #   GÜVENLİK SERVİSİ (app/services/security.py)
 # ═══════════════════════════════════════════════════════════
-from app.services.security import CryptoManager, hash_password, verify_password, generate_verification_code
+from app.services.security import CryptoManager, hash_password, verify_password, generate_verification_code, CryptoDecryptionError
 
 
 # Ana uygulama logger
@@ -477,6 +477,24 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
             "error": "Gönderilen veri formatı hatalı.",
             "detail": exc.errors(),
             "body": body_str
+        }
+    )
+
+@app.exception_handler(CryptoDecryptionError)
+async def crypto_exception_handler(request: Request, exc: CryptoDecryptionError):
+    """
+    Fail-Fast (Aşama 1) Kuralı: Şifreleme çözülemediğinde sessizce boş string dönmek YASAKTIR.
+    Bu global handler, herhangi bir API endpointinde CryptoDecryptionError fırlatıldığında
+    dürüstçe 500 hatası ve anlamlı mesaj döner.
+    """
+    app_logger.error(f"[CRYPTO_ERROR] endpoint={request.url.path} mesaj={str(exc)}")
+    return JSONResponse(
+        status_code=500,
+        content={
+            "success": False,
+            "error": "CRYPTO_ERROR",
+            "details": str(exc),
+            "detail": str(exc)  # Bazı frontend fetch'leri "detail" arayabilir
         }
     )
 # Statik dosyalar ve Template motoru (PyInstaller BUNDLE_DIR uyumlu)
@@ -2967,11 +2985,42 @@ def _fetch_transcript_sync(video_id: str) -> str:
         raise ValueError(f"Altyazı çekilemedi. API Hatası: {last_api_error} | Yedek Motor Hatası: {e}")
 
 
+# ── Thumbnail Kuralı: İçerik tipine göre dinamik oluştur ─────────────────────
+# BUG FIX: Oyun/gaming kanalları için insan yüzü YASAK direktifi.
+# Ana AI (chat) promptu bu kuralı içeriyordu ama _call_groq_clone içine
+# cascade etmiyordu — bu yüzden halüsinasyon üretiliyordu. Artık düzeltildi.
+def _build_thumbnail_rule(content_type: str) -> str:
+    """content_type'a göre thumbnail direktifi döndürür."""
+    gaming_keywords = ['oyun', 'gaming', 'game', 'fps', 'rpg', 'minecraft', 'valorant',
+                       'left 4 dead', 'cod', 'gta', 'esport', 'turnuva']
+    is_gaming = any(kw in content_type.lower() for kw in gaming_keywords)
+
+    if is_gaming:
+        return (
+            "3. ABSOLUTE THUMBNAIL RULE — GAMING CHANNEL: "
+            "This is a GAMING channel. Human faces are STRICTLY FORBIDDEN in thumbnail descriptions. "
+            "NEVER write phrases like 'mutlu bir yüz', 'yüze bakıyor', 'insan yüzü', 'shocked face', or any face/emotion reference. "
+            "If you hallucinate a face that does not exist, your output is INVALID. "
+            "Instead, focus ONLY on: game UI elements, dramatic in-game moments, bold text overlays, "
+            "high-contrast character/item art, explosive effects, or controller/keyboard imagery. "
+            "The 'thumbnail' field MUST be a detailed TEXT DESCRIPTION — NEVER a URL or image link."
+        )
+    else:
+        return (
+            "3. CRITICAL THUMBNAIL RULE: NEVER generate fake image URLs or links. "
+            "The 'thumbnail' field MUST contain a detailed text description of the thumbnail design. "
+            "Example: \"Arka planda patlayan bir araba, önde şaşkın bir ifade ve büyük sarı harflerle 'BUNU BEKLEMİYORDUK!' yazısı.\""
+        )
+
+
 async def _call_groq_clone(api_key: str, title: str, channel: str, transcript: str, content_type: str, purpose: str) -> str:
     """
     Groq Llama-3 ile viral klonlama konsepti üretir.
     Senkron requests çağrısını run_in_threadpool ile sarmalar.
     """
+    # BUG FIX: Thumbnail kuralı artık content_type'a göre dinamik seçiliyor.
+    thumbnail_rule = _build_thumbnail_rule(content_type)
+
     if transcript:
         prompt = f"""Sen elit bir YouTube İçerik Stratejistisin. Kullanıcının kanalı şu nişte: {content_type}. Amacı: {purpose}.
 Sana başarılı bir videonun altyazısı (transcript) ve başlığı verilecek. Senden bu videonun başarısının altındaki psikolojik iskeleti (Kısıtlama, Merak Boşluğu, Zıtlık vb.) bulmanı ve bunu KULLANICININ KENDİ KANAL NİŞİNE uyarlayarak 3 yepyeni video fikri üretmeni istiyorum.
@@ -2984,8 +3033,12 @@ Sana başarılı bir videonun altyazısı (transcript) ve başlığı verilecek.
 KURALLAR:
 1. UYGULANABİLİRLİK: Kullanıcının devasa bütçesi yok. Fikirler pratik olmalı.
 2. KOPYALAMA: Orijinal videodaki nesneleri (örn: Bazuka, Drone) kopyalama. Orijinal videonun HİSSİNİ ve KURGU İSKELETİNİ kopyalayıp kullanıcının sektörüne uyarla.
-3. CRITICAL THUMBNAIL RULE: NEVER generate fake image URLs or links (like https://example.com/...). The "thumbnail" field MUST contain a detailed text description of the thumbnail design. Example: "Arka planda patlayan bir araba, önde şaşkın bir ifade ve büyük sarı harflerle 'BUNU BEKLEMİYORDUK!' yazısı."
-4. SADECE JSON Array döndür: [{{"title":"...", "hook":"...", "thumbnail":"..."}}]"""
+{thumbnail_rule}
+4. SADECE JSON Array döndür: [{{
+   "title": "...",
+   "hook": "...",
+   "thumbnail": "...(thumbnail tasarımının detaylı metin açıklaması — asla URL değil)..."
+}}]"""
     else:
         prompt = f"""Sen elit bir YouTube İçerik Stratejistisin. Kullanıcının kanalı şu nişte: {content_type}. Amacı: {purpose}.
 Bu videonun altyazısı yok. Ancak başlığı: '{title}'. Sadece bu başlığa ve konseptine bakarak benim kanalım için 3 farklı viral başlık ve thumbnail fikri üret.
@@ -2993,8 +3046,12 @@ Bu videonun altyazısı yok. Ancak başlığı: '{title}'. Sadece bu başlığa 
 KURALLAR:
 1. UYGULANABİLİRLİK: Kullanıcının devasa bütçesi yok. Fikirler pratik olmalı.
 2. KOPYALAMA: Orijinal videodaki nesneleri kopyalama. Orijinal videonun HİSSİNİ ve KURGU İSKELETİNİ kopyalayıp kullanıcının sektörüne uyarla.
-3. CRITICAL THUMBNAIL RULE: NEVER generate fake image URLs or links (like https://example.com/...). The "thumbnail" field MUST contain a detailed text description of the thumbnail design. Example: "Arka planda patlayan bir araba, önde şaşkın bir ifade ve büyük sarı harflerle 'BUNU BEKLEMİYORDUK!' yazısı."
-4. SADECE JSON Array döndür: [{{"title":"...", "hook":"...", "thumbnail":"..."}}]"""
+{thumbnail_rule}
+4. SADECE JSON Array döndür: [{{
+   "title": "...",
+   "hook": "...",
+   "thumbnail": "...(thumbnail tasarımının detaylı metin açıklaması — asla URL değil)..."
+}}]"""
 
     def _post():
         resp = requests.post(
@@ -3022,68 +3079,186 @@ KURALLAR:
     else:
         raise ValueError(f"Groq API hatası: HTTP {resp.status_code}")
 
+def calculate_chaos_score(transcript: str, titles: list[str]) -> dict:
+    import re
+    import statistics
+
+    transcript = (transcript or "").strip()
+    titles = titles or []
+
+    # 1. Rage Yoğunluğu (0-10)
+    rage_words = ['lan', 'ya', 'abi', 'noldu', 'niye', 'nasıl', 'imkansız', 'yok artık', 'git', 'olmaz', 'berbat', 'şok', 'çıldırdım', 'delirdim']
+    words = re.findall(r'\b\w+\b', transcript.lower())
+    total_words = len(words)
+    rage_count = sum(1 for w in words if w in rage_words)
+    
+    transcript_lower = transcript.lower()
+    rage_count += transcript_lower.count("yok artık")
+    
+    if total_words > 0:
+        rage_score = min(10.0, (rage_count / total_words) * 200.0)
+    else:
+        rage_score = 0.0
+
+    # 2. Tempo Varyansı (0-10)
+    sentences = re.split(r'[.?!]', transcript)
+    sentences = [s.strip() for s in sentences if s.strip()]
+    lengths = [len(s.split()) for s in sentences]
+    
+    tempo_score = 0.0
+    if len(lengths) > 1: # Fail-Fast: ZeroDivisionError / ValueError koruması
+        stdev = statistics.stdev(lengths)
+        tempo_score = min(10.0, stdev / 1.5)
+
+    # 3. Başlık Agresifliği (0-10)
+    agg_chars = 0
+    total_title_chars = 0
+    for t in titles:
+        agg_chars += t.count('!') + t.count('?')
+        total_title_chars += len(t)
+        
+    if total_title_chars > 0:
+        title_score = min(10.0, (agg_chars / total_title_chars) * 100.0)
+    else:
+        title_score = 0.0
+
+    # Genel Kaos Skoru
+    final_score = (rage_score * 0.50) + (tempo_score * 0.30) + (title_score * 0.20)
+    final_score = round(final_score, 1)
+
+    # BabaClutch Hükmü
+    if final_score < 6:
+        potential = int((6 - final_score) * 15)
+        verdict = f"Rakipte yeterince kaos yok. BabaClutch tarzı rage eklenirse tahminen %{potential} daha fazla izlenme potansiyeli var."
+    else:
+        verdict = "Rakip de kaotik! BabaClutch'ın avantajı niş uzmanlığında."
+
+    return {
+        "score": final_score,
+        "verdict": verdict,
+        "details": {
+            "rage_score": round(rage_score, 1),
+            "tempo_score": round(tempo_score, 1),
+            "title_score": round(title_score, 1)
+        }
+    }
+
 def extract_channel_stats_sync(channel_url: str):
     import yt_dlp
-    
+    import time as _time
+
     if not channel_url.endswith('/videos'):
         base_url = channel_url.split('/featured')[0].split('/shorts')[0].split('/streams')[0].rstrip('/')
         channel_url = f"{base_url}/videos"
-        
+
     opts = {
         'extract_flat': True,
         'playlist_end': 5,
         'quiet': True,
-        'no_warnings': True
+        'no_warnings': True,
+        # STRES TESTİ FIX #6: yt-dlp rate-limit ve IP ban koruması
+        # Socketleri çok çabuk açmak 429'u tetikler; küçük bir sleep eklenebilir.
+        'sleep_interval': 1,        # istekler arası minimum 1sn bekle
+        'max_sleep_interval': 3,    # maksimum 3sn
+        'socket_timeout': 15,
     }
-    with yt_dlp.YoutubeDL(opts) as ydl:
-        info = ydl.extract_info(channel_url, download=False)
-        entries = info.get('entries', [])
-        if not entries:
-            raise ValueError("Kanal videoları bulunamadı.")
+
+    # Exponential Backoff: 429 veya geçici ağ hatasında 3 kez dene (1s → 3s → 9s)
+    last_error = None
+    for attempt in range(3):
+        try:
+            with yt_dlp.YoutubeDL(opts) as ydl:
+                info = ydl.extract_info(channel_url, download=False)
+            break  # Başarılı → döngüden çık
+        except Exception as e:
+            last_error = e
+            err_str = str(e).lower()
+            is_rate_limit = '429' in err_str or 'too many requests' in err_str or 'rate' in err_str
+            is_temporary  = 'timeout' in err_str or 'connection' in err_str or 'network' in err_str
+
+            if (is_rate_limit or is_temporary) and attempt < 2:
+                wait_secs = 3 ** attempt  # 1, 3, 9 saniye
+                app_logger.warning(
+                    f"[Kanal Savaşları] yt-dlp hata (deneme {attempt+1}/3): {e} | "
+                    f"{wait_secs}sn sonra tekrar deneniyor..."
+                )
+                _time.sleep(wait_secs)
+            else:
+                # Kalıcı hata veya 3. deneme: fırlat
+                if '429' in err_str or 'too many requests' in err_str:
+                    raise ValueError(
+                        "YouTube rate-limit uyguladı (HTTP 429). "
+                        "Kanal Savaşları birkaç dakika içinde tekrar denenebilir. "
+                        "Çok sık tarama yapmak IP ban riskini artırır."
+                    )
+                raise ValueError(f"Kanal verileri çekilemedi: {e}")
+    else:
+        # Tüm denemeler başarısız
+        raise ValueError(f"Kanal verileri 3 denemede de çekilemedi: {last_error}")
+
+    entries = info.get('entries', [])
+    if not entries:
+        raise ValueError("Kanal videoları bulunamadı.")
         
-        total_views = 0
-        count = 0
-        video_urls = []
-        recent_titles = []
-        for v in entries:
-            if v and v.get('url'):
-                video_urls.append(v['url'])
-            if v and v.get('title'):
-                recent_titles.append(v['title'])
-            if v and v.get('view_count'):
-                total_views += v['view_count']
-                count += 1
-                
-        # Eğer extract_flat view_count'ları getirmediyse (None geldiyse),
-        # İlk 3 videonun meta verisini tekil olarak çekiyoruz (Daha hızlı ve stabil)
-        if count == 0 and video_urls:
-            single_opts = {
-                'extract_flat': False,
-                'quiet': True,
-                'no_warnings': True,
-                'socket_timeout': 5
-            }
-            with yt_dlp.YoutubeDL(single_opts) as ydl_single:
-                for v_url in video_urls[:3]:
-                    try:
-                        v_info = ydl_single.extract_info(v_url, download=False)
-                        if v_info and v_info.get('view_count'):
-                            total_views += v_info['view_count']
-                            count += 1
-                    except:
-                        pass
-                        
-        if count == 0:
-            avg_views = "Bilinmiyor"
-        else:
-            avg_views = int(total_views / count)
+    total_views = 0
+    count = 0
+    video_urls = []
+    recent_titles = []
+    for v in entries:
+        if v and v.get('url'):
+            video_urls.append(v['url'])
+        if v and v.get('title'):
+            recent_titles.append(v['title'])
+        if v and v.get('view_count'):
+            total_views += v['view_count']
+            count += 1
             
-        return {
-            "channel_name": info.get('uploader', info.get('title', 'Bilinmeyen Kanal')),
-            "avg_views": avg_views,
-            "recent_titles": recent_titles[:5],
-            "video_count_analyzed": count if count > 0 else len(video_urls)
+    # Eğer extract_flat view_count'ları getirmediyse (None geldiyse),
+    # İlk 3 videonun meta verisini tekil olarak çekiyoruz (Daha hızlı ve stabil)
+    if count == 0 and video_urls:
+        single_opts = {
+            'extract_flat': False,
+            'quiet': True,
+            'no_warnings': True,
+            'socket_timeout': 5
         }
+        with yt_dlp.YoutubeDL(single_opts) as ydl_single:
+            for v_url in video_urls[:3]:
+                try:
+                    v_info = ydl_single.extract_info(v_url, download=False)
+                    if v_info and v_info.get('view_count'):
+                        total_views += v_info['view_count']
+                        count += 1
+                except:
+                    pass
+                    
+    if count == 0:
+        avg_views = "Bilinmiyor"
+    else:
+        avg_views = int(total_views / count)
+        
+    # Transcript Çekimi ve Kaos Metriği
+    transcript = ""
+    try:
+        if video_urls:
+            first_url = video_urls[0]
+            if 'v=' in first_url:
+                v_id = first_url.split('v=')[-1].split('&')[0]
+            else:
+                v_id = first_url.split('/')[-1].split('?')[0]
+            transcript = _fetch_transcript_sync(v_id)
+    except Exception:
+        pass
+        
+    chaos_metrics = calculate_chaos_score(transcript, recent_titles[:5])
+        
+    return {
+        "channel_name": info.get('uploader', info.get('title', 'Bilinmeyen Kanal')),
+        "avg_views": avg_views,
+        "recent_titles": recent_titles[:5],
+        "video_count_analyzed": count if count > 0 else len(video_urls),
+        "chaos_metrics": chaos_metrics
+    }
 
 async def _call_groq_battle(api_key: str, my_data: dict, rival_data: dict) -> str:
     import requests
@@ -3173,7 +3348,7 @@ async def extension_analyze_channel(payload: AnalyzeChannelRequest):
     
     try:
         report = await _call_groq_battle(api_key, my_data, rival_data)
-        return {"result": report, "rival_name": rival_data["channel_name"]}
+        return {"result": report, "rival_name": rival_data["channel_name"], "chaos_metrics": rival_data.get("chaos_metrics")}
     except Exception as e:
         return {"error": f"Savaş raporu oluşturulamadı: {str(e)}"}
 
@@ -3369,6 +3544,303 @@ async def extension_clone_video(payload: CloneVideoRequest):
         "channel":   channel,
         "result":    result,
         "transcript_length": len(transcript),
+    }
+
+
+# ═══════════════════════════════════════════════════════════
+#   A/B TEST SİMÜLATÖRÜ — Multi-Agent Debate Motoru
+#   Persona A: Acımasız Eleştirmen (temperature=0.3)
+#   Persona B: Viral Büyücü       (temperature=0.95)
+#   Hakem AI : Kazananı seçer / harmanlayıp tek fikir üretir
+# ═══════════════════════════════════════════════════════════
+
+async def _call_groq_debate(
+    api_key: str,
+    title: str,
+    channel: str,
+    transcript: str,
+    content_type: str,
+    purpose: str,
+) -> dict:
+    """
+    İki persona paralel çalışır (asyncio.gather), ardından Hakem AI karar verir.
+    Çıktı kesinlikle ayrıştırılabilir JSON dict olmalı — aksi hâlde HTTPException(500).
+    """
+
+    # Oyun kanalları için insan yüzü yasağı her iki ajana da enjekte edilir
+    thumbnail_rule = _build_thumbnail_rule(content_type)
+
+    transcript_excerpt = transcript[:2000] if transcript else "(Altyazı mevcut değil)"
+
+    # ── Persona A: Acımasız Eleştirmen ────────────────────────────────────────
+    prompt_a = f"""Sen acımasız, veriye dayalı, CTR (Tıklanma Oranı) odaklı bir YouTube stratejistisin.
+Sentimental düşünmez, sadece sayı ve psikoloji konuşursun.
+Kullanıcının kanalı: {content_type}. Amaç: {purpose}.
+
+📌 Orijinal Başlık: {title}
+📺 Orijinal Kanal: {channel}
+📝 Altyazı (ilk 2000 karakter): {transcript_excerpt}
+
+Kurallar:
+1. Mantık, kısıtlama ve merak boşluğu kullan — duygusal clickbait değil.
+2. {thumbnail_rule}
+3. YALNIZCA şu JSON formatında 1 fikir döndür (başka hiçbir şey yazma):
+{{"title": "...", "hook": "...", "thumbnail": "..."}}"""
+
+    # ── Persona B: Viral Büyücü ───────────────────────────────────────────────
+    prompt_b = f"""Sen uçuk kaçık, kaotik ve clickbait konusunda şeytani bir viral içerik büyücüsüsün.
+Mantığı umursamaz, algoritmayı hissedersin. Aşırı duygusal ve dramatik başlıklar üretirsin.
+Kullanıcının kanalı: {content_type}. Amaç: {purpose}.
+
+📌 Orijinal Başlık: {title}
+📺 Orijinal Kanal: {channel}
+📝 Altyazı (ilk 2000 karakter): {transcript_excerpt}
+
+Kurallar:
+1. Merak, şok, korku ve aşırı dramatizm kullan. Sınırı zorla.
+2. {thumbnail_rule}
+3. YALNIZCA şu JSON formatında 1 fikir döndür (başka hiçbir şey yazma):
+{{"title": "...", "hook": "...", "thumbnail": "..."}}"""
+
+    system_json = "Sen bir YouTube stratejisti asistanısın. YALNIZCA geçerli JSON döndürürsün, başka hiçbir şey yazmazsın."
+
+    def _post_persona_a():
+        return requests.post(
+            "https://api.groq.com/openai/v1/chat/completions",
+            headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
+            json={
+                "model": "llama-3.3-70b-versatile",
+                "messages": [
+                    {"role": "system", "content": system_json},
+                    {"role": "user",   "content": prompt_a},
+                ],
+                "max_tokens": 512,
+                "temperature": 0.3,  # Persona A: soğuk ve mantıklı
+            },
+            timeout=30,
+        )
+
+    def _post_persona_b():
+        return requests.post(
+            "https://api.groq.com/openai/v1/chat/completions",
+            headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
+            json={
+                "model": "llama-3.3-70b-versatile",
+                "messages": [
+                    {"role": "system", "content": system_json},
+                    {"role": "user",   "content": prompt_b},
+                ],
+                "max_tokens": 512,
+                "temperature": 0.95,  # Persona B: kaotik yaratıcı
+            },
+            timeout=30,
+        )
+
+    # ── Paralel çalıştır ──────────────────────────────────────────────────────
+    resp_a, resp_b = await asyncio.gather(
+        run_in_threadpool(_post_persona_a),
+        run_in_threadpool(_post_persona_b),
+    )
+
+    # Fail-Fast: HTTP hatalarında direkt HTTPException fırlat
+    for label, resp in [("Persona A (Eleştirmen)", resp_a), ("Persona B (Büyücü)", resp_b)]:
+        if resp.status_code == 401:
+            raise HTTPException(status_code=502, detail="Groq API anahtarı geçersiz.")
+        if resp.status_code == 429:
+            raise HTTPException(status_code=429, detail="Groq API kotası doldu. Lütfen bekleyin.")
+        if resp.status_code != 200:
+            raise HTTPException(
+                status_code=502,
+                detail=f"{label} Groq hatası: HTTP {resp.status_code}"
+            )
+
+    raw_a = resp_a.json()["choices"][0]["message"]["content"].strip()
+    raw_b = resp_b.json()["choices"][0]["message"]["content"].strip()
+
+    # ── JSON parse — Fail-Fast ────────────────────────────────────────────────
+    def _parse_persona_json(raw: str, label: str) -> dict:
+        """JSON bloğunu çıkar ve parse et. Hata varsa HTTPException(500) fırlat."""
+        import re as _re
+        # Markdown kod bloklarını temizle
+        cleaned = _re.sub(r"```(?:json)?", "", raw).replace("```", "").strip()
+        # İlk { ... } bloğunu bul
+        match = _re.search(r"\{.*\}", cleaned, _re.DOTALL)
+        if not match:
+            app_logger.error(f"[clone_debate] {label} JSON parse hatası — ham yanıt: {raw[:300]}")
+            raise HTTPException(
+                status_code=500,
+                detail=f"{label} geçerli bir JSON döndürmedi. Ham yanıt: {raw[:200]}"
+            )
+        try:
+            return json.loads(match.group())
+        except json.JSONDecodeError as exc:
+            app_logger.error(f"[clone_debate] {label} JSON decode hatası: {exc} | Ham: {raw[:300]}")
+            raise HTTPException(
+                status_code=500,
+                detail=f"{label} JSON ayrıştırılamadı: {exc}"
+            )
+
+    idea_a = _parse_persona_json(raw_a, "Persona A (Eleştirmen)")
+    idea_b = _parse_persona_json(raw_b, "Persona B (Büyücü)")
+
+    # ── Hakem AI: Kazananı Seç veya Harmanlayıp Tek Fikir Üret ──────────────
+    prompt_judge = f"""Sen tarafsız ve kıyasıya dürüst bir YouTube İçerik Hakemisin.
+İki farklı strateji ajananın ürettiği fikirleri değerlendir ve TEK BİR KAZANAN fikir üret.
+
+📌 Analiz Edilen Video: {title} ({channel})
+🎯 Kanal Nişi: {content_type}
+
+--- AJAN A (Acımasız Eleştirmen — CTR odaklı) ---
+Başlık  : {idea_a.get('title', '')}
+Kanca   : {idea_a.get('hook', '')}
+Thumbnail: {idea_a.get('thumbnail', '')}
+
+--- AJAN B (Viral Büyücü — Clickbait odaklı) ---
+Başlık  : {idea_b.get('title', '')}
+Kanca   : {idea_b.get('hook', '')}
+Thumbnail: {idea_b.get('thumbnail', '')}
+
+GÖREVİN:
+1. A'nın ve B'nin fikirlerini kıyasla (eleştirmen_fikri ve buyucu_fikri alanlarına 1 cümlelik özet yaz).
+2. En güçlü olanı seç VEYA ikisinin en iyi yönlerini harmanlayarak kusursuz bir fikir üret.
+3. {thumbnail_rule}
+4. YALNIZCA şu JSON formatında döndür (başka hiçbir şey yazma):
+{{
+  "eleştirmen_fikri": "A'nın fikrinin 1 cümlelik özeti ve güçlü/zayıf yanı",
+  "buyucu_fikri": "B'nin fikrinin 1 cümlelik özeti ve güçlü/zayıf yanı",
+  "kazanan_baslik": "...",
+  "kazanan_kanca": "...",
+  "kazanan_thumbnail": "..."
+}}"""
+
+    def _post_judge():
+        return requests.post(
+            "https://api.groq.com/openai/v1/chat/completions",
+            headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
+            json={
+                "model": "llama-3.3-70b-versatile",
+                "messages": [
+                    {"role": "system", "content": system_json},
+                    {"role": "user",   "content": prompt_judge},
+                ],
+                "max_tokens": 768,
+                "temperature": 0.5,
+            },
+            timeout=35,
+        )
+
+    resp_judge = await run_in_threadpool(_post_judge)
+
+    if resp_judge.status_code != 200:
+        raise HTTPException(
+            status_code=502,
+            detail=f"Hakem AI Groq hatası: HTTP {resp_judge.status_code}"
+        )
+
+    raw_judge = resp_judge.json()["choices"][0]["message"]["content"].strip()
+
+    # Fail-Fast: Hakem JSON parse
+    import re as _re2
+    cleaned_judge = _re2.sub(r"```(?:json)?", "", raw_judge).replace("```", "").strip()
+    match_judge = _re2.search(r"\{.*\}", cleaned_judge, _re2.DOTALL)
+    if not match_judge:
+        app_logger.error(f"[clone_debate] Hakem JSON parse hatası — ham: {raw_judge[:300]}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Hakem AI geçerli bir JSON döndürmedi. Ham yanıt: {raw_judge[:200]}"
+        )
+    try:
+        result_dict = json.loads(match_judge.group())
+    except json.JSONDecodeError as exc:
+        app_logger.error(f"[clone_debate] Hakem JSON decode hatası: {exc} | Ham: {raw_judge[:300]}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Hakem AI JSON ayrıştırılamadı: {exc}"
+        )
+
+    # Zorunlu anahtarları doğrula
+    required_keys = {"eleştirmen_fikri", "buyucu_fikri", "kazanan_baslik", "kazanan_kanca", "kazanan_thumbnail"}
+    missing = required_keys - result_dict.keys()
+    if missing:
+        app_logger.error(f"[clone_debate] Hakem JSON eksik anahtar(lar): {missing} | Ham: {raw_judge[:300]}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Hakem AI çıktısında eksik anahtar(lar): {missing}"
+        )
+
+    return result_dict
+
+
+@app.post("/api/extension/clone_debate")
+async def extension_clone_debate(payload: CloneVideoRequest):
+    """
+    A/B Test Simülatörü — Multi-Agent Debate Endpoint.
+    Persona A (Eleştirmen) + Persona B (Büyücü) paralel çalışır.
+    Hakem AI en iyi fikri seçer/harmanlayarak JSON döner.
+
+    Beklenen JSON body: { "url": "...", "videoId": "...", "title": "...", "channel": "...", "thumbnail": "..." }
+    Çıktı: { "success": true, "debate": { eleştirmen_fikri, buyucu_fikri, kazanan_baslik, kazanan_kanca, kazanan_thumbnail } }
+    """
+    app_logger.info(f"[clone_debate] ⚔️ Tartışma başlatıldı: {payload.model_dump()}")
+
+    url      = payload.url.strip()
+    video_id = payload.videoId.strip()
+    title    = payload.title.strip() or "Başlık Yok"
+    channel  = payload.channel.strip() or "Bilinmeyen Kanal"
+
+    if not video_id and "v=" in url:
+        from urllib.parse import urlparse, parse_qs
+        video_id = parse_qs(urlparse(url).query).get("v", [""])[0]
+
+    if not video_id:
+        raise HTTPException(status_code=400, detail="Video ID bulunamadı. Geçerli bir YouTube URL'si gönderin.")
+
+    # ── Transcript ─────────────────────────────────────────────────────────────
+    try:
+        transcript = await run_in_threadpool(_fetch_transcript_sync, video_id)
+    except Exception as e:
+        app_logger.warning(f"[clone_debate] Transcript hatası (Fallback): {e}")
+        transcript = ""
+
+    if not transcript or transcript.startswith("HATA:"):
+        transcript = ""
+
+    # ── API Key ────────────────────────────────────────────────────────────────
+    api_key = await get_groq_api_key()
+    if not api_key:
+        raise HTTPException(
+            status_code=503,
+            detail="Groq API anahtarı ayarlanmamış. Uygulamanın Ayarlar panelinden ekleyin."
+        )
+
+    # ── Kanal Profili ──────────────────────────────────────────────────────────
+    content_type = "Genel İçerik"
+    purpose      = "İzleyici Eğlendirmek"
+    if payload.user_id:
+        db = await get_async_db()
+        try:
+            async with db.execute(
+                "SELECT content_type, purpose FROM channels WHERE user_id = ? LIMIT 1",
+                (payload.user_id,)
+            ) as c:
+                row = await c.fetchone()
+                if row:
+                    content_type = row["content_type"] or content_type
+                    purpose      = row["purpose"]      or purpose
+        finally:
+            await db.close()
+
+    # ── Multi-Agent Debate ─────────────────────────────────────────────────────
+    debate_result = await _call_groq_debate(api_key, title, channel, transcript, content_type, purpose)
+
+    app_logger.info(f"[clone_debate] ✅ Tartışma tamamlandı: video_id={video_id}")
+
+    return {
+        "success":  True,
+        "video_id": video_id,
+        "title":    title,
+        "channel":  channel,
+        "debate":   debate_result,
     }
 
 

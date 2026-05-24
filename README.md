@@ -5,21 +5,29 @@
 
 ---
 
-✨ **Latest Release (v4.1.0)**
+✨ **Latest Release (v4.2.0)**
 > [!IMPORTANT]
-> **Code Quality & Security Hardening — Groq Decryption & Google OAuth XSS Shield**
+> **v4.2.0 - The Chaos & Debate Update 🚀**
 > 
-> * **[Security] Google OAuth XSS Shield:** Patched a cross-site scripting (XSS) vulnerability in the Google OAuth callback endpoint. Previously, user session details were injected directly into a single-quoted JavaScript string when saving to `localStorage`. This could allow arbitrary script execution if a username contained single quotes or malicious payloads. All session objects are now serialized as double-quoted JSON strings using `json.dumps()` before injection.
-> * **[Logic] Groq API Decryption Fix:** Resolved a critical issue in the AI Chat and analysis endpoints where stored Groq API keys were retrieved from the SQLite database and sent to the API raw (encrypted). This prevented AI-driven analysis and chat from functioning. Incorporated `CryptoManager.decrypt` to properly decrypt keys at runtime.
-> * **[Math] Corrected Shorts Scoring Scale:** Fixed the scoring weights used in YouTube Shorts overall score calculations. Previously, the weights (`retention=0.45`, `tech=0.35`, `seo=0.10`) summed to `0.90`, capping the maximum possible score at `9.0` instead of `10.0`. Restructured weights to `retention=0.50`, `tech=0.35`, and `seo=0.15` to form a perfect `1.00` sum (maximum 10.0 score).
-> * **[PDF] Cleaned Multiple Headers in Report PDF:** Fixed a layout bug in the PDF exporter where the "SEO & Thumbnail Balance Warning" header was duplicated in the document flow due to copy-paste errors.
-> * **[Async] Non-blocking Email Status:** Simplified the email notification logic inside `analyze_video` to prevent false positives (where `email_sent` was marked `True` even if the delivery failed). Sending status is now accurately determined based on active SMTP credentials.
-> * **[Performance] Discarded Heavy Test Imports:** Removed `from starlette.testclient import TestClient` from the production `api_send_report` endpoint, reducing runtime memory overhead and startup latency.
-> * **[Stability] Prevented NameError in Subtitle Engine:** Initialized `last_api_error` before the `try-except` block in `_fetch_transcript_sync` to avoid `NameError` exceptions when subtitle fetching fails.
-> * **[CV] Non-Pro Visual Tempo Resolution:** Fixed a visual tempo map rendering bug where non-pro analyses were generating empty maps. Reduced the non-pro frame skip threshold from the video's FPS to 1 frame to ensure a rich density map.
-> * **[Competitor] Robust Channel & Title Check:** Enhanced competitor filtering by cross-referencing multiple attributes (channel name, uploader name, and channel ID) to reliably exclude the user's own channel from competitor metrics. Added a new `check_content_consistency` helper to check title/tag/description keyword overlap.
+> * **[AI Debate] A/B Test Simulator:** Introduced a Multi-Agent Debate engine (`_call_groq_debate`). Persona A (The Critic) and Persona B (The Wizard) now run in parallel to argue over the best viral strategy. The AI Referee evaluates their concepts and crowns a winner, complete with a golden neon UI card! ⚔️
+> * **[Analytics] BabaClutch Chaos Metric:** A custom, 100% local, pure Python NLP algorithm (`calculate_chaos_score`) that measures the "Rage Density" and "Tempo Variance" of a competitor's transcript. Zero API cost. Predicts the potential view surge based on psychological chaos. Features a brand-new red glitch-effect UI! 🌪️
+> * **[DB & Crypto] Fail-Fast Architecture:** The `CryptoManager` now strictly throws an HTTP 500 error on corrupted keys rather than failing silently. Enabled SQLite WAL (Write-Ahead Logging) mode for robust concurrent performance.
+> * **[Data Leak] Empty URL Patch:** Sealed a vulnerability that allowed empty or invalid URL submissions to bypass validation.
+> * **[Extension] SPA Navigation Blindness:** Solved the YouTube Single Page Application (SPA) navigation bug using a 3-layered event listener architecture.
+> * **[Scraping] HTTP 429 Exponential Backoff:** Added robust exponential backoff logic for `yt-dlp` to prevent aggressive rate-limiting bans.
+> * **[AI Prompt] Anti-Hallucination Directives:** Injected a strict "Human Face Ban" rule (`_build_thumbnail_rule`) across all agents for Gaming channels, completely stopping AI from hallucinating fake human emotions in thumbnail prompts.
 
 ### 📜 Changelog
+#### 🌪️ v4.2.0 — The Chaos & Debate Update
+- **[AI Debate] A/B Test Simulator:** AI Persona debate engine with Referee evaluation.
+- **[Analytics] Chaos Metric:** Pure Python NLP algorithm to calculate transcript Rage/Tempo.
+- **[DB] SQLite WAL Mode:** Enabled Write-Ahead Logging.
+- **[Crypto] Fail-Fast:** CryptoManager throws HTTP 500 on corrupted keys.
+- **[Data Leak] URL Patch:** Blocked empty URL submissions in the extension.
+- **[Extension] SPA Fix:** 3-layered event listener for YouTube SPA routing.
+- **[Scraping] yt-dlp Backoff:** Exponential backoff against HTTP 429 bans.
+- **[AI Prompt] Face Ban:** Strict gaming thumbnail directive to prevent human face hallucination.
+
 #### 🔒 v4.1.0 — Security & Logic Hardening
 - **[Security] Google OAuth XSS Shield:** Serialized OAuth callbacks with `json.dumps` to prevent potential JavaScript injection.
 - **[Logic] Groq API Decryption Fix:** Added `CryptoManager.decrypt` to ensure Groq API keys are decrypted before calling AI endpoints.
@@ -56,6 +64,8 @@ A heavy-duty backend built with **Python, FastAPI, and PyQt5**, powered by OpenC
 ### 2. The Weapon (Chrome Extension)
 A sleek, neon-themed **Chrome Extension** that injects directly into the YouTube interface and syncs with the Desktop App.
 * **Viral Cloning Engine:** With one click (`Clone This Video`), the extension extracts a viral video's transcript, structure, and psychological triggers, generating 3 unique content hooks tailored to your own niche.
+* **A/B Test Simulator (AI Debate):** Two distinct AI Personas (The Critic vs. The Wizard) argue in real-time to find the ultimate viral hook for your next video, judged by a Master AI Referee. ⚔️
+* **BabaClutch Chaos Metric:** A 100% local, custom Python NLP algorithm that calculates the "Rage Density" and "Tempo Variance" of competitor transcripts to measure their psychological chaos level. 🌪️
 * **Channel Battles (Competitor Analysis):** Visit any competitor's channel page and click `Analyze Channel`. The extension bypasses YouTube's pagination, instantly pulls their real view counts using a hybrid `yt-dlp` engine, and pits their stats against your channel's Quality Score. The AI generates aggressive, guerrilla marketing tactics to steal their audience.
 * **Rabbit Hole (Niche Finder):** Stuck on what to film next? Search a broad keyword (e.g., "Crypto"), and the Rabbit Hole module will deep-dive into YouTube to find hidden "Outlier" videos with abnormally high View Velocities.
 

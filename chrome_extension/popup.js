@@ -21,12 +21,14 @@ const views = {
   idle:    $('view-idle'),
   loading: $('view-loading'),
   result:  $('view-result'),
+  debate:  $('view-debate'),
   error:   $('view-error'),
 };
 
 const elDot          = $('status-dot');
 const elStatusLabel  = $('server-status-label');
 const elBtnClone     = $('btn-clone');
+const elBtnDebate    = $('btn-debate');
 const elBtnAnalyze   = $('btn-analyze');
 const elRabbitQuery  = $('rabbit-query');
 const elBtnRabbit    = $('btn-rabbit');
@@ -71,11 +73,13 @@ function setServerStatus(state) {
   if (state === 'online') {
     elStatusLabel.textContent = '● Çevrimiçi';
     elStatusLabel.className   = 'server-status online';
-    elBtnClone.disabled = false;
+    elBtnClone.disabled  = false;
+    if (elBtnDebate) elBtnDebate.disabled = false;
   } else if (state === 'offline') {
     elStatusLabel.textContent = '● Çevrimdışı';
     elStatusLabel.className   = 'server-status offline';
-    elBtnClone.disabled = true;
+    elBtnClone.disabled  = true;
+    if (elBtnDebate) elBtnDebate.disabled = true;
   } else {
     elStatusLabel.textContent = 'Kontrol ediliyor...';
     elStatusLabel.className   = 'server-status';
@@ -171,15 +175,20 @@ function handleLogout() {
 }
 
 // ── Aktif Sekme Tespiti (Tam Ekran Desteği İçin) ─────────────────────────────
+// BUG FIX: tabs[0] fallback kaldırıldı. URL query'den gelen passedUrl ile
+// eşleşen sekme yoksa null döner — boş/yanlış URL ile analiz yapılamaz.
 async function getActiveTab() {
   const urlParams = new URLSearchParams(window.location.search);
   const passedUrl = urlParams.get('url');
   
   if (passedUrl) {
+    // Tam ekran modu: URL'si tam olarak eşleşen sekmeyi bul.
+    // Eşleşme yoksa HATA ver — rastgele bir YouTube sekmesi seçme!
     let tabs = await chrome.tabs.query({ url: "*://*.youtube.com/*" });
-    let matchedTab = tabs.find(t => t.url === passedUrl) || tabs[0];
+    let matchedTab = tabs.find(t => t.url === passedUrl);
     if (matchedTab) return matchedTab;
-    return { url: passedUrl, id: null };
+    // Eşleşme bulunamadı: null döndür, çağıran fonksiyon hata gösterecek.
+    return null;
   }
   
   let [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
@@ -250,6 +259,17 @@ async function analyzeChannel() {
     }
     
     elResultBox.innerHTML = `<strong>⚔️ VS ${data.rival_name || 'Rakip'}</strong><br><br>${data.result}`;
+    
+    if (data.chaos_metrics) {
+        const chaosHtml = `
+        <div class="chaos-card">
+            <h3 class="chaos-title">🌪️ KAOS METRİĞİ</h3>
+            <div class="chaos-score">${data.chaos_metrics.score} <span style="font-size:14px; color:#aaa;">/ 10</span></div>
+            <div class="chaos-verdict">${data.chaos_metrics.verdict}</div>
+        </div>`;
+        elResultBox.innerHTML += chaosHtml;
+    }
+    
     showView('result');
   } catch (err) {
     showError('🔌 Bağlantı Hatası', `Sunucuya ulaşılamadı: ${err.message}`);
@@ -311,6 +331,114 @@ async function findRabbitHole() {
   }
 }
 
+// ── A/B Test Debate Ana Akışı ─────────────────────────────────────────────
+async function debateVideo() {
+  // 1. Sunucu online mı?
+  const serverUp = await checkServer();
+  if (!serverUp) {
+    showError('🔴 Sunucu Çevrimdışı', 'YT Analiz Pro masaüstü uygulaması çalışmıyor.');
+    return;
+  }
+
+  // 2. Aktif sekme YouTube videosu mu?
+  let tab = await getActiveTab();
+  if (!tab) {
+    showError('🔗 Sekme Bulunamadı', 'Analiz edilecek YouTube video sekmesi bulunamadı.');
+    return;
+  }
+  if (!isYouTubeTab(tab)) {
+    showError('📺 YouTube Sayfası Gerekli', 'Bu özellik yalnızca YouTube video sayfalarında çalışır.');
+    return;
+  }
+
+  // 3. Battle yükleme ekranını göster (3s progress bar animasyonu ile)
+  showView('loading');
+  elLoadingSub.textContent = 'Persona A vs B savaşıyor...';
+
+  // Progress bar enjekte et (sadece debate modunda)
+  const existingBar = document.getElementById('battle-bar-wrap');
+  if (!existingBar) {
+    const barWrap = document.createElement('div');
+    barWrap.id = 'battle-bar-wrap';
+    barWrap.className = 'battle-progress-wrap';
+    barWrap.innerHTML = `
+      <div class="battle-progress-label">⚔️ Ajanlar Kapışıyor... Hakem Karar Veriyor...</div>
+      <div class="battle-progress-bar"><div class="battle-progress-fill"></div></div>
+    `;
+    // loading view'in sonuna ekle
+    views.loading.appendChild(barWrap);
+  } else {
+    // Varsa animasyonu yeniden başlat
+    const fill = existingBar.querySelector('.battle-progress-fill');
+    if (fill) { fill.style.animation = 'none'; fill.offsetHeight; fill.style.animation = ''; }
+  }
+
+  // 4. Metadata çek
+  let videoData;
+  try {
+    const [result] = await chrome.scripting.executeScript({
+      target: { tabId: tab.id },
+      func: extractYouTubeData,
+    });
+    const extracted = result?.result;
+    if (!extracted || extracted.error) {
+      showError('❌ Veri Çekme Hatası', extracted?.error || 'Sayfa verisi okunamadı.');
+      return;
+    }
+    videoData = extracted;
+    if (!videoData.videoId) {
+      showError('❌ Video Verisi Bulunamadı', 'Video sayfasını yenileyin.');
+      return;
+    }
+  } catch (err) {
+    showError('❌ Script Hatası', `İçerik scripti çalışmadı: ${err.message}`);
+    return;
+  }
+
+  const { user_id } = await chrome.storage.local.get(['user_id']);
+
+  const requestBody = {
+    url:       videoData.url       || '',
+    videoId:   videoData.videoId   || '',
+    title:     videoData.title     || 'Başlık Yok',
+    channel:   videoData.channel   || 'Bilinmeyen Kanal',
+    thumbnail: videoData.thumbnail || '',
+    user_id:   user_id || 0,
+  };
+
+  // 5. POST /api/extension/clone_debate
+  try {
+    const resp = await fetch(`${SERVER}/api/extension/clone_debate`, {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+      body:    JSON.stringify(requestBody),
+    });
+
+    const data = await resp.json();
+
+    // Fail-Fast: HTTP hata veya backend error alanı → dürüstçe ekrana bas
+    if (!resp.ok || !data.success) {
+      const msg = data.detail || data.error || `Bilinmeyen Hata (HTTP ${resp.status})`;
+      showError('⚠️ Tartışma Başarısız', msg);
+      return;
+    }
+
+    const d = data.debate;
+
+    // 6. Debate result view'i doldur
+    document.getElementById('debate-critic-summary').textContent  = d.eleştirmen_fikri  || '—';
+    document.getElementById('debate-wizard-summary').textContent  = d.buyucu_fikri      || '—';
+    document.getElementById('debate-winner-title').textContent    = d.kazanan_baslik    || '—';
+    document.getElementById('debate-winner-hook').textContent     = d.kazanan_kanca     || '—';
+    document.getElementById('debate-winner-thumb').textContent    = d.kazanan_thumbnail || '—';
+
+    showView('debate');
+
+  } catch (fetchErr) {
+    showError('🔌 Bağlantı Hatası', `Sunucuya ulaşılamadı: ${fetchErr.message}`);
+  }
+}
+
 // ── Klonlama Ana Akışı ────────────────────────────────────────────────────────
 async function cloneVideo() {
   // 1. Sunucu online mı?
@@ -324,7 +452,16 @@ async function cloneVideo() {
   }
 
   // 2. Aktif sekme YouTube'da mı?
+  // BUG FIX: getActiveTab() artık null döndürebilir (tam ekran modunda eşleşme yoksa).
+  // null kontrolü eklendi — URL eksikse analiz KESİNLİKLE reddedilir.
   let tab = await getActiveTab();
+  if (!tab) {
+    showError(
+      '🔗 Sekme Bulunamadı',
+      'Analiz edilecek YouTube video sekmesi bulunamadı. Bir YouTube video sekmesini aktif yapıp tekrar deneyin.'
+    );
+    return;
+  }
   if (!isYouTubeTab(tab)) {
     showError(
       '📺 YouTube Sayfası Gerekli',
@@ -470,8 +607,17 @@ function extractYouTubeData() {
 elBtnLogin.addEventListener('click', handleLogin);
 elBtnLogout.addEventListener('click', handleLogout);
 elBtnClone.addEventListener('click', cloneVideo);
+if (elBtnDebate) elBtnDebate.addEventListener('click', debateVideo);
 elBtnAnalyze.addEventListener('click', analyzeChannel);
 elBtnRabbit.addEventListener('click', findRabbitHole);
+
+// Debate reset butonu
+const elBtnDebateReset = $('btn-debate-reset');
+if (elBtnDebateReset) {
+  elBtnDebateReset.addEventListener('click', () => {
+    showView('idle');
+  });
+}
 
 const elBtnFullscreen = $('btn-fullscreen');
 if (elBtnFullscreen) {
@@ -494,17 +640,20 @@ elBtnRetry.addEventListener('click', () => showView('idle'));
 // ── Init ──────────────────────────────────────────────────────────────────────
 (async () => {
   elBtnClone.disabled = true; // sunucu kontrolü bitene kadar devre dışı
+  if (elBtnDebate) elBtnDebate.disabled = true;
   await checkServer();
   
   let tab = await getActiveTab();
-  const btnClone = document.getElementById('btn-clone');
+  const btnClone   = document.getElementById('btn-clone');
+  const btnDebate  = document.getElementById('btn-debate');
+  const btnGroup   = document.getElementById('clone-btn-group');
   const btnAnalyze = document.getElementById('btn-analyze');
   
   if (isYouTubeChannelTab(tab)) {
-      if (btnClone) btnClone.style.display = 'none';
+      if (btnGroup)   btnGroup.style.display   = 'none';
       if (btnAnalyze) btnAnalyze.style.display = 'block';
   } else {
-      if (btnClone) btnClone.style.display = 'block';
+      if (btnGroup)   btnGroup.style.display   = 'flex';
       if (btnAnalyze) btnAnalyze.style.display = 'none';
   }
   
@@ -516,3 +665,33 @@ elBtnRetry.addEventListener('click', () => showView('idle'));
     }
   });
 })();
+
+// ── YouTube SPA Navigasyon Dinleyicisi ────────────────────────────────────────
+// SPA FIX: content.js'den gelen YT_URL_CHANGED mesajını dinle.
+// YouTube AJAX ile video değiştirdiğinde popup'ı sıfırla.
+// Bu olmadan kullanıcı "Klonla"ya basarsa eski videonun verisini çekebilir.
+chrome.runtime.onMessage.addListener((msg) => {
+  if (msg.type === 'YT_URL_CHANGED') {
+    const activeView = Object.entries(views).find(([, el]) => el.classList.contains('active'));
+    const currentView = activeView ? activeView[0] : 'idle';
+
+    // Sonuç veya loading ekranındaysak sıfırla
+    if (currentView === 'result' || currentView === 'loading') {
+      elThumbWrap.style.display = 'none';
+      elThumbImg.src = '';
+      elResultBox.textContent = '';
+      showView('idle');
+    }
+
+    // Klonla + Tartış grubunu yeni video için göster
+    const btnGroup   = document.getElementById('clone-btn-group');
+    const btnAnalyze = document.getElementById('btn-analyze');
+    if (btnGroup)   btnGroup.style.display   = 'flex';
+    if (btnAnalyze) btnAnalyze.style.display = 'none';
+  }
+
+  // Debate view'indeyken URL değişirse sıfırla
+  if (currentView === 'debate') {
+    showView('idle');
+  }
+});

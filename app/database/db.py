@@ -35,9 +35,18 @@ _logger = logging.getLogger("yt_analiz.database")
 # ─── Bağlantı fonksiyonları ───────────────────────────────────────────────────
 
 def get_db():
-    """Senkron SQLite bağlantısı döndürür."""
-    conn = sqlite3.connect(str(db_path), check_same_thread=False)
+    """Senkron SQLite bağlantısı döndürür.
+    
+    STRES TESTİ FIX: WAL (Write-Ahead Logging) modu etkinleştirildi.
+    Senkron (sync) ve asenkron (async) bağlantılar aynı dosyaya eş zamanlı
+    yazarken 'database is locked' race condition'ını önler.
+    timeout=5 → lock beklerken 5 saniye dener, sonra OperationalError fırlatır.
+    """
+    conn = sqlite3.connect(str(db_path), check_same_thread=False, timeout=5)
     conn.row_factory = sqlite3.Row
+    # WAL modu: okuma hiçbir zaman yazmayı bloke etmez
+    conn.execute("PRAGMA journal_mode=WAL;")
+    conn.execute("PRAGMA synchronous=NORMAL;")  # WAL ile güvenli, daha hızlı
     return conn
 
 

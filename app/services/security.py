@@ -29,6 +29,22 @@ else:
 _logger = logging.getLogger("yt_analiz.security")
 
 
+# ─── Özel Exception ─────────────────────────────────────────────────────────────────────
+
+class CryptoDecryptionError(RuntimeError):
+    """Şifreli veri çözülemediğinde fırlatılır.
+
+    Fail-Fast (Aşama 1) kuralı: Sahte veri üretmek YASAKTIR.
+    Bu exception'u yakalayan endpoint'ler dürüstçe HTTPException dönmelidir.
+
+    Olası nedenler:
+      - .secret.key dosyası değiştirilmiş veya silinmiş.
+      - Veritabanı başka bir makineden kopyalanmış (farklı key).
+      - Veri bozulmuş (bit rot, doğrudan DB edit vb.).
+    """
+    pass
+
+
 # ─── CryptoManager ────────────────────────────────────────────────────────────
 
 class CryptoManager:
@@ -59,14 +75,32 @@ class CryptoManager:
 
     @classmethod
     def decrypt(cls, text: str) -> str:
-        """Şifreli metni çözer. Çözme başarısız olursa orijinal metni döndürür
-        (eski şifrelenmemiş veriler için geriye dönük uyumluluk)."""
+        """Şifreli metni çözer.
+        
+        STRES TESTİ FIX: Anahtar kaybolursa veya bozulursa artık sessizce
+        boş veri döndermüyor. Davranış şöyle:
+          - InvalidToken (anahtar değişmiş / veri bozuk)  → WARNING log + "" döner
+          - .secret.key dosyası yoksa get_fernet() yeni key yazar (normal akış)
+          - Eski şifrelenmemiş veri (kısa, Fernet token formatı değil) → uyumluluk için orijinal text döner
+        """
         if not text:
             return text
         try:
             return cls.get_fernet().decrypt(text.encode()).decode()
-        except Exception:
-            return text  # Geriye dönük uyumluluk: eski şifrelenmemiş veri
+        except Exception as e:
+            from cryptography.fernet import InvalidToken
+            if isinstance(e, InvalidToken):
+                # Anahtar değişmiş ya da veri bozulmuş: bu bir GÜVENLİK OLAYI.
+                # Aşama 1 (Fail-Fast) kuralı gereği: Sahte veri/boş string dönmek YASAKTIR.
+                _logger.error(
+                    "[CryptoManager] KRİTİK HATA: decrypt() InvalidToken hatası. "
+                    "'.secret.key' dosyası değişmiş veya veri bozulmuş olabilir. "
+                    "Etkilenen veri uzunluğu: %d karakter. CryptoDecryptionError fırlatılıyor.",
+                    len(text)
+                )
+                raise CryptoDecryptionError("Şifreleme anahtarı bozuk veya veri geçersiz. Veriler okunamadı.")
+            # Eski şifrelenmemiş veri (geriye dönük uyumluluk)
+            return text
 
 
 # ─── Şifre işlemleri ─────────────────────────────────────────────────────────

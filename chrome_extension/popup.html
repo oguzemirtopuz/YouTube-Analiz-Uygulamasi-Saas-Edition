@@ -64,10 +64,16 @@
         </div>
       </div>
 
-      <button id="btn-clone" class="btn btn--primary" type="button">
-        <span class="btn-icon">⚡</span>
-        🚀 Bu Videoyu Klonla
-      </button>
+      <!-- Klonla + Tartış yan yana -->
+      <div id="clone-btn-group" style="display:flex; gap:8px; width:100%;">
+        <button id="btn-clone" class="btn btn--primary" type="button" style="flex:1;">
+          <span class="btn-icon">⚡</span>
+          🚀 Klonla
+        </button>
+        <button id="btn-debate" class="btn btn--debate" type="button" style="flex:1;">
+          ⚔️ Tartış
+        </button>
+      </div>
 
       <button id="btn-analyze" style="display: none; width: 100%; padding: 14px; background: linear-gradient(90deg, #ef4444, #f59e0b); border: none; border-radius: 10px; color: white; font-weight: 800; font-size: 1rem; cursor: pointer; box-shadow: 0 6px 20px rgba(239, 68, 68, 0.35); margin-top: 10px;">
           ⚔️ Bu Kanalı Analiz Et
@@ -90,6 +96,43 @@
       </div>
       <div id="result-content" class="result-content"></div>
       <button id="btn-reset" class="btn btn--ghost" type="button">
+        ↩ Yeni Video
+      </button>
+    </section>
+
+    <!-- Debate Result state -->
+    <section id="view-debate" class="view">
+      <div class="result-badge" style="background:linear-gradient(135deg,rgba(234,179,8,.18),rgba(249,115,22,.18));border-color:rgba(234,179,8,.5);color:#fbbf24;">⚔️ Tartışma Tamamlandı!</div>
+
+      <!-- Kavga Kartları: Eleştirmen vs Büyücü -->
+      <div style="width:100%; display:flex; gap:8px; margin-top:4px;">
+        <!-- Persona A -->
+        <div class="debate-persona-card debate-card--critic">
+          <div class="debate-persona-label">🔬 Eleştirmen</div>
+          <p id="debate-critic-summary" class="debate-persona-text"></p>
+        </div>
+        <!-- Persona B -->
+        <div class="debate-persona-card debate-card--wizard">
+          <div class="debate-persona-label">🪄 Büyücü</div>
+          <p id="debate-wizard-summary" class="debate-persona-text"></p>
+        </div>
+      </div>
+
+      <!-- Kazanan Fikir -->
+      <div class="debate-winner-card">
+        <div class="debate-winner-label">🏆 KAZANAN FİKİR</div>
+        <div class="debate-winner-title" id="debate-winner-title"></div>
+        <div class="debate-winner-section">
+          <span class="debate-winner-tag">KANCA</span>
+          <p id="debate-winner-hook" class="debate-winner-body"></p>
+        </div>
+        <div class="debate-winner-section">
+          <span class="debate-winner-tag" style="background:rgba(16,185,129,.2);color:#34d399;border-color:rgba(16,185,129,.4);">THUMBNAIL</span>
+          <p id="debate-winner-thumb" class="debate-winner-body"></p>
+        </div>
+      </div>
+
+      <button id="btn-debate-reset" class="btn btn--ghost" type="button">
         ↩ Yeni Video
       </button>
     </section>

@@ -20,7 +20,7 @@ from email.mime.base import MIMEBase
 from email import encoders
 
 from app.database.db import get_async_db
-from app.services.security import CryptoManager
+from app.services.security import CryptoManager, CryptoDecryptionError
 
 _logger = logging.getLogger("yt_analiz.email")
 
@@ -98,6 +98,8 @@ Si no solicitaste esto, ignora este correo.
             server.login(smtp_email, smtp_password)
             server.sendmail(smtp_email, to_email, msg.as_string())
         return True
+    except CryptoDecryptionError:
+        raise
     except Exception as e:
         traceback.print_exc()
         print(f"Mail gönderilemedi DETAY: {type(e).__name__}: {e}")
@@ -187,6 +189,8 @@ Puntos clave del informe:
             server.sendmail(smtp_email, to_email, msg.as_string())
         _logger.info(f"📧 Rapor e-postası gönderildi: {to_email}")
         return True
+    except CryptoDecryptionError:
+        raise
     except Exception as e:
         _logger.error(f"Rapor e-postası gönderilemedi: {type(e).__name__}: {e}")
         return False

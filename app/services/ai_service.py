@@ -13,7 +13,7 @@ import logging
 import requests
 
 from app.database.db import get_async_db
-from app.services.security import CryptoManager
+from app.services.security import CryptoManager, CryptoDecryptionError
 
 _logger = logging.getLogger("yt_analiz.ai")
 
@@ -30,6 +30,8 @@ async def get_groq_api_key() -> str:
             return CryptoManager.decrypt(row[0]) if row and row[0] else ""
         finally:
             await db.close()
+    except CryptoDecryptionError:
+        raise
     except Exception as e:
         _logger.error(f"Hata [get_groq_api_key]: {str(e)}", exc_info=True)
         return ""
@@ -184,6 +186,8 @@ async def analyze_image_with_gemini(image_base64: str, mime_type: str) -> str:
             if resp.status_code == 429:
                 return "SİSTEM BİLGİSİ: Kullanıcı bir görsel yükledi ancak Gemini API (Google) anahtarının KOTASI DOLDU (Error 429). Lütfen kullanıcıya 'Google Gemini API kotanızın dolduğunu, bu nedenle resmi okuyamadığımı' kibarca bildir."
             return f"SİSTEM BİLGİSİ: Görsel okunurken Gemini API hatası oluştu: {resp.status_code}"
+    except CryptoDecryptionError:
+        raise
     except Exception as e:
         print(f"GEMINI HATA: {type(e).__name__}: {e}")
         return f"SİSTEM BİLGİSİ: Görsel okuma sistemi çöktü: {str(e)}"

@@ -3,7 +3,39 @@
   <p><strong>A full-stack SaaS platform combining an AI-powered Desktop App with a Viral Cloning Chrome Extension.</strong></p>
 </div>
 
-<br>
+---
+
+✨ **Latest Release (v4.1.0)**
+> [!IMPORTANT]
+> **Code Quality & Security Hardening — Groq Decryption & Google OAuth XSS Shield**
+> 
+> * **[Security] Google OAuth XSS Shield:** Patched a cross-site scripting (XSS) vulnerability in the Google OAuth callback endpoint. Previously, user session details were injected directly into a single-quoted JavaScript string when saving to `localStorage`. This could allow arbitrary script execution if a username contained single quotes or malicious payloads. All session objects are now serialized as double-quoted JSON strings using `json.dumps()` before injection.
+> * **[Logic] Groq API Decryption Fix:** Resolved a critical issue in the AI Chat and analysis endpoints where stored Groq API keys were retrieved from the SQLite database and sent to the API raw (encrypted). This prevented AI-driven analysis and chat from functioning. Incorporated `CryptoManager.decrypt` to properly decrypt keys at runtime.
+> * **[Math] Corrected Shorts Scoring Scale:** Fixed the scoring weights used in YouTube Shorts overall score calculations. Previously, the weights (`retention=0.45`, `tech=0.35`, `seo=0.10`) summed to `0.90`, capping the maximum possible score at `9.0` instead of `10.0`. Restructured weights to `retention=0.50`, `tech=0.35`, and `seo=0.15` to form a perfect `1.00` sum (maximum 10.0 score).
+> * **[PDF] Cleaned Multiple Headers in Report PDF:** Fixed a layout bug in the PDF exporter where the "SEO & Thumbnail Balance Warning" header was duplicated in the document flow due to copy-paste errors.
+> * **[Async] Non-blocking Email Status:** Simplified the email notification logic inside `analyze_video` to prevent false positives (where `email_sent` was marked `True` even if the delivery failed). Sending status is now accurately determined based on active SMTP credentials.
+> * **[Performance] Discarded Heavy Test Imports:** Removed `from starlette.testclient import TestClient` from the production `api_send_report` endpoint, reducing runtime memory overhead and startup latency.
+> * **[Stability] Prevented NameError in Subtitle Engine:** Initialized `last_api_error` before the `try-except` block in `_fetch_transcript_sync` to avoid `NameError` exceptions when subtitle fetching fails.
+> * **[CV] Non-Pro Visual Tempo Resolution:** Fixed a visual tempo map rendering bug where non-pro analyses were generating empty maps. Reduced the non-pro frame skip threshold from the video's FPS to 1 frame to ensure a rich density map.
+> * **[Competitor] Robust Channel & Title Check:** Enhanced competitor filtering by cross-referencing multiple attributes (channel name, uploader name, and channel ID) to reliably exclude the user's own channel from competitor metrics. Added a new `check_content_consistency` helper to check title/tag/description keyword overlap.
+
+### 📜 Changelog
+#### 🔒 v4.1.0 — Security & Logic Hardening
+- **[Security] Google OAuth XSS Shield:** Serialized OAuth callbacks with `json.dumps` to prevent potential JavaScript injection.
+- **[Logic] Groq API Decryption Fix:** Added `CryptoManager.decrypt` to ensure Groq API keys are decrypted before calling AI endpoints.
+- **[Math] Shorts Puanlama Düzeltmesi:** Realigned Shorts scoring weights (`0.50` / `0.35` / `0.15`) to sum to `1.00`.
+- **[PDF] Cleaned Multiple Headers:** Removed duplicated warning headers in the exported PDF layout.
+- **[Async] E-Posta Gönderim Mantığı:** Standardized `email_sent` dynamically based on SMTP check.
+- **[Performance] Test Client Import Removed:** Cleaned unused test framework import from production API.
+- **[Stability] Transcript NameError Shield:** Pre-initialized `last_api_error` in altyazı motoru to prevent NameErrors on failure.
+- **[CV] Visual Tempo Map:** Changed threshold frame count for non-pro analysis to generate tempo data correctly.
+- **[Competitor] Own Channel Exclusion & Keyword Sync:** Upgraded competitor check using robust ID/Name matching and added a content consistency utility.
+
+#### 🌟 v4.0.0 — YouTube Analiz Pro SaaS Edition
+- **SaaS Architecture:** Introduced multi-user support, authentication, and secure localized credential storage.
+- **Advanced Computer Vision:** Multi-threaded scene transition mapping and OpenCV threshold computing.
+
+---
 
 YT Analiz Pro is not just an analytics tool; it is a **YouTube Growth Ecosystem** designed to dissect videos mathematically, clone viral structures, and dominate competitor channels using advanced AI and computer vision.
 

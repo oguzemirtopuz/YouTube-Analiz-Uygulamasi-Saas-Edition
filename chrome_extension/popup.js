@@ -739,6 +739,13 @@ function showSuggestionCard(videoData, subtitle) {
   const idleView = document.getElementById('view-idle');
   if (!idleView || document.getElementById('smart-suggestion-card')) return;
 
+  // --- KRİTİK EKLEME: Alttaki yinelenen butonları gizle ---
+  const cloneBtnGroup = document.getElementById('clone-btn-group');
+  const btnAnalyze = document.getElementById('btn-analyze');
+  if (cloneBtnGroup) cloneBtnGroup.style.display = 'none';
+  if (btnAnalyze) btnAnalyze.style.display = 'none';
+  // --------------------------------------------------------
+
   const card = document.createElement('div');
   card.id = 'smart-suggestion-card';
   card.className = 'smart-suggestion-card';
@@ -766,9 +773,21 @@ function showSuggestionCard(videoData, subtitle) {
     idleView.insertBefore(card, idleView.firstChild);
   }
 
-  document.getElementById('btn-dismiss-suggestion').addEventListener('click', () => {
+  document.getElementById('btn-dismiss-suggestion').addEventListener('click', async () => {
     card.remove();
     chrome.storage.local.set({ dismissed_video_id: videoData.videoId });
+
+    // --- KRİTİK İYİLEŞTİRME: Sayfa tipine göre alttaki butonları geri getir ---
+    const tab = await getActiveTab();
+    const cloneBtnGroup = document.getElementById('clone-btn-group');
+    const btnAnalyze = document.getElementById('btn-analyze');
+    if (isYouTubeChannelTab(tab)) {
+      if (cloneBtnGroup) cloneBtnGroup.style.display = 'none';
+      if (btnAnalyze) btnAnalyze.style.display = 'block';
+    } else {
+      if (cloneBtnGroup) cloneBtnGroup.style.display = 'flex';
+      if (btnAnalyze) btnAnalyze.style.display = 'none';
+    }
   });
 
   document.getElementById('btn-suggest-clone').addEventListener('click', () => {

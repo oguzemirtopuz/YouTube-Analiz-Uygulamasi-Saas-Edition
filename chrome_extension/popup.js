@@ -344,7 +344,10 @@ async function findRabbitHole() {
 }
 
 // ── A/B Test Debate Ana Akışı ─────────────────────────────────────────────
-async function debateVideo() {
+async function debateVideo(eventOrData = null) {
+  let isAuto = eventOrData && !(eventOrData instanceof Event);
+  let autoData = isAuto ? eventOrData : null;
+
   // 1. Sunucu online mı?
   const serverUp = await checkServer();
   if (!serverUp) {
@@ -352,15 +355,18 @@ async function debateVideo() {
     return;
   }
 
-  // 2. Aktif sekme YouTube videosu mu?
-  let tab = await getActiveTab();
-  if (!tab) {
-    showError('🔗 Sekme Bulunamadı', 'Analiz edilecek YouTube video sekmesi bulunamadı.');
-    return;
-  }
-  if (!isYouTubeTab(tab)) {
-    showError('📺 YouTube Sayfası Gerekli', 'Bu özellik yalnızca YouTube video sayfalarında çalışır.');
-    return;
+  let tab = null;
+  if (!autoData) {
+      // 2. Aktif sekme YouTube videosu mu?
+      tab = await getActiveTab();
+      if (!tab) {
+        showError('🔗 Sekme Bulunamadı', 'Analiz edilecek YouTube video sekmesi bulunamadı.');
+        return;
+      }
+      if (!isYouTubeTab(tab)) {
+        showError('📺 YouTube Sayfası Gerekli', 'Bu özellik yalnızca YouTube video sayfalarında çalışır.');
+        return;
+      }
   }
 
   // 3. Battle yükleme ekranını göster (3s progress bar animasyonu ile)
@@ -387,24 +393,28 @@ async function debateVideo() {
 
   // 4. Metadata çek
   let videoData;
-  try {
-    const [result] = await chrome.scripting.executeScript({
-      target: { tabId: tab.id },
-      func: extractYouTubeData,
-    });
-    const extracted = result?.result;
-    if (!extracted || extracted.error) {
-      showError('❌ Veri Çekme Hatası', extracted?.error || 'Sayfa verisi okunamadı.');
-      return;
-    }
-    videoData = extracted;
-    if (!videoData.videoId) {
-      showError('❌ Video Verisi Bulunamadı', 'Video sayfasını yenileyin.');
-      return;
-    }
-  } catch (err) {
-    showError('❌ Script Hatası', `İçerik scripti çalışmadı: ${err.message}`);
-    return;
+  if (autoData) {
+      videoData = autoData;
+  } else {
+      try {
+        const [result] = await chrome.scripting.executeScript({
+          target: { tabId: tab.id },
+          func: extractYouTubeData,
+        });
+        const extracted = result?.result;
+        if (!extracted || extracted.error) {
+          showError('❌ Veri Çekme Hatası', extracted?.error || 'Sayfa verisi okunamadı.');
+          return;
+        }
+        videoData = extracted;
+        if (!videoData.videoId) {
+          showError('❌ Video Verisi Bulunamadı', 'Video sayfasını yenileyin.');
+          return;
+        }
+      } catch (err) {
+        showError('❌ Script Hatası', `İçerik scripti çalışmadı: ${err.message}`);
+        return;
+      }
   }
 
   const { user_id } = await chrome.storage.local.get(['user_id']);
@@ -470,7 +480,10 @@ async function debateVideo() {
 }
 
 // ── Klonlama Ana Akışı ────────────────────────────────────────────────────────
-async function cloneVideo() {
+async function cloneVideo(eventOrData = null) {
+  let isAuto = eventOrData && !(eventOrData instanceof Event);
+  let autoData = isAuto ? eventOrData : null;
+
   // 1. Sunucu online mı?
   const serverUp = await checkServer();
   if (!serverUp) {
@@ -481,23 +494,26 @@ async function cloneVideo() {
     return;
   }
 
-  // 2. Aktif sekme YouTube'da mı?
-  // BUG FIX: getActiveTab() artık null döndürebilir (tam ekran modunda eşleşme yoksa).
-  // null kontrolü eklendi — URL eksikse analiz KESİNLİKLE reddedilir.
-  let tab = await getActiveTab();
-  if (!tab) {
-    showError(
-      '🔗 Sekme Bulunamadı',
-      'Analiz edilecek YouTube video sekmesi bulunamadı. Bir YouTube video sekmesini aktif yapıp tekrar deneyin.'
-    );
-    return;
-  }
-  if (!isYouTubeTab(tab)) {
-    showError(
-      '📺 YouTube Sayfası Gerekli',
-      'Bu eklenti yalnızca YouTube video sayfalarında (/watch?v=...) çalışır.\nBir video açıp tekrar deneyin.'
-    );
-    return;
+  let tab = null;
+  if (!autoData) {
+      // 2. Aktif sekme YouTube'da mı?
+      // BUG FIX: getActiveTab() artık null döndürebilir (tam ekran modunda eşleşme yoksa).
+      // null kontrolü eklendi — URL eksikse analiz KESİNLİKLE reddedilir.
+      tab = await getActiveTab();
+      if (!tab) {
+        showError(
+          '🔗 Sekme Bulunamadı',
+          'Analiz edilecek YouTube video sekmesi bulunamadı. Bir YouTube video sekmesini aktif yapıp tekrar deneyin.'
+        );
+        return;
+      }
+      if (!isYouTubeTab(tab)) {
+        showError(
+          '📺 YouTube Sayfası Gerekli',
+          'Bu eklenti yalnızca YouTube video sayfalarında (/watch?v=...) çalışır.\nBir video açıp tekrar deneyin.'
+        );
+        return;
+      }
   }
 
   // 3. Loading göster
@@ -506,30 +522,34 @@ async function cloneVideo() {
 
   // 4. content.js inject et ve metadata çek
   let videoData;
-  try {
-    const [result] = await chrome.scripting.executeScript({
-      target: { tabId: tab.id },
-      func: extractYouTubeData,
-    });
+  if (autoData) {
+      videoData = autoData;
+  } else {
+      try {
+        const [result] = await chrome.scripting.executeScript({
+          target: { tabId: tab.id },
+          func: extractYouTubeData,
+        });
 
-    // executeScript dönüşü: { result: <fonksiyonun döndürdüğü değer> }
-    const extracted = result?.result;
+        // executeScript dönüşü: { result: <fonksiyonun döndürdüğü değer> }
+        const extracted = result?.result;
 
-    // Fonksiyon içinden { error: "..." } geldiyse yakala
-    if (!extracted || extracted.error) {
-      showError('❌ Veri Çekme Hatası', extracted?.error || 'Sayfa verisi okunamadı.');
-      return;
-    }
+        // Fonksiyon içinden { error: "..." } geldiyse yakala
+        if (!extracted || extracted.error) {
+          showError('❌ Veri Çekme Hatası', extracted?.error || 'Sayfa verisi okunamadı.');
+          return;
+        }
 
-    videoData = extracted;
+        videoData = extracted;
 
-    if (!videoData.videoId) {
-      showError('❌ Video Verisi Bulunamadı', 'Sayfa henüz yüklenmiş olmayabilir. Video sayfasını yenileyin.');
-      return;
-    }
-  } catch (err) {
-    showError('❌ Script Hatası', `İçerik scripti çalışmadı: ${err.message}`);
-    return;
+        if (!videoData.videoId) {
+          showError('❌ Video Verisi Bulunamadı', 'Sayfa henüz yüklenmiş olmayabilir. Video sayfasını yenileyin.');
+          return;
+        }
+      } catch (err) {
+        showError('❌ Script Hatası', `İçerik scripti çalışmadı: ${err.message}`);
+        return;
+      }
   }
 
   // 5. Thumbnail göster
@@ -634,6 +654,119 @@ function extractYouTubeData() {
   }
 }
 
+// ── Açılış Zekası (Contextual Auto-Suggestion) ────────────────────────────────
+async function initSuggestion() {
+  const { suggestion_dismissed } = await chrome.storage.local.get(['suggestion_dismissed']);
+  if (suggestion_dismissed) return;
+
+  const tab = await getActiveTab();
+  if (!tab || !tab.url) return;
+
+  if (isYouTubeTab(tab)) {
+    try {
+      const [result] = await chrome.scripting.executeScript({
+        target: { tabId: tab.id },
+        func: extractYouTubeData,
+      });
+      const videoData = result?.result;
+      if (videoData && !videoData.error && videoData.videoId) {
+        showSuggestionCard(videoData, "Bu videoyu analiz etmeye hazır mısın?");
+      }
+    } catch (e) {}
+    return;
+  }
+
+  if (isYouTubeChannelTab(tab)) {
+    try {
+      const [result] = await chrome.scripting.executeScript({
+        target: { tabId: tab.id },
+        func: () => {
+          const titleEl = document.querySelector('meta[property="og:title"]');
+          return titleEl ? titleEl.content : null;
+        }
+      });
+      const channelName = result?.result;
+      if (channelName) {
+        const { user_id } = await chrome.storage.local.get(['user_id']);
+        const resp = await fetch(`${SERVER}/api/extension/rabbit_hole`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ query: channelName, user_id: user_id || 0 })
+        });
+        const data = await resp.json();
+        if (resp.ok && data.success && data.outliers && data.outliers.length > 0) {
+           const best = data.outliers[0];
+           // Extract videoId from url
+           let videoId = "";
+           if (best.url.includes("v=")) {
+               videoId = best.url.split("v=")[1].split("&")[0];
+           } else {
+               videoId = best.url.split("/").pop().split("?")[0];
+           }
+           if (videoId) {
+               const videoData = {
+                   url: best.url,
+                   videoId: videoId,
+                   title: best.title,
+                   channel: best.channel,
+                   thumbnail: `https://i.ytimg.com/vi/${videoId}/maxresdefault.jpg`
+               };
+               showSuggestionCard(videoData, "Kanalın en hızlı yükselen videosunu klonla!");
+           }
+        }
+      }
+    } catch(e) {}
+    return;
+  }
+}
+
+function showSuggestionCard(videoData, subtitle) {
+  const idleView = document.getElementById('view-idle');
+  if (!idleView || document.getElementById('smart-suggestion-card')) return;
+
+  const card = document.createElement('div');
+  card.id = 'smart-suggestion-card';
+  card.className = 'smart-suggestion-card';
+  card.innerHTML = `
+    <div class="suggestion-header">
+      <span class="suggestion-badge">🔥 AKILLI SEÇİM</span>
+      <button id="btn-dismiss-suggestion" class="suggestion-dismiss" title="Kapat">✖</button>
+    </div>
+    <h4 class="suggestion-title">${videoData.title}</h4>
+    <p class="suggestion-subtitle">${subtitle}</p>
+    <div class="suggestion-actions" style="display:flex; gap:8px;">
+      <button id="btn-suggest-clone" class="btn btn--primary suggestion-btn-clone" style="flex:1;">
+        ⚡ Klonla
+      </button>
+      <button id="btn-suggest-debate" class="btn btn--debate suggestion-btn-debate" style="flex:1;">
+        ⚔️ Tartış
+      </button>
+    </div>
+  `;
+
+  const dashboardHeader = idleView.querySelector('.dashboard-header');
+  if (dashboardHeader) {
+    dashboardHeader.insertAdjacentElement('afterend', card);
+  } else {
+    idleView.insertBefore(card, idleView.firstChild);
+  }
+
+  document.getElementById('btn-dismiss-suggestion').addEventListener('click', () => {
+    card.remove();
+    chrome.storage.local.set({ suggestion_dismissed: true });
+  });
+
+  document.getElementById('btn-suggest-clone').addEventListener('click', () => {
+    cloneVideo(videoData);
+  });
+  const btnSuggestDebate = document.getElementById('btn-suggest-debate');
+  if (btnSuggestDebate) {
+      btnSuggestDebate.addEventListener('click', () => {
+        debateVideo(videoData);
+      });
+  }
+}
+
 // ── Event Listeners ───────────────────────────────────────────────────────────
 elBtnLogin.addEventListener('click', handleLogin);
 elBtnLogout.addEventListener('click', handleLogout);
@@ -695,6 +828,9 @@ elBtnRetry.addEventListener('click', () => showView('idle'));
       showView('login');
     }
   });
+
+  // Start smart suggestion in the background
+  initSuggestion();
 })();
 
 // ── YouTube SPA Navigasyon Dinleyicisi ────────────────────────────────────────

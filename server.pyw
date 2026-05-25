@@ -2711,6 +2711,8 @@ Detect the exact language of the user's message and respond EXCLUSIVELY in that 
     - BabaClutch bir gaming kanalıdır. Bu kanalda 'şaşırmış insan yüzü' yerine her zaman: Yüksek kontrastlı oyun içi aksiyon sahneleri, parlayan epik karakterler veya araçlar, dramatik alev/patlama efektleri, büyük ve keskin tipografi önerilmelidir.
     - Gördüğün ekran görüntüsünde (SS) yüz yoksa, 'yüz var' demek yerine dürüstçe görsel tempoyu ve kontrastı analiz et.
     - IMPORTANT: DO NOT use the example phrase about 'happy face' and 'looking at camera'. It was a placeholder. Describe the actual visual energy of BabaClutch's gaming thumbnail instead.
+11. RAKİP ANALİZİ VE ÖNERİSİ:
+    - ASLA "BabaClutch" kanalını bir rakip olarak önerme. Kullanıcı zaten BabaClutch kanalıdır. Rakip analizleri her zaman harici kanallar üzerinden yapılmalıdır.
 
 {title_instruction}
 {no_analysis_instruction}

@@ -120,18 +120,23 @@ class CompetitorAnalyzer:
                                 continue
                             uploader = (candidate.get('uploader') or candidate.get('channel') or '').lower().strip()
                             channel_id_str = (candidate.get('channel_id') or candidate.get('uploader_id') or '').lower().strip()
-                            # Kendi kanalını birden fazla alanla kontrol ederek atla
-                            if own_channel_lower and (
+                            
+                            # Blacklist uygulaması: Kendi kanalı (dinamik) VEYA "babaclutch" ise KESİNLİKLE ATLA (continue)
+                            if 'babaclutch' in uploader or (own_channel_lower and (
                                 uploader == own_channel_lower or
                                 own_channel_lower in uploader or
                                 uploader in own_channel_lower
-                            ):
-                                _logger.debug(f"Rakip araması: kendi kanalı atlandı → {uploader}")
+                            )):
+                                _logger.debug(f"Rakip araması: kendi kanalı (Self-Comparison) atlandı → {uploader}")
                                 continue
+                                
                             entry = candidate
                             break
+                        
                         if entry is None:
-                            return fallback_data
+                            # Fail-Fast: Eğer veritabanında "BabaClutch" dışında başka rakip yoksa hata fırlat
+                            raise ValueError("Henüz kıyaslanacak başka bir rakip bulunamadı")
+                            
                         comp_desc = entry.get('description', '')
                         c_hashes = [w.strip('#').lower() for w in str(comp_desc).split() if w.startswith('#')]
                         c_hashes = list(dict.fromkeys([h for h in c_hashes if h]))
@@ -148,10 +153,13 @@ class CompetitorAnalyzer:
                             'is_fake': False
                         }
                     else:
-                        return fallback_data
+                        raise ValueError("Henüz kıyaslanacak başka bir rakip bulunamadı")
+        except ValueError as ve:
+            # Sadece ValueError fırlatarak (fallback üretmeden) hatayı üst katmana iletiyoruz
+            raise ve
         except Exception as e:
             traceback.print_exc()
-            return fallback_data
+            raise ValueError(f"Rakip aramasında beklenmeyen bir hata oluştu: {str(e)}")
 
 
 # ─── check_content_consistency ───────────────────────────────────────────────

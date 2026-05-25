@@ -661,13 +661,17 @@ function extractYouTubeData() {
 
 // ── Açılış Zekası (Contextual Auto-Suggestion) ────────────────────────────────
 async function initSuggestion() {
-  const { suggestion_dismissed } = await chrome.storage.local.get(['suggestion_dismissed']);
-  if (suggestion_dismissed) return;
-
   const tab = await getActiveTab();
   if (!tab || !tab.url) return;
 
   if (isYouTubeTab(tab)) {
+    // --- KRİTİK EKLEME: Ekranı temizle ve odağı videoya ver ---
+    const recentTitle = document.querySelector('.recent-analyses-title') || document.querySelector('.recent-analyses .recent-title');
+    const recentList = document.querySelector('.recent-list');
+    if (recentTitle) recentTitle.style.display = 'none'; // "Son Analizlerim" yazısını gizle
+    if (recentList) recentList.style.maxHeight = '100px'; // Listeyi daralt veya tamamen gizle
+    // -------------------------------------------------------
+
     try {
       const [result] = await chrome.scripting.executeScript({
         target: { tabId: tab.id },
@@ -675,7 +679,10 @@ async function initSuggestion() {
       });
       const videoData = result?.result;
       if (videoData && !videoData.error && videoData.videoId) {
-        showSuggestionCard(videoData, "Bu videoyu analiz etmeye hazır mısın?");
+        const { dismissed_video_id } = await chrome.storage.local.get(['dismissed_video_id']);
+        if (dismissed_video_id !== videoData.videoId) {
+          showSuggestionCard(videoData, "Bu videoyu analiz etmeye hazır mısın?");
+        }
       }
     } catch (e) {}
     return;
@@ -716,7 +723,10 @@ async function initSuggestion() {
                    channel: best.channel,
                    thumbnail: `https://i.ytimg.com/vi/${videoId}/maxresdefault.jpg`
                };
-               showSuggestionCard(videoData, "Kanalın en hızlı yükselen videosunu klonla!");
+               const { dismissed_video_id } = await chrome.storage.local.get(['dismissed_video_id']);
+               if (dismissed_video_id !== videoId) {
+                   showSuggestionCard(videoData, "Kanalın en hızlı yükselen videosunu klonla!");
+               }
            }
         }
       }
@@ -758,7 +768,7 @@ function showSuggestionCard(videoData, subtitle) {
 
   document.getElementById('btn-dismiss-suggestion').addEventListener('click', () => {
     card.remove();
-    chrome.storage.local.set({ suggestion_dismissed: true });
+    chrome.storage.local.set({ dismissed_video_id: videoData.videoId });
   });
 
   document.getElementById('btn-suggest-clone').addEventListener('click', () => {

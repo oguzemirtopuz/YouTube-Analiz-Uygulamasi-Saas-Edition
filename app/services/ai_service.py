@@ -103,6 +103,7 @@ async def generate_ai_game_feedback(c_type: str, c_aud: str, c_purp: str, tech_s
         f"NO HALLUCINATION: NEVER make up information. If you do not know the answer to something, explicitly state 'I do not know' (veya 'Bilmiyorum'). NEVER give wrong information. "
         f"ANTI-GENERIC RULE: NEVER use generic advice like 'surprise them in the first 10 seconds' or 'ilk 10 saniyede şaşırt'. You MUST answer the 'HOW' question. Provide a highly specific, concrete scene or script. "
         f"CRITICAL THUMBNAIL RULE: If the Channel Type is 'Gaming' or 'Oyun', NEVER suggest adding real human faces to the thumbnail. Instead, suggest using glowing text, high-contrast game characters, or epic in-game vehicles. "
+        f"IMPORTANT: DO NOT use the example phrase about 'happy face' and 'looking at camera'. It was a placeholder. Describe the actual visual energy of BabaClutch's gaming thumbnail instead. "
         f"Start with an emoji + 'ANALİZ PRO KOÇU: ' "
         f"(ES='ENTRENADOR PRO: ', EN='PRO COACH: '). "
         f"Be actionable and punchy. "

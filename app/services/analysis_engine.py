@@ -401,10 +401,10 @@ class AnalysisEngine:
                         emo_tr = {"surprise": "şaşkın", "happy": "mutlu", "fear": "korkmuş",
                                   "angry": "kızgın", "sad": "üzgün", "neutral": "nötr",
                                   "disgust": "tiksinti"}
-                        summary_parts.append(
-                            f"Thumbnail'de {emo_tr.get(emo, emo)} bir yüz var")
-                        if primary["looking_at_camera"]:
-                            summary_parts.append("kameraya bakıyor")
+                        # Kullanıcının talebi üzerine hardcoded yüz metinleri tamamen temizlendi
+                        # summary_parts.append(f"Thumbnail'de {emo_tr.get(emo, emo)} bir yüz var")
+                        # if primary["looking_at_camera"]:
+                        #     summary_parts.append("kameraya bakıyor")
                 except Exception as e:
                     print(f"DeepFace analiz hatası: {e}")
             else:

@@ -24,7 +24,7 @@ import gc
 import re
 import logging
 import logging.handlers
-from typing import Optional, Dict, List
+from typing import Optional, Dict, List, Union
 from pathlib import Path
 import traceback
 from fastapi import FastAPI, UploadFile, File, Form, Request, HTTPException
@@ -3462,7 +3462,7 @@ def extract_rabbit_hole_sync(query: str):
 
 class RabbitHoleRequest(BaseModel):
     query: str
-    user_id: int = 0
+    user_id: Optional[Union[int, str]] = 0
 
 async def analyze_rabbit_hole_compatibility(api_key: str, title: str, channel: str, content_type: str, purpose: str) -> str:
     import requests

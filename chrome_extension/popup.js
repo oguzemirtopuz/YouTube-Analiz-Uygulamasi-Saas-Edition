@@ -293,11 +293,16 @@ async function findRabbitHole() {
   showView('loading');
   elLoadingSub.textContent = "YouTube'un derinliklerine iniliyor... (Bu işlem 15-30 sn sürebilir)";
   
+  const { user_id } = await chrome.storage.local.get(['user_id']);
+  
   try {
     const resp = await fetch(`${SERVER}/api/extension/rabbit_hole`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ query, user_id: user_id || 0 })
+      body: JSON.stringify({ 
+        query: query, 
+        user_id: user_id || localStorage.getItem('user_id') || "default_user" 
+      })
     });
     
     const data = await resp.json();

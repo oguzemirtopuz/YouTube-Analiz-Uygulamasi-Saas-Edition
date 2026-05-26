@@ -23,6 +23,7 @@ const views = {
   result:  $('view-result'),
   debate:  $('view-debate'),
   error:   $('view-error'),
+  info:    $('view-info'),
 };
 
 const elDot          = $('status-dot');
@@ -424,14 +425,8 @@ async function debateVideo(eventOrData = null) {
 
   const { user_id } = await chrome.storage.local.get(['user_id']);
 
-  const requestBody = {
-    url:       videoData.url       || '',
-    videoId:   videoData.videoId   || '',
-    title:     videoData.title     || 'Başlık Yok',
-    channel:   videoData.channel   || 'Bilinmeyen Kanal',
-    thumbnail: videoData.thumbnail || '',
-    user_id:   user_id || 0,
-  };
+  // Predictive Intelligence alanları ile zenginleştirilmiş request
+  const requestBody = enrichVideoData(videoData, user_id);
 
   // 5. POST /api/extension/clone_debate
   try {
@@ -451,6 +446,11 @@ async function debateVideo(eventOrData = null) {
     }
 
     const d = data.debate;
+    const debateViews    = requestBody.views || 0;
+    const debateTier     = requestBody.tier  || (debateViews >= 5000 ? 'viral' : debateViews >= 500 ? 'potential' : 'dead');
+    const debateVelocity = requestBody.velocity_per_day;
+    const debateWindow   = requestBody.time_window;
+    const debatePenetr   = requestBody.penetration_ratio;
 
     // 6. Debate result view'i doldur
     document.getElementById('debate-critic-summary').textContent  = d.eleştirmen_fikri  || '—';
@@ -466,14 +466,56 @@ async function debateVideo(eventOrData = null) {
         if (oldExtra) oldExtra.remove();
         
         let extraHtml = '';
-        if (d.viral_anatomi) extraHtml += `<div style="margin-bottom:10px; padding-bottom:10px; border-bottom:1px solid rgba(255,255,255,0.1);"><strong style="color:#fbbf24;">[VİRAL ANATOMİ: Bu Video Neden Patladı?]</strong><br><span style="font-size:11px; color:#e2e8f0;">${d.viral_anatomi}</span></div>`;
+
+        // ── 5 Kademeli Tier Banner (Debate) ──────────────────────────────────
+        const TIER_CONFIG = {
+          dead:       { emoji: '🔴', label: 'ÖLÇÜM',         color: '#ef4444', bg: 'rgba(239,68,68,0.12)',    sub: 'Acil müdahale önerileri aşağıda.' },
+          potential:  { emoji: '🟡', label: 'POTANSİYEL VAR', color: '#f59e0b', bg: 'rgba(245,158,11,0.12)', sub: 'Bir hamle eksik — öneriler aşağıda.' },
+          rising:     { emoji: '🚀', label: 'YÜKSELIYOR!',   color: '#f97316', bg: 'rgba(249,115,22,0.15)',   sub: 'Momentum yakalandı — şimdi harekete geç.' },
+          viral:      { emoji: '🟢', label: 'VİRAL',         color: '#22c55e', bg: 'rgba(34,197,94,0.12)',    sub: 'Başarının anatomisi aşağıda.' },
+          mega_viral: { emoji: '🔵', label: 'MEGA VİRAL',    color: '#38bdf8', bg: 'rgba(56,189,248,0.12)',   sub: 'Algoritma kırıcı — sistemi çıkart, kazayı kopyalama.' },
+        };
+        const dtc = TIER_CONFIG[debateTier] || TIER_CONFIG['potential'];
+        const dViewsStr = debateViews > 0 ? debateViews.toLocaleString('tr-TR') + ' izlenme' : 'İzlenme verisi alınamadı';
+
+        let dChips = '';
+        if (debateVelocity !== null && debateVelocity !== undefined) {
+          dChips += `<span class="pi-chip">📈 ~${debateVelocity.toLocaleString('tr-TR')} izlenme/gün</span>`;
+        }
+        if (debateWindow) {
+          const wLabels = { fresh: '⏱ Yeni yayınlandı', burst: '⚡ Patlama penceresi', established: '📅 Algoritma yayılımı', evergreen: '🌿 Evergreen içerik' };
+          dChips += `<span class="pi-chip">${wLabels[debateWindow] || debateWindow}</span>`;
+        }
+        if (debatePenetr !== null && debatePenetr !== undefined) {
+          const pLabel = debatePenetr >= 1 ? 'Yüksek' : debatePenetr >= 0.1 ? 'Orta' : 'Düşük';
+          dChips += `<span class="pi-chip">👥 Abone oranı: ${debatePenetr.toFixed(1)}x (${pLabel})</span>`;
+        }
+
+        extraHtml += `<div class="tier-banner" style="border-color:${dtc.color}; background:${dtc.bg}; margin-bottom:12px;">
+          <div class="tier-banner__header">
+            <span class="tier-banner__emoji">${dtc.emoji}</span>
+            <strong class="tier-banner__label" style="color:${dtc.color};">${dtc.label}</strong>
+            <span class="tier-banner__views">${dViewsStr}</span>
+          </div>
+          <div class="tier-banner__sub">${dtc.sub}</div>
+          ${dChips ? `<div class="pi-chips">${dChips}</div>` : ''}
+        </div>`;
+
+        if (d.viral_anatomi) {
+          const isViralTier = debateTier === 'viral' || debateTier === 'mega_viral';
+          const anatomyLabel = isViralTier ? '[VİRAL ANATOMİ: Bu Video Neden Patladı?]'
+            : debateTier === 'rising' ? '[MOMENTUM ANALİZİ: Bu Video Neden Yükseliyor?]'
+            : '[VİDEO ANALİZİ: Bu Video Neden Kitle Bulamıyor?]';
+          const anatomyColor = isViralTier ? '#fbbf24' : debateTier === 'rising' ? '#f97316' : '#f87171';
+          extraHtml += `<div style="margin-bottom:10px; padding-bottom:10px; border-bottom:1px solid rgba(255,255,255,0.1);"><strong style="color:${anatomyColor};">${anatomyLabel}</strong><br><span style="font-size:11px; color:#e2e8f0;">${d.viral_anatomi}</span></div>`;
+        }
         if (d.nis_uyarisi) extraHtml += `<div style="margin-top:10px; padding-top:10px; border-top:1px solid rgba(239,68,68,0.3); color:#fca5a5; font-size:11px;"><strong>${d.nis_uyarisi}</strong></div>`;
         
         if (extraHtml) {
             const extraDiv = document.createElement('div');
             extraDiv.className = 'dynamic-debate-extras';
             extraDiv.innerHTML = extraHtml;
-            winnerCard.insertBefore(extraDiv, winnerCard.firstChild); // Üste ekle
+            winnerCard.insertBefore(extraDiv, winnerCard.firstChild);
         }
     }
 
@@ -568,15 +610,8 @@ async function cloneVideo(eventOrData = null) {
 
   const { user_id } = await chrome.storage.local.get(['user_id']);
 
-  // 6. Backend'e POST — yalnızca bilinen alanları gönder (422 önlemi)
-  const requestBody = {
-    url:       videoData.url       || '',
-    videoId:   videoData.videoId   || '',
-    title:     videoData.title     || 'Başlık Yok',
-    channel:   videoData.channel   || 'Bilinmeyen Kanal',
-    thumbnail: videoData.thumbnail || '',
-    user_id:   user_id || 0
-  };
+  // 6. Backend'e POST — Predictive Intelligence alanları ile zenginleştirilmiş
+  const requestBody = enrichVideoData(videoData, user_id);
 
   try {
     const resp = await fetch(`${SERVER}/api/extension/clone_video`, {
@@ -594,7 +629,13 @@ async function cloneVideo(eventOrData = null) {
       return;
     }
 
-    // 7. Sonucu göster
+    // 7. Sonucu göster — 5 Kademeli Tier Sistemi
+    const videoViews    = requestBody.views || 0;
+    const videoTier     = requestBody.tier  || (videoViews >= 5000 ? 'viral' : videoViews >= 500 ? 'potential' : 'dead');
+    const videoVelocity = requestBody.velocity_per_day;
+    const videoWindow   = requestBody.time_window;
+    const videoPenetr   = requestBody.penetration_ratio;
+
     try {
       let rawText = data.result.trim();
       if (rawText.startsWith('```json')) rawText = rawText.replace(/^```json/, '').replace(/```$/, '').trim();
@@ -602,10 +643,51 @@ async function cloneVideo(eventOrData = null) {
 
       const parsed = JSON.parse(rawText);
       let htmlCards = '';
+
+      // ── 5 Kademeli Tier Banner ───────────────────────────────────────────────
+      const TIER_CONFIG = {
+        dead:       { emoji: '🔴', label: 'ÖLÇÜM',        color: '#ef4444', bg: 'rgba(239,68,68,0.12)',       sub: 'Acil müdahale önerileri aşağıda.' },
+        potential:  { emoji: '🟡', label: 'POTANSİYEL VAR', color: '#f59e0b', bg: 'rgba(245,158,11,0.12)',    sub: 'Bir hamle eksik — öneriler aşağıda.' },
+        rising:     { emoji: '🚀', label: 'YÜKSELIYOR!',  color: '#f97316', bg: 'rgba(249,115,22,0.15)',      sub: 'Momentum yakalandı — şimdi harekete geç.' },
+        viral:      { emoji: '🟢', label: 'VİRAL',        color: '#22c55e', bg: 'rgba(34,197,94,0.12)',       sub: 'Başarının anatomisi aşağıda.' },
+        mega_viral: { emoji: '🔵', label: 'MEGA VİRAL',   color: '#38bdf8', bg: 'rgba(56,189,248,0.12)',      sub: 'Algoritma kırıcı — sistemi çıkart, kazayı kopyalama.' },
+      };
+      const tc = TIER_CONFIG[videoTier] || TIER_CONFIG['potential'];
+      const viewsStr = videoViews > 0 ? videoViews.toLocaleString('tr-TR') + ' izlenme' : 'İzlenme verisi alınamadı';
+
+      // Chip'ler (varsa göster)
+      let chips = '';
+      if (videoVelocity !== null && videoVelocity !== undefined) {
+        chips += `<span class="pi-chip">📈 ~${videoVelocity.toLocaleString('tr-TR')} izlenme/gün</span>`;
+      }
+      if (videoWindow) {
+        const windowLabels = { fresh: '⏱ Yeni yayınlandı', burst: '⚡ Patlama penceresi', established: '📅 Algoritma yayılımı', evergreen: '🌿 Evergreen içerik' };
+        chips += `<span class="pi-chip">${windowLabels[videoWindow] || videoWindow}</span>`;
+      }
+      if (videoPenetr !== null && videoPenetr !== undefined) {
+        const penetLabel = videoPenetr >= 1 ? 'Yüksek' : videoPenetr >= 0.1 ? 'Orta' : 'Düşük';
+        chips += `<span class="pi-chip">👥 Abone oranı: ${videoPenetr.toFixed(1)}x (${penetLabel})</span>`;
+      }
+
+      htmlCards += `<div class="tier-banner" style="border-color:${tc.color}; background:${tc.bg};">
+        <div class="tier-banner__header">
+          <span class="tier-banner__emoji">${tc.emoji}</span>
+          <strong class="tier-banner__label" style="color:${tc.color};">${tc.label}</strong>
+          <span class="tier-banner__views">${viewsStr}</span>
+        </div>
+        <div class="tier-banner__sub">${tc.sub}</div>
+        ${chips ? `<div class="pi-chips">${chips}</div>` : ''}
+      </div>`;
+
       let fikirler = Array.isArray(parsed) ? parsed : (parsed.fikirler || []);
 
       if (!Array.isArray(parsed) && parsed.viral_anatomi) {
-        htmlCards += `<div style="margin-bottom:15px; padding-bottom:10px; border-bottom:1px solid rgba(255,255,255,0.1);"><strong style="color:#fbbf24;">[VİRAL ANATOMİ: Bu Video Neden Patladı?]</strong><br><span style="font-size:13px; color:#e2e8f0; line-height:1.6;">${parsed.viral_anatomi}</span></div>`;
+        const isViral = videoTier === 'viral' || videoTier === 'mega_viral';
+        const anatomyLabel = isViral ? '[VİRAL ANATOMİ: Bu Video Neden Patladı?]'
+          : videoTier === 'rising' ? '[MOMENTUM ANALİZİ: Bu Video Neden Yükseliyor?]'
+          : '[VİDEO ANALİZİ: Bu Video Neden Kitle Bulamıyor?]';
+        const anatomyColor = isViral ? '#fbbf24' : videoTier === 'rising' ? '#f97316' : '#f87171';
+        htmlCards += `<div style="margin-bottom:15px; padding-bottom:10px; border-bottom:1px solid rgba(255,255,255,0.1);"><strong style="color:${anatomyColor};">${anatomyLabel}</strong><br><span style="font-size:13px; color:#e2e8f0; line-height:1.6;">${parsed.viral_anatomi}</span></div>`;
       }
 
       if (fikirler.length > 0) {
@@ -653,10 +735,157 @@ function extractYouTubeData() {
 
     const thumbnail = `https://i.ytimg.com/vi/${videoId}/maxresdefault.jpg`;
 
-    return { url, videoId, title, channel, thumbnail };
+    // ── İzlenme Sayısı Çekme ──────────────────────────────────────────────────
+    // Önce meta etiketinden dene (en güvenilir)
+    let views = 0;
+    const metaViewCount = document.querySelector('meta[itemprop="interactionCount"]');
+    if (metaViewCount && metaViewCount.content) {
+      views = parseInt(metaViewCount.content.replace(/[^\d]/g, ''), 10) || 0;
+    }
+    // Fallback: görüntüleme sayısı metninden parse et
+    // GÜVENLI PARSER: Türkçe (1.234.567), İngilizce (1,234,567) ve
+    // kısaltmalı (1.2M, 500B, 3K) formatları doğru işler.
+    if (views === 0) {
+      const viewEl = (
+        document.querySelector('.view-count') ||
+        document.querySelector('ytd-video-view-count-renderer .view-count') ||
+        document.querySelector('#count .view-count-renderer span')
+      );
+      if (viewEl) {
+        const raw = viewEl.textContent.trim().toLowerCase();
+        // Kısaltma formatlarını önce çöz (1.2m, 1.2b, 3k, 500b vb.)
+        const shortMatch = raw.match(/([\d][\d.,]*)\s*([mbk]|mn|bn|milyon|milyar|bin)/);
+        if (shortMatch) {
+          const num = parseFloat(shortMatch[1].replace(',', '.'));
+          const suffix = shortMatch[2];
+          if (suffix === 'k' || suffix === 'bin') views = Math.round(num * 1_000);
+          else if (suffix === 'm' || suffix === 'mn' || suffix === 'milyon') views = Math.round(num * 1_000_000);
+          else if (suffix === 'b' || suffix === 'bn' || suffix === 'milyar') views = Math.round(num * 1_000_000_000);
+        } else {
+          // Standart sayı: tüm nokta/virgül/boşluk binlik ayraçlarını sil, sonra parse et
+          const digitsOnly = raw.replace(/[^\d]/g, '');
+          views = parseInt(digitsOnly, 10) || 0;
+        }
+      }
+    }
+
+    // ── Yayın Tarihi (Velocity için) ─────────────────────────────────────────
+    let uploadDate = null;
+    const uploadMeta = document.querySelector('meta[itemprop="uploadDate"]') ||
+                       document.querySelector('meta[itemprop="datePublished"]');
+    if (uploadMeta && uploadMeta.content) {
+      uploadDate = uploadMeta.content; // ISO 8601 formatında: "2025-05-20T14:00:00+00:00"
+    }
+
+    // ── Abone Sayısı (Penetrasyon Oranı için) ────────────────────────────────
+    let subscriberCount = null;
+    const subEl = (
+      document.querySelector('yt-formatted-string#subscriber-count') ||
+      document.querySelector('#owner-sub-count') ||
+      document.querySelector('ytd-channel-name + div span')
+    );
+    if (subEl && subEl.textContent) {
+      const subRaw = subEl.textContent.trim().toLowerCase();
+      // Kısaltma formatlarını çöz: 1.2M, 500B, 3K, vb.
+      const subMatch = subRaw.match(/([\d][.\d,]*)\s*([mbk]|mn|bn|milyon|milyar|bin)?/);
+      if (subMatch) {
+        const num = parseFloat(subMatch[1].replace(',', '.'));
+        const suffix = subMatch[2] || '';
+        if (suffix === 'k' || suffix === 'bin') subscriberCount = Math.round(num * 1_000);
+        else if (suffix === 'm' || suffix === 'mn' || suffix === 'milyon') subscriberCount = Math.round(num * 1_000_000);
+        else if (suffix === 'b' || suffix === 'bn' || suffix === 'milyar') subscriberCount = Math.round(num * 1_000_000_000);
+        else subscriberCount = Math.round(num) || null;
+      }
+    }
+
+    // ── Yorum Sinyalleri (Kalite Analizi için) ───────────────────────────────
+    // İlk 5 yorumun ham metnini topla — suni artış koruması için AI'ya bildirilecek
+    let commentSignals = '';
+    const commentEls = document.querySelectorAll('ytd-comment-thread-renderer #content-text');
+    if (commentEls.length > 0) {
+      const firstFive = Array.from(commentEls).slice(0, 5);
+      commentSignals = firstFive.map(el => el.textContent.trim()).filter(Boolean).join(' ||| ');
+    }
+
+    return { url, videoId, title, channel, thumbnail, views, uploadDate, subscriberCount, commentSignals };
   } catch (err) {
     return { error: `Veri çekme hatası: ${err.message}` };
   }
+}
+
+// ── Predictive Intelligence: Velocity + Tier + Penetrasyon Hesabı ────────────
+/**
+ * Ham videoData objesini alır, analitik alanlarla zenginleştirir ve
+ * backend'e gönderilmeye hazır requestBody döner.
+ *
+ * Hesaplanan alanlar:
+ *   velocity_per_day  — günlük tahmini izlenme artışı
+ *   time_window       — fresh / burst / established / evergreen
+ *   tier              — dead / potential / rising / viral / mega_viral
+ *   penetration_ratio — izlenme / abone (abone yoksa null)
+ */
+function enrichVideoData(videoData, userId) {
+  const views          = videoData.views          || 0;
+  const uploadDate     = videoData.uploadDate     || null;
+  const subscriberCount = videoData.subscriberCount || null;
+  const commentSignals = videoData.commentSignals || '';
+
+  // ── Video Yaşı + Velocity ─────────────────────────────────────────────────
+  let videoAgeHours  = null;
+  let velocityPerDay = null;
+  let timeWindow     = null;
+
+  if (uploadDate) {
+    try {
+      const publishedAt  = new Date(uploadDate).getTime();
+      const nowMs        = Date.now();
+      videoAgeHours      = Math.max((nowMs - publishedAt) / 3_600_000, 0.01); // sıfıra bölme koruması
+      velocityPerDay     = Math.round((views / videoAgeHours) * 24);
+
+      if (videoAgeHours < 6)         timeWindow = 'fresh';
+      else if (videoAgeHours < 48)   timeWindow = 'burst';
+      else if (videoAgeHours < 168)  timeWindow = 'established'; // 7 gün
+      else                           timeWindow = 'evergreen';
+    } catch (e) {
+      // Geçersiz tarih formatı — tüm velocity alanları null kalır
+    }
+  }
+
+  // ── Spektrum Kademesi (Tier) ──────────────────────────────────────────────
+  let tier;
+  if      (views >= 100_000) tier = 'mega_viral';
+  else if (views >=   5_000) tier = 'viral';
+  else if (views >=     500) tier = 'potential';
+  else                       tier = 'dead';
+
+  // Özel Kural: Yükselen (Rising) — potential + burst + hız > 1.000/gün
+  if (tier === 'potential' && timeWindow === 'burst' && velocityPerDay > 1_000) {
+    tier = 'rising';
+  }
+
+  // ── Abone Penetrasyon Oranı ───────────────────────────────────────────────
+  let penetrationRatio = null;
+  if (subscriberCount && subscriberCount > 0 && views > 0) {
+    penetrationRatio = parseFloat((views / subscriberCount).toFixed(3));
+  }
+
+  return {
+    url:               videoData.url       || '',
+    videoId:           videoData.videoId   || '',
+    title:             videoData.title     || 'Başlık Yok',
+    channel:           videoData.channel   || 'Bilinmeyen Kanal',
+    thumbnail:         videoData.thumbnail || '',
+    views,
+    user_id:           userId || 0,
+    // ── Yeni Predictive Alanlar ──
+    upload_date:       uploadDate,
+    subscriber_count:  subscriberCount,
+    velocity_per_day:  velocityPerDay,
+    time_window:       timeWindow,
+    tier,
+    penetration_ratio: penetrationRatio,
+    comment_signals:   commentSignals || null,
+  };
 }
 
 // ── Açılış Zekası (Contextual Auto-Suggestion) ────────────────────────────────
@@ -808,6 +1037,11 @@ elBtnClone.addEventListener('click', cloneVideo);
 if (elBtnDebate) elBtnDebate.addEventListener('click', debateVideo);
 elBtnAnalyze.addEventListener('click', analyzeChannel);
 elBtnRabbit.addEventListener('click', findRabbitHole);
+
+const elBtnInfo = $('btn-info');
+const elBtnInfoClose = $('btn-info-close');
+if (elBtnInfo) elBtnInfo.addEventListener('click', () => showView('info'));
+if (elBtnInfoClose) elBtnInfoClose.addEventListener('click', () => showView('idle'));
 
 // Debate reset butonu
 const elBtnDebateReset = $('btn-debate-reset');

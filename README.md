@@ -5,16 +5,24 @@
 
 ---
 
-✨ **Latest Release (v4.3.0)**
+✨🚀 **Latest Release (v4.4.0)**
 > [!IMPORTANT]
-> **v4.3.0 - The Precision Update 🎯**
+> **v4.4.0 - The Predictive Intelligence Update 🧠**
 > 
-> * **[Rabbit Hole] Dynamic Niche Compatibility:** The Rabbit Hole module now dynamically pulls your channel's exact content type and purpose directly from the localized SQLite database, providing surgically precise "Compatible/Incompatible" tags for outlier videos. 🐇
-> * **[Extension] Robust AI JSON Parsing:** Completely overhauled the clone and debate JSON parsing engine (`popup.js`) to strip markdown blocks safely and render "Viral Anatomy" and "Hook" cards flawlessly under all edge cases. 🛡️
-> * **[Analytics] Gamified Chaos Explanation:** Added a user-friendly UI explanation to the Chaos Metric, dynamically calculating the exact percentage of view-potential based on tempo, rage density, and aggressive titling. 🌪️
-> * **[AI Prompt] Context Restoration:** Restored the high-quality, persona-driven cloning prompt while successfully enforcing strict JSON formatting to maintain frontend stability without sacrificing AI creativity. 🎭
+> * **[AI Model] 5-Tier Spectrum Analysis:** Replaced the binary "viral/non-viral" logic with a highly advanced 5-tier context engine (Dead, Potential, Rising, Viral, Mega Viral) that understands the scale of a video's success. 📊
+> * **[Algorithm] Velocity & Momentum Detection:** Implemented real-time mathematical calculations for daily view velocity and time-window awareness (fresh, burst, established, evergreen) to shield the AI against artificial spikes and detect true organic momentum. ⏱️
+> * **[Analytics] Subscriber Penetration Ratio:** Added deep mathematical parsing for subscriber counts (handling '1.2M', '540B', '3K' robustly in multiple languages) to calculate exactly how aggressively an audience engages with a video. 👥
+> * **[UI/UX] Dynamic Predictive Banners:** Completely overhauled the frontend result cards to display tier-specific dynamic banners, metrics chips, and situational warnings. 🎨
+> * **[Docs] In-App Guide:** Integrated a beautiful, localized "Nasıl Çalışır?" (How it Works) information panel directly inside the Chrome Extension. ℹ️
 
 ### 📜 Changelog
+#### 🧠 v4.4.0 — The Predictive Intelligence Update
+- **[AI Model] 5-Tier Analysis:** Advanced context injection for Dead, Potential, Rising, Viral, and Mega Viral videos.
+- **[Algorithm] Velocity & Time Window:** Real-time velocity tracking and suni-spike protection.
+- **[Analytics] Penetration Ratio:** Robust Regex parsing for subscriber counts to prevent ZeroDivisionError.
+- **[UI/UX] Predictive Banners:** Dynamic, tier-colored result cards with chip metrics.
+- **[Extension] In-App Guide:** Added localized "How it Works" view.
+
 #### 🎯 v4.3.0 — The Precision Update
 - **[Rabbit Hole] Dynamic Compatibility:** SQLite integrated dynamic context fetching for niche compatibility.
 - **[Extension] Robust JSON Parser:** Strips markdown and renders UI cards securely.

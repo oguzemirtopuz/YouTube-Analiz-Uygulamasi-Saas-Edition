@@ -3025,7 +3025,13 @@ def _build_thumbnail_rule(content_type: str) -> str:
         )
 
 
-async def _call_groq_clone(api_key: str, title: str, channel: str, transcript: str, content_type: str, purpose: str) -> str:
+async def _call_groq_clone(
+    api_key: str, title: str, channel: str, transcript: str,
+    content_type: str, purpose: str, views: int = 0,
+    tier: str = None, time_window: str = None,
+    velocity_per_day: float = None, penetration_ratio: float = None,
+    comment_signals: str = None,
+) -> str:
     """
     Groq Llama-3 ile viral klonlama konsepti üretir.
     Senkron requests çağrısını run_in_threadpool ile sarmalar.
@@ -3063,6 +3069,22 @@ KURALLAR:
   ]
 }}"""
 
+    # -- Predictive Intelligence --
+    _eff_tier = tier or ("mega_viral" if views >= 100_000 else "viral" if views >= 5_000 else "potential" if views >= 500 else "dead")
+    _pi_ctx = _build_pi_context(tier=_eff_tier, time_window=time_window,
+        velocity_per_day=velocity_per_day, penetration_ratio=penetration_ratio,
+        comment_signals=comment_signals, views=views)
+    if _pi_ctx:
+        prompt = _pi_ctx + "\n\n" + prompt
+
+    # -- Predictive Intelligence --
+    _eff_tier = tier or ("mega_viral" if views >= 100_000 else "viral" if views >= 5_000 else "potential" if views >= 500 else "dead")
+    _pi_ctx = _build_pi_context(tier=_eff_tier, time_window=time_window,
+        velocity_per_day=velocity_per_day, penetration_ratio=penetration_ratio,
+        comment_signals=comment_signals, views=views)
+    if _pi_ctx:
+        prompt = _pi_ctx + "\n\n" + prompt
+
     def _post():
         resp = requests.post(
             "https://api.groq.com/openai/v1/chat/completions",
@@ -3088,6 +3110,78 @@ KURALLAR:
         raise ValueError("Groq API kotası doldu. Lütfen bir süre bekleyin.")
     else:
         raise ValueError(f"Groq API hatası: HTTP {resp.status_code}")
+
+
+
+def _build_pi_context(tier=None, time_window=None, velocity_per_day=None, penetration_ratio=None, comment_signals=None, views=0):
+    lines = []
+    tier_labels = {
+        "dead":       "TIER: DEAD -- Bu video hic izlenme kazanamamis. Acil mudahale: baslik/thumbnail autopsy yap.",
+        "potential":  "TIER: POTENTIAL -- Video potansiyelini kullanamamis. Bir hamle eksik -- neyi duzeltmeli analiz et.",
+        "rising":     "TIER: RISING -- Bu video SU AN YUKSELIYOR! Momentum penceresi acik. Bunu yakala ve anlat.",
+        "viral":      "TIER: VIRAL -- Video viral olmus. Basarinin anatomisini cikar, tekrarlanabilir kalibi bul.",
+        "mega_viral": "TIER: MEGA VIRAL -- Sadece kazayi kopyalama. Sistemi cikar, tekrarlanabilir unsurlari ayir.",
+    }
+    if tier and tier in tier_labels:
+        lines.append("[PREDICTIVE INTELLIGENCE]")
+        lines.append(tier_labels[tier])
+
+    window_labels = {
+        "fresh":       "UYARI: Bu video 6 saatten yeni. Izlenme/yorumlar arkadaslik agi etkisi tasiyabilir -- baslik/thumbnail kalitesine odaklan.",
+        "burst":       "Video patlama penceresinde (6-48 saat) -- gercek organik momentum.",
+        "established": "Video algoritma yayilim evresinde (2-7 gun).",
+        "evergreen":   "Video evergreen evresinde (7+ gun) -- trafik arama/oneri bazli.",
+    }
+    if time_window and time_window in window_labels:
+        lines.append(window_labels[time_window])
+
+    if velocity_per_day is not None and velocity_per_day >= 0:
+        lines.append(f"Tahmini hiz: {velocity_per_day:,.0f} izlenme/gun.")
+
+    if penetration_ratio is not None and penetration_ratio > 0:
+        pstr = "YUKSEK" if penetration_ratio >= 1.0 else "ORTA" if penetration_ratio >= 0.1 else "DUSUK"
+        lines.append(f"Abone penetrasyonu: her 100 abonesine {penetration_ratio*100:.1f} izlenme -- {pstr} baglilik.")
+
+    if comment_signals and comment_signals.strip():
+        lines.append(f"Yorum sinyalleri: {comment_signals[:300].strip()}")
+
+    return "\n".join(lines)
+
+
+
+def _build_pi_context(tier=None, time_window=None, velocity_per_day=None, penetration_ratio=None, comment_signals=None, views=0):
+    lines = []
+    tier_labels = {
+        "dead":       "TIER: DEAD -- Bu video hic izlenme kazanamamis. Acil mudahale: baslik/thumbnail autopsy yap.",
+        "potential":  "TIER: POTENTIAL -- Video potansiyelini kullanamamis. Bir hamle eksik -- neyi duzeltmeli analiz et.",
+        "rising":     "TIER: RISING -- Bu video SU AN YUKSELIYOR! Momentum penceresi acik. Bunu yakala ve anlat.",
+        "viral":      "TIER: VIRAL -- Video viral olmus. Basarinin anatomisini cikar, tekrarlanabilir kalibi bul.",
+        "mega_viral": "TIER: MEGA VIRAL -- Sadece kazayi kopyalama. Sistemi cikar, tekrarlanabilir unsurlari ayir.",
+    }
+    if tier and tier in tier_labels:
+        lines.append("[PREDICTIVE INTELLIGENCE]")
+        lines.append(tier_labels[tier])
+
+    window_labels = {
+        "fresh":       "UYARI: Bu video 6 saatten yeni. Izlenme/yorumlar arkadaslik agi etkisi tasiyabilir -- baslik/thumbnail kalitesine odaklan.",
+        "burst":       "Video patlama penceresinde (6-48 saat) -- gercek organik momentum.",
+        "established": "Video algoritma yayilim evresinde (2-7 gun).",
+        "evergreen":   "Video evergreen evresinde (7+ gun) -- trafik arama/oneri bazli.",
+    }
+    if time_window and time_window in window_labels:
+        lines.append(window_labels[time_window])
+
+    if velocity_per_day is not None and velocity_per_day >= 0:
+        lines.append(f"Tahmini hiz: {velocity_per_day:,.0f} izlenme/gun.")
+
+    if penetration_ratio is not None and penetration_ratio > 0:
+        pstr = "YUKSEK" if penetration_ratio >= 1.0 else "ORTA" if penetration_ratio >= 0.1 else "DUSUK"
+        lines.append(f"Abone penetrasyonu: her 100 abonesine {penetration_ratio*100:.1f} izlenme -- {pstr} baglilik.")
+
+    if comment_signals and comment_signals.strip():
+        lines.append(f"Yorum sinyalleri: {comment_signals[:300].strip()}")
+
+    return "\n".join(lines)
 
 def calculate_chaos_score(transcript: str, titles: list[str]) -> dict:
     import re
@@ -3327,6 +3421,22 @@ class CloneVideoRequest(BaseModel):
     title:     str = Field(default="Başlık Yok", description="Video başlığı")
     channel:   str = Field(default="Bilinmeyen Kanal", description="Kanal adı")
     thumbnail: str = Field(default="", description="Thumbnail URL")
+    # -- Predictive Intelligence --
+    upload_date:       Optional[str]   = Field(default=None)
+    subscriber_count:  Optional[int]   = Field(default=None)
+    velocity_per_day:  Optional[float] = Field(default=None)
+    time_window:       Optional[str]   = Field(default=None)
+    tier:              Optional[str]   = Field(default=None)
+    penetration_ratio: Optional[float] = Field(default=None)
+    comment_signals:   Optional[str]   = Field(default=None)
+    # -- Predictive Intelligence --
+    upload_date:       Optional[str]   = Field(default=None)
+    subscriber_count:  Optional[int]   = Field(default=None)
+    velocity_per_day:  Optional[float] = Field(default=None)
+    time_window:       Optional[str]   = Field(default=None)
+    tier:              Optional[str]   = Field(default=None)
+    penetration_ratio: Optional[float] = Field(default=None)
+    comment_signals:   Optional[str]   = Field(default=None)
     user_id:   int = Field(default=0, description="Kullanıcı ID")
 
 class AnalyzeChannelRequest(BaseModel):
@@ -3574,7 +3684,13 @@ async def extension_clone_video(payload: CloneVideoRequest):
             await db.close()
 
     try:
-        result = await _call_groq_clone(api_key, title, channel, transcript, content_type, purpose)
+        result = await _call_groq_clone(
+            api_key, title, channel, transcript, content_type, purpose,
+            views=payload.views, tier=payload.tier, time_window=payload.time_window,
+            velocity_per_day=payload.velocity_per_day,
+            penetration_ratio=payload.penetration_ratio,
+            comment_signals=payload.comment_signals,
+        )
     except ValueError as e:
         app_logger.warning(f"[clone_video] Groq hatası: {e}")
         raise HTTPException(status_code=502, detail=str(e))
@@ -3608,11 +3724,29 @@ async def _call_groq_debate(
     transcript: str,
     content_type: str,
     purpose: str,
+    views: int = 0,
+    tier: str = None,
+    time_window: str = None,
+    velocity_per_day: float = None,
+    penetration_ratio: float = None,
+    comment_signals: str = None,
 ) -> dict:
     """
     İki persona paralel çalışır (asyncio.gather), ardından Hakem AI karar verir.
     Çıktı kesinlikle ayrıştırılabilir JSON dict olmalı — aksi hâlde HTTPException(500).
     """
+
+    # -- Predictive Intelligence context for judge --
+    _debate_tier = tier or ("mega_viral" if views >= 100_000 else "viral" if views >= 5_000 else "potential" if views >= 500 else "dead")
+    _debate_pi = _build_pi_context(tier=_debate_tier, time_window=time_window,
+        velocity_per_day=velocity_per_day, penetration_ratio=penetration_ratio,
+        comment_signals=comment_signals, views=views)
+
+    # -- Predictive Intelligence context for judge --
+    _debate_tier = tier or ("mega_viral" if views >= 100_000 else "viral" if views >= 5_000 else "potential" if views >= 500 else "dead")
+    _debate_pi = _build_pi_context(tier=_debate_tier, time_window=time_window,
+        velocity_per_day=velocity_per_day, penetration_ratio=penetration_ratio,
+        comment_signals=comment_signals, views=views)
 
     # Oyun kanalları için insan yüzü yasağı her iki ajana da enjekte edilir
     thumbnail_rule = _build_thumbnail_rule(content_type)
@@ -3731,6 +3865,12 @@ Kurallar:
     idea_b = _parse_persona_json(raw_b, "Persona B (Büyücü)")
 
     # ── Hakem AI: Kazananı Seç veya Harmanlayıp Tek Fikir Üret ──────────────
+    if _debate_pi:
+        anatomi_directive = _debate_pi + "\n" + anatomi_directive
+
+    if _debate_pi:
+        anatomi_directive = _debate_pi + "\n" + anatomi_directive
+
     prompt_judge = f"""Sen acımasız ve vizyoner bir YouTube İçerik Hakemi ve Algoritma Uzmanısın.
 
 KULLANICI PROFİLİ: 
@@ -3896,7 +4036,13 @@ async def extension_clone_debate(payload: CloneVideoRequest):
             await db.close()
 
     # ── Multi-Agent Debate ─────────────────────────────────────────────────────
-    debate_result = await _call_groq_debate(api_key, title, channel, transcript, content_type, purpose)
+    debate_result = await _call_groq_debate(
+        api_key, title, channel, transcript, content_type, purpose,
+        views=payload.views, tier=payload.tier, time_window=payload.time_window,
+        velocity_per_day=payload.velocity_per_day,
+        penetration_ratio=payload.penetration_ratio,
+        comment_signals=payload.comment_signals,
+    )
 
     app_logger.info(f"[clone_debate] ✅ Tartışma tamamlandı: video_id={video_id}")
 

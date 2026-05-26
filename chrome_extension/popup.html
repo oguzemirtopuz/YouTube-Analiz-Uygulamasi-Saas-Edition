@@ -18,6 +18,7 @@
       </div>
     </div>
     <div style="display:flex; align-items:center; gap:10px;">
+      <button id="btn-info" type="button" title="Nasıl Çalışır?" style="background:transparent; border:none; color:#38bdf8; font-size:18px; cursor:pointer; transition: color 0.2s;">ℹ️</button>
       <button id="btn-fullscreen" type="button" title="Tam Ekran Aç" style="background:transparent; border:none; color:#a855f7; font-size:18px; cursor:pointer; transition: color 0.2s;">⛶</button>
       <div id="status-dot" class="dot dot--checking" title="Sunucu durumu kontrol ediliyor..."></div>
     </div>
@@ -144,6 +145,41 @@
       <p id="error-msg" class="error-msg"></p>
       <button id="btn-retry" class="btn btn--ghost" type="button">
         ↩ Tekrar Dene
+      </button>
+    </section>
+
+    <!-- Info state -->
+    <section id="view-info" class="view">
+      <div style="text-align:left; color:#e2e8f0; font-size:13px; max-height: 400px; overflow-y: auto; padding-right: 5px;">
+        <h2 style="color:#00f2fe; margin-bottom:10px; font-size:16px;">ℹ️ Nasıl Çalışır?</h2>
+        
+        <p style="margin-bottom:10px;"><strong>YT Analiz Pro</strong>, YouTube videolarını arka planda gelişmiş bir yapay zeka algoritmasıyla analiz ederek, kanalınız için en yüksek potansiyele sahip içerik fikirlerini klonlar.</p>
+        
+        <h3 style="color:#a855f7; font-size:14px; margin-bottom:5px;">📊 5 Kademeli Spektrum (Tier) Sistemi</h3>
+        <ul style="margin-bottom:10px; padding-left:15px; color:#cbd5e1; list-style-type: disc;">
+          <li><strong style="color:#ef4444;">🔴 Ölçüm (Dead):</strong> 0-500 izlenme. Kitle bulamamış. Başlık ve küçük resim (thumbnail) anatomisi yapılır.</li>
+          <li><strong style="color:#f59e0b;">🟡 Potansiyel Var:</strong> 500-5.000 izlenme. Potansiyeli olup bir noktada takılan videolar.</li>
+          <li><strong style="color:#f97316;">🚀 Yükseliyor:</strong> Hızlı ivme yakalamış (Momentum). Anında müdahale penceresi.</li>
+          <li><strong style="color:#22c55e;">🟢 Viral:</strong> 5.000-100.000 izlenme. Başarının anatomisi çıkarılır.</li>
+          <li><strong style="color:#38bdf8;">🔵 Mega Viral:</strong> 100.000+ izlenme. Algoritma kırıcı içerikler, kaza değil sistematik başarı analiz edilir.</li>
+        </ul>
+
+        <h3 style="color:#a855f7; font-size:14px; margin-bottom:5px;">⚙️ Ek Akıllı Metrikler</h3>
+        <p style="margin-bottom:10px;">
+          <strong>📈 İzlenme Hızı (Velocity):</strong> Videonun saatlik ivmesi üzerinden günlük izlenme hızı tahmin edilir.<br>
+          <strong>👥 Abone Penetrasyonu:</strong> İzlenme / Abone oranı. Kitlenin videoya ne kadar güçlü tepki verdiğini ölçer.<br>
+          <strong>⏱️ Zaman Penceresi:</strong> Videonun ne kadar taze olduğu analiz edilir. Örneğin ilk 6 saatlik (Fresh) veriler suni artış (arkadaş ağı vb.) riski taşıdığı için yapay zeka tarafından özel süzgeçten geçirilir.
+        </p>
+
+        <h3 style="color:#a855f7; font-size:14px; margin-bottom:5px;">💡 Nasıl Kullanmalıyım?</h3>
+        <ul style="padding-left:15px; color:#cbd5e1; margin-bottom: 15px; list-style-type: disc;">
+          <li>Bir YouTube videosu açın ve <strong>⚡ Klonla</strong> tuşuna basarak kanalınıza özel 3 viral fikir alın.</li>
+          <li><strong>⚔️ Tartış</strong> butonu ile iki farklı AI personasını (Acımasız Eleştirmen vs Viral Büyücü) karşı karşıya getirip, en güçlü tek fikri sentezleyin.</li>
+          <li><strong>🐇 Tavşan Deliği</strong> ile yazdığınız anahtar kelimedeki en hızlı ivmelenen videoları anında tespit edin.</li>
+        </ul>
+      </div>
+      <button id="btn-info-close" class="btn btn--ghost" type="button" style="margin-top: 15px;">
+        ↩ Geri Dön
       </button>
     </section>
 

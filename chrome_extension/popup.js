@@ -791,9 +791,16 @@ function extractYouTubeData() {
       if (subMatch) {
         const num = parseFloat(subMatch[1].replace(',', '.'));
         const suffix = subMatch[2] || '';
+        const isEnglish = subRaw.includes('sub');
+
         if (suffix === 'k' || suffix === 'bin') subscriberCount = Math.round(num * 1_000);
         else if (suffix === 'm' || suffix === 'mn' || suffix === 'milyon') subscriberCount = Math.round(num * 1_000_000);
-        else if (suffix === 'b' || suffix === 'bn' || suffix === 'milyar') subscriberCount = Math.round(num * 1_000_000_000);
+        else if (suffix === 'bn' || suffix === 'milyar') subscriberCount = Math.round(num * 1_000_000_000);
+        else if (suffix === 'b') {
+            // Youtube'da hiçbir kanal 1 milyara sahip değil ama İngilizce'de 'B' billion demektir.
+            // Türkçe'de ise 'B' bin demektir.
+            subscriberCount = isEnglish ? Math.round(num * 1_000_000_000) : Math.round(num * 1_000);
+        }
         else subscriberCount = Math.round(num) || null;
       }
     }
@@ -888,6 +895,123 @@ function enrichVideoData(videoData, userId) {
   };
 }
 
+// ── Prophet's Pick — Otomatik Viral Öneri Sistemi ────────────────────────────
+/**
+ * BabaClutch nişine (Oyun/Kaos) uygun, YouTube'da şu an patlamakta olan
+ * 3 "Aykırı" videoyu çekip Matrix Vision Glow efektli kart grid'i olarak gösterir.
+ * Tetikleyici: initSuggestion() içinde, video sayfasında DEĞİLSEK çağrılır.
+ * 
+ * Akış:
+ *   1. POST /api/extension/prophet_picks → {success, picks:[...]}
+ *   2. Dashboard'un üstüne 3'lü yatay kart grid'i enjekte et
+ *   3. Her kartta: Başlık (2 satır), 🔥 Hız chip, ⚡ Klonla + ⚔️ Tartış butonları
+ */
+async function fetchProphetPicks(userId) {
+  // Zaten gösteriliyorsa tekrar ekleme
+  if (document.getElementById('prophet-picks-section')) return;
+
+  try {
+    const resp = await fetch(`${SERVER}/api/extension/prophet_picks`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ user_id: userId || 0 })
+    });
+
+    if (!resp.ok) return;
+    const data = await resp.json();
+    if (!data.success || !data.picks || data.picks.length === 0) return;
+
+    // ── Kart HTML üret ──────────────────────────────────────────────────────
+    let cardsHtml = '';
+    data.picks.forEach((v, idx) => {
+      // videoId'yi URL'den çıkar (Klonla / Tartış için gerekli)
+      let videoId = '';
+      if (v.url && v.url.includes('v=')) {
+        videoId = v.url.split('v=')[1].split('&')[0];
+      } else if (v.url) {
+        videoId = v.url.split('/').pop().split('?')[0];
+      }
+      const thumbnail = videoId ? `https://i.ytimg.com/vi/${videoId}/maxresdefault.jpg` : '';
+      const velocityStr = (v.velocity || 0).toLocaleString('tr-TR');
+
+      cardsHtml += `
+<div class="prophet-card matrix-glow" data-url="${v.url || ''}" data-videoid="${videoId}" data-title="${encodeURIComponent(v.title || '')}" data-channel="${encodeURIComponent(v.channel || '')}" data-thumbnail="${thumbnail}">
+  <div class="prophet-card__rank">#${idx + 1}</div>
+  <div class="prophet-card__title">${v.title || 'Başlık Yok'}</div>
+  <div class="prophet-card__speed">
+    <span class="prophet-speed-chip">🔥 ${velocityStr} izl/gün</span>
+  </div>
+  <div class="prophet-card__actions">
+    <button class="prophet-btn prophet-btn--clone" data-idx="${idx}" title="Klonla">⚡ Klonla</button>
+    <button class="prophet-btn prophet-btn--debate" data-idx="${idx}" title="Tartış">⚔️</button>
+  </div>
+</div>`;
+    });
+
+    // ── Section container ─────────────────────────────────────────────────
+    const section = document.createElement('div');
+    section.id = 'prophet-picks-section';
+    section.innerHTML = `
+      <div class="prophet-picks-header">
+        <span class="prophet-picks-badge">🔮 PROPHET'S PICK</span>
+        <span class="prophet-picks-sub">Şu an patlıyor</span>
+        <button id="btn-prophet-close" class="prophet-close-btn" title="Kapat">✖</button>
+      </div>
+      <div class="prophet-picks-grid">${cardsHtml}</div>
+    `;
+
+    // Dashboard header'ın hemen altına ekle (en üst pozisyon)
+    const idleView = document.getElementById('view-idle');
+    if (!idleView) return;
+    const dashHeader = idleView.querySelector('.dashboard-header');
+    if (dashHeader) {
+      dashHeader.insertAdjacentElement('afterend', section);
+    } else {
+      idleView.insertBefore(section, idleView.firstChild);
+    }
+
+    // ── Kapat butonu ──────────────────────────────────────────────────────
+    document.getElementById('btn-prophet-close').addEventListener('click', () => {
+      section.remove();
+    });
+
+    // ── Kart aksiyonları: videoData objesini kur ve klonla/tartış başlat ─
+    const storedPicks = data.picks; // closure için sakla
+    section.querySelectorAll('.prophet-btn--clone').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const card = btn.closest('.prophet-card');
+        const vd = _prophetCardToVideoData(card, storedPicks[parseInt(btn.dataset.idx)]);
+        cloneVideo(vd);
+      });
+    });
+    section.querySelectorAll('.prophet-btn--debate').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const card = btn.closest('.prophet-card');
+        const vd = _prophetCardToVideoData(card, storedPicks[parseInt(btn.dataset.idx)]);
+        debateVideo(vd);
+      });
+    });
+
+  } catch (err) {
+    // Sessizce başarısız ol — bu bir arka plan özelliğidir
+    console.warn('[Prophet Picks] Yüklenemedi:', err.message);
+  }
+}
+
+/** Prophet kart elemanından cloneVideo/debateVideo için uyumlu videoData objesi üretir. */
+function _prophetCardToVideoData(card, pick) {
+  const videoId = card.dataset.videoid || '';
+  return {
+    url:       pick.url || card.dataset.url || '',
+    videoId:   videoId,
+    title:     decodeURIComponent(card.dataset.title || pick.title || 'Başlık Yok'),
+    channel:   decodeURIComponent(card.dataset.channel || pick.channel || 'Bilinmeyen Kanal'),
+    thumbnail: card.dataset.thumbnail || (videoId ? `https://i.ytimg.com/vi/${videoId}/maxresdefault.jpg` : ''),
+    views:     pick.view_count || 0,
+    velocity_per_day: pick.velocity || null,
+  };
+}
+
 // ── Açılış Zekası (Contextual Auto-Suggestion) ────────────────────────────────
 async function initSuggestion() {
   const tab = await getActiveTab();
@@ -962,6 +1086,12 @@ async function initSuggestion() {
     } catch(e) {}
     return;
   }
+
+  // ── Prophet's Pick: Video sayfasında da kanal sayfasında da değiliz ──────
+  // (Ana sayfa, arama sonuçları, trending vb. durumlarda Prophet Picks göster)
+  const { user_id: prophetUserId } = await chrome.storage.local.get(['user_id']);
+  // Arka planda asenkron çalıştır — UI'yi bloklamaz, 2sn içinde yüklenir
+  fetchProphetPicks(prophetUserId).catch(() => {});
 }
 
 function showSuggestionCard(videoData, subtitle) {
@@ -1040,7 +1170,51 @@ elBtnRabbit.addEventListener('click', findRabbitHole);
 
 const elBtnInfo = $('btn-info');
 const elBtnInfoClose = $('btn-info-close');
-if (elBtnInfo) elBtnInfo.addEventListener('click', () => showView('info'));
+if (elBtnInfo) elBtnInfo.addEventListener('click', async () => {
+  let tab = await getActiveTab();
+  let infoHtml = '';
+
+  if (isYouTubeTab(tab)) {
+    infoHtml = `
+      <div style="background: rgba(16, 185, 129, 0.1); border-left: 4px solid #10b981; padding: 10px; margin-bottom: 15px; border-radius: 4px;">
+        <strong style="color: #34d399; font-size: 14px;">Şu an Strateji Modundasın.</strong>
+        <p style="margin-top: 5px; color: #cbd5e1; font-size: 12px;">Video sayfasındasın. <strong>Akıllı Seçim</strong> devrededir. (Odaklanman için Prophet's Pick gizlendi).</p>
+        <ul style="margin-top: 5px; padding-left: 15px; color: #94a3b8; font-size: 12px; list-style-type: disc;">
+          <li><strong>Akıllı Seçim:</strong> Bu videoyu anında klonla veya tartıştır.</li>
+          <li><strong>Viral Anatomi:</strong> Videonun neden patladığını (veya neden çöktüğünü) anla.</li>
+        </ul>
+      </div>
+    `;
+  } else if (isYouTubeChannelTab(tab)) {
+    infoHtml = `
+      <div style="background: rgba(245, 158, 11, 0.1); border-left: 4px solid #f59e0b; padding: 10px; margin-bottom: 15px; border-radius: 4px;">
+        <strong style="color: #fbbf24; font-size: 14px;">Şu an İstihbarat Modundasın.</strong>
+        <p style="margin-top: 5px; color: #cbd5e1; font-size: 12px;">Kanal sayfasındasın.</p>
+        <ul style="margin-top: 5px; padding-left: 15px; color: #94a3b8; font-size: 12px; list-style-type: disc;">
+          <li><strong>Kanal Savaşları:</strong> Rakibini tarat, zayıf noktalarını bul.</li>
+          <li><strong>Kaos Metriği:</strong> Rakibin öfke ve tempo analizini gör.</li>
+        </ul>
+      </div>
+    `;
+  } else {
+    infoHtml = `
+      <div style="background: rgba(168, 85, 247, 0.1); border-left: 4px solid #a855f7; padding: 10px; margin-bottom: 15px; border-radius: 4px;">
+        <strong style="color: #d8b4fe; font-size: 14px;">Şu an Keşif Modundasın.</strong>
+        <p style="margin-top: 5px; color: #cbd5e1; font-size: 12px;">YouTube Ana Sayfası veya Arama sonuçlarındasın.</p>
+        <ul style="margin-top: 5px; padding-left: 15px; color: #94a3b8; font-size: 12px; list-style-type: disc;">
+          <li><strong>Matrix Vision:</strong> Trend videolar neon yeşil parlar.</li>
+          <li><strong>Kahinin Seçimi:</strong> Senin için seçtiğim 3 viral fırsatı gör.</li>
+        </ul>
+      </div>
+    `;
+  }
+
+  const dynamicContent = document.getElementById('dynamic-info-content');
+  if (dynamicContent) {
+    dynamicContent.innerHTML = infoHtml;
+  }
+  showView('info');
+});
 if (elBtnInfoClose) elBtnInfoClose.addEventListener('click', () => showView('idle'));
 
 // Debate reset butonu
@@ -1107,6 +1281,9 @@ elBtnRetry.addEventListener('click', () => showView('idle'));
 // Bu olmadan kullanıcı "Klonla"ya basarsa eski videonun verisini çekebilir.
 chrome.runtime.onMessage.addListener((msg) => {
   if (msg.type === 'YT_URL_CHANGED') {
+    const prophetPicks = document.getElementById('prophet-picks-section');
+    if (prophetPicks) prophetPicks.remove();
+
     const activeView = Object.entries(views).find(([, el]) => el.classList.contains('active'));
     const currentView = activeView ? activeView[0] : 'idle';
 
@@ -1118,15 +1295,16 @@ chrome.runtime.onMessage.addListener((msg) => {
       showView('idle');
     }
 
+    // BUG FIX: Debate kontrolü currentView'in geçerli olduğu blok içine taşındı.
+    // Önceden blok dışında kullanılıyordu → strict-mode ReferenceError
+    if (currentView === 'debate') {
+      showView('idle');
+    }
+
     // Klonla + Tartış grubunu yeni video için göster
     const btnGroup   = document.getElementById('clone-btn-group');
     const btnAnalyze = document.getElementById('btn-analyze');
     if (btnGroup)   btnGroup.style.display   = 'flex';
     if (btnAnalyze) btnAnalyze.style.display = 'none';
-  }
-
-  // Debate view'indeyken URL değişirse sıfırla
-  if (currentView === 'debate') {
-    showView('idle');
   }
 });

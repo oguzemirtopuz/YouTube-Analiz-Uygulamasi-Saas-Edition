@@ -865,3 +865,197 @@ html, body {
 .tier-banner[data-tier="rising"]     { box-shadow: 0 0 16px rgba(249,115,22,0.22); }
 .tier-banner[data-tier="viral"]      { box-shadow: 0 0 14px rgba(34,197,94,0.18); }
 .tier-banner[data-tier="mega_viral"] { box-shadow: 0 0 18px rgba(56,189,248,0.22); }
+
+/* ==============================================================
+   PROPHET'S PICK — Matrix Vision Glow Kart Sistemi
+   ============================================================== */
+
+/* Ana section kapsayýcý */
+#prophet-picks-section {
+  margin: 10px 0 12px 0;
+  animation: prophetFadeIn 0.5s ease forwards;
+}
+
+@keyframes prophetFadeIn {
+  from { opacity: 0; transform: translateY(-8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Baþlýk satýrý */
+.prophet-picks-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.prophet-picks-badge {
+  font-size: 11px;
+  font-weight: 800;
+  color: #e879f9;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  background: rgba(232, 121, 249, 0.12);
+  border: 1px solid rgba(232, 121, 249, 0.35);
+  border-radius: 6px;
+  padding: 2px 8px;
+}
+
+.prophet-picks-sub {
+  font-size: 11px;
+  color: #94a3b8;
+  flex: 1;
+}
+
+.prophet-close-btn {
+  background: transparent;
+  border: none;
+  color: #64748b;
+  font-size: 11px;
+  cursor: pointer;
+  padding: 2px 4px;
+  border-radius: 4px;
+  transition: color 0.2s;
+}
+.prophet-close-btn:hover { color: #f87171; }
+
+/* 3-kart yatay grid */
+.prophet-picks-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 7px;
+}
+
+/* Tekil Prophet Kartý */
+.prophet-card {
+  position: relative;
+  background: rgba(10, 5, 20, 0.85);
+  border: 1px solid rgba(168, 85, 247, 0.4);
+  border-radius: 10px;
+  padding: 9px 8px 8px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  cursor: default;
+  transition: border-color 0.25s, transform 0.2s, box-shadow 0.25s;
+  overflow: hidden;
+}
+
+/* Matrix Vision Glow efekti */
+.prophet-card.matrix-glow {
+  box-shadow:
+    0 0 10px rgba(168, 85, 247, 0.15),
+    inset 0 0 20px rgba(168, 85, 247, 0.04);
+}
+
+.prophet-card.matrix-glow::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 10px;
+  background: linear-gradient(
+    135deg,
+    rgba(168, 85, 247, 0.08) 0%,
+    rgba(6, 182, 212, 0.05) 50%,
+    rgba(168, 85, 247, 0.08) 100%
+  );
+  background-size: 200% 200%;
+  animation: matrixShimmer 4s ease infinite;
+  pointer-events: none;
+}
+
+@keyframes matrixShimmer {
+  0%   { background-position: 0% 0%; }
+  50%  { background-position: 100% 100%; }
+  100% { background-position: 0% 0%; }
+}
+
+.prophet-card:hover {
+  border-color: rgba(232, 121, 249, 0.75);
+  transform: translateY(-2px);
+  box-shadow:
+    0 0 18px rgba(232, 121, 249, 0.3),
+    0 4px 16px rgba(0, 0, 0, 0.5),
+    inset 0 0 24px rgba(232, 121, 249, 0.06);
+}
+
+/* Rank numarasý (#1, #2, #3) */
+.prophet-card__rank {
+  font-size: 9px;
+  font-weight: 800;
+  color: rgba(232, 121, 249, 0.7);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  line-height: 1;
+}
+
+/* Video baþlýðý — 2 satýr limit */
+.prophet-card__title {
+  font-size: 11px;
+  font-weight: 600;
+  color: #f1f5f9;
+  line-height: 1.35;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  flex: 1;
+}
+
+/* Hýz chip */
+.prophet-card__speed {
+  display: flex;
+}
+
+.prophet-speed-chip {
+  font-size: 9.5px;
+  font-weight: 700;
+  background: linear-gradient(90deg, rgba(244, 63, 94, 0.85), rgba(249, 115, 22, 0.85));
+  color: #fff;
+  padding: 2px 6px;
+  border-radius: 5px;
+  letter-spacing: 0.2px;
+  box-shadow: 0 0 8px rgba(244, 63, 94, 0.4);
+}
+
+/* Aksiyon butonlarý satýrý */
+.prophet-card__actions {
+  display: flex;
+  gap: 5px;
+}
+
+.prophet-btn {
+  flex: 1;
+  border: none;
+  border-radius: 6px;
+  font-size: 10px;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 4px 0;
+  transition: opacity 0.2s, transform 0.15s, box-shadow 0.2s;
+}
+.prophet-btn:hover { opacity: 0.88; transform: scale(1.04); }
+.prophet-btn:active { transform: scale(0.97); }
+
+/* Klonla butonu — mor gradient */
+.prophet-btn--clone {
+  background: linear-gradient(90deg, #7c3aed, #a855f7);
+  color: #fff;
+  box-shadow: 0 0 8px rgba(168, 85, 247, 0.4);
+}
+.prophet-btn--clone:hover {
+  box-shadow: 0 0 14px rgba(232, 121, 249, 0.55);
+}
+
+/* Tartýþ butonu — ateþ turuncu */
+.prophet-btn--debate {
+  background: linear-gradient(90deg, #b45309, #f59e0b);
+  color: #fff;
+  flex: 0 0 28px;
+  font-size: 13px;
+  padding: 0;
+  box-shadow: 0 0 8px rgba(245, 158, 11, 0.35);
+}
+.prophet-btn--debate:hover {
+  box-shadow: 0 0 14px rgba(245, 158, 11, 0.55);
+}

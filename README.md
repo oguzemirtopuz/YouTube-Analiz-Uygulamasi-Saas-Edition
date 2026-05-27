@@ -5,23 +5,40 @@
 
 ---
 
-✨🚀 **Latest Release (v4.4.0)**
+✨🚀 **Latest Release (v4.5.0 PROPHET'S PICK EDITION)**
 > [!IMPORTANT]
-> **v4.4.0 - The Predictive Intelligence Update 🧠**
+> **v4.5.0 - Prophet's Pick Edition (Dynamic Auto-Suggestion System) 🔮**
 > 
-> * **[AI Model] 5-Tier Spectrum Analysis:** Replaced the binary "viral/non-viral" logic with a highly advanced 5-tier context engine (Dead, Potential, Rising, Viral, Mega Viral) that understands the scale of a video's success. 📊
-> * **[Algorithm] Velocity & Momentum Detection:** Implemented real-time mathematical calculations for daily view velocity and time-window awareness (fresh, burst, established, evergreen) to shield the AI against artificial spikes and detect true organic momentum. ⏱️
-> * **[Analytics] Subscriber Penetration Ratio:** Added deep mathematical parsing for subscriber counts (handling '1.2M', '540B', '3K' robustly in multiple languages) to calculate exactly how aggressively an audience engages with a video. 👥
-> * **[UI/UX] Dynamic Predictive Banners:** Completely overhauled the frontend result cards to display tier-specific dynamic banners, metrics chips, and situational warnings. 🎨
-> * **[Docs] In-App Guide:** Integrated a beautiful, localized "Nasıl Çalışır?" (How it Works) information panel directly inside the Chrome Extension. ℹ️
+> **A. Next-Gen Analysis Engine (Predictive Intelligence):**
+> * **5-Tier AI Spectrum:** The system analyzes videos across 5 distinct tiers: 🔴 DEAD, 🟡 POTENTIAL, 🚀 RISING, 🟢 VIRAL, and 🔵 MEGA VIRAL.
+> * **Dynamic Persona:** The AI shifts its personality based on the tier (e.g., a ruthless autopsy for a Dead video, but a deep system analysis for a Mega Viral video).
+> * **Velocity & Time Awareness:** "View Velocity" calculation added via `uploadDate` to distinguish artificial spikes in the "Fresh Window" (first 6 hours).
+> * **Subscriber Penetration:** A new metric measuring the true engagement power of the channel by calculating the ratio of views to subscriber count.
+> * **Comment Signals:** Added a layer that measures "Share Potential" by analyzing the sentiment of the first 10 comments.
+>
+> **B. "Killer" Features:**
+> * **Prophet's Pick (Dynamic Auto-Suggestion):** AI generates 3 dynamic search queries tailored exactly to your channel's niche, finds the highest-velocity trending videos, and drops them directly on your dashboard.
+> * **Matrix Vision:** A passive radar that outlines "Outlier" videos with a Neon Green glow and a 🔥 TREND badge on the YouTube homepage.
+> * **AI Multi-Agent Debate:** The Critic and The Wizard AIs clash with the "Debate" button, while the Referee AI produces the golden winning idea.
+> * **BabaClutch Chaos Metric:** A 100% local, 0% API cost NLP algorithm analyzing competitor rage and tempo.
+>
+> **C. Critical Bug Fixes & Security:**
+> * **"Happy Face" Annihilation:** Eradicated hardcoded AI prompts preventing the AI from hallucinating non-existent faces.
+> * **Regex "B" Revolution:** Resolved the data-parsing confusion between Turkish "Bin" (Thousand) and English "Billion".
+> * **Dynamic Self-Filtering:** The engine now automatically fetches your channel names from the database and scrubs your own videos from all Rabbit Hole and Prophet's Pick recommendations.
 
 ### 📜 Changelog
-#### 🧠 v4.4.0 — The Predictive Intelligence Update
-- **[AI Model] 5-Tier Analysis:** Advanced context injection for Dead, Potential, Rising, Viral, and Mega Viral videos.
-- **[Algorithm] Velocity & Time Window:** Real-time velocity tracking and suni-spike protection.
-- **[Analytics] Penetration Ratio:** Robust Regex parsing for subscriber counts to prevent ZeroDivisionError.
-- **[UI/UX] Predictive Banners:** Dynamic, tier-colored result cards with chip metrics.
-- **[Extension] In-App Guide:** Added localized "How it Works" view.
+#### 🔮 v4.5.0 — Prophet's Pick Edition
+- **[Prophet's Pick] Dynamic AI Queries:** Generates search queries via Groq specifically tailored to the user's registered `content_type` and `purpose`.
+- **[UI/UX] Matrix Glow Cards:** Injects a dynamic 3-card grid with a neon Matrix glow when the user is not on a video tab.
+- **[Educational UX] Context-Aware Info Modal:** The `ℹ️` button now teaches users whether they are in "Discovery", "Strategy", or "Intelligence" mode based on their active YouTube tab.
+- **[Self-Filtering] Dynamic Channel Blacklist:** Automatically prevents the user's own videos from appearing in AI-generated trending suggestions.
+#### 🧠 v4.4.0 — Prophet Edition (Predictive Intelligence Update)
+- **[AI Model] 5-Tier Spectrum:** Analyzes videos in 🔴 DEAD, 🟡 POTENTIAL, 🚀 RISING, 🟢 VIRAL, and 🔵 MEGA VIRAL categories with dynamic personas.
+- **[Algorithm] Velocity & Penetration:** Calculates view velocity and subscriber penetration ratio to detect organic momentum.
+- **[Features] Matrix Vision & Debate AI:** Neon green outlier radar and multi-agent AI debate (Critic vs. Wizard vs. Referee).
+- **[NLP] Chaos Metric:** 100% local NLP algorithm to measure competitor rage and tempo.
+- **[Fixes] Zero-Hallucination Armor:** Fixed the "Happy Face" hallucination, resolved the Turkish/English 'B' suffix parsing bug, and added robust JSON/SPA routing protections.
 
 #### 🎯 v4.3.0 — The Precision Update
 - **[Rabbit Hole] Dynamic Compatibility:** SQLite integrated dynamic context fetching for niche compatibility.
@@ -109,7 +126,11 @@ We made setup completely frictionless.
 
 ## 🌌 Connected Projects & Sister Ecosystems
 If you like **YT Analiz Pro**, make sure to check out my other advanced AI cognitive architecture:
-* **[JARVIS-Cognitive-OS](https://github.com/oguzemirtopuz/JARVIS-Cognitive-OS):** An ultra-advanced Autonomous Cognitive Operating System built with a custom semantic router, hot-reloaded tool synthesis, low-energy Whisper voice pipelines, and AST-level sandbox execution environments. 🚀
+* **[JARVIS-Cognitive-OS (v16.1.0 ARCHITECT UPDATE)](https://github.com/oguzemirtopuz/JARVIS-Cognitive-OS)** 🤖
+  * **Armored Sandbox:** AST Sandbox made 100% secure, blocking deep Python vulnerabilities like `__builtins__`, `getattr`, `__import__`.
+  * **Zero Leak (Memory):** Fixed the bug where data deleted from ChromaDB remained hanging in RAM; TF-IDF matrix is now cleared asynchronously.
+  * **1-Click Installation:** Added a PowerShell-based, error-handled automatic FFmpeg downloader and PATH integrator.
+  * **DevOps:** Updated `requirements.txt` and `README.md`, sealed the v16.1.0 tag on GitHub.
 
 ---
 

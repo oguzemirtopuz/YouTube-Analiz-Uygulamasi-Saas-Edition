@@ -3069,15 +3069,7 @@ KURALLAR:
   ]
 }}"""
 
-    # -- Predictive Intelligence --
-    _eff_tier = tier or ("mega_viral" if views >= 100_000 else "viral" if views >= 5_000 else "potential" if views >= 500 else "dead")
-    _pi_ctx = _build_pi_context(tier=_eff_tier, time_window=time_window,
-        velocity_per_day=velocity_per_day, penetration_ratio=penetration_ratio,
-        comment_signals=comment_signals, views=views)
-    if _pi_ctx:
-        prompt = _pi_ctx + "\n\n" + prompt
-
-    # -- Predictive Intelligence --
+    # -- Predictive Intelligence (tek sefer enjekte) --
     _eff_tier = tier or ("mega_viral" if views >= 100_000 else "viral" if views >= 5_000 else "potential" if views >= 500 else "dead")
     _pi_ctx = _build_pi_context(tier=_eff_tier, time_window=time_window,
         velocity_per_day=velocity_per_day, penetration_ratio=penetration_ratio,
@@ -3113,7 +3105,13 @@ KURALLAR:
 
 
 
+
 def _build_pi_context(tier=None, time_window=None, velocity_per_day=None, penetration_ratio=None, comment_signals=None, views=0):
+    """
+    Predictive Intelligence bağlamı oluşturur.
+    Tier, zaman penceresi, hız, penetrasyon ve yorum sinyallerini AI'ya açıklar.
+    Anti-hallüsinasyon: yorum sinyali yoksa AI'ya açıkça bildirilir.
+    """
     lines = []
     tier_labels = {
         "dead":       "TIER: DEAD -- Bu video hic izlenme kazanamamis. Acil mudahale: baslik/thumbnail autopsy yap.",
@@ -3142,44 +3140,12 @@ def _build_pi_context(tier=None, time_window=None, velocity_per_day=None, penetr
         pstr = "YUKSEK" if penetration_ratio >= 1.0 else "ORTA" if penetration_ratio >= 0.1 else "DUSUK"
         lines.append(f"Abone penetrasyonu: her 100 abonesine {penetration_ratio*100:.1f} izlenme -- {pstr} baglilik.")
 
+    # Anti-halusinasyon zirhi: yorum verisi varsa gercek sinyal olarak gec;
+    # yoksa AI'yi hayali yorum uretmemesi konusunda uyar.
     if comment_signals and comment_signals.strip():
-        lines.append(f"Yorum sinyalleri: {comment_signals[:300].strip()}")
-
-    return "\n".join(lines)
-
-
-
-def _build_pi_context(tier=None, time_window=None, velocity_per_day=None, penetration_ratio=None, comment_signals=None, views=0):
-    lines = []
-    tier_labels = {
-        "dead":       "TIER: DEAD -- Bu video hic izlenme kazanamamis. Acil mudahale: baslik/thumbnail autopsy yap.",
-        "potential":  "TIER: POTENTIAL -- Video potansiyelini kullanamamis. Bir hamle eksik -- neyi duzeltmeli analiz et.",
-        "rising":     "TIER: RISING -- Bu video SU AN YUKSELIYOR! Momentum penceresi acik. Bunu yakala ve anlat.",
-        "viral":      "TIER: VIRAL -- Video viral olmus. Basarinin anatomisini cikar, tekrarlanabilir kalibi bul.",
-        "mega_viral": "TIER: MEGA VIRAL -- Sadece kazayi kopyalama. Sistemi cikar, tekrarlanabilir unsurlari ayir.",
-    }
-    if tier and tier in tier_labels:
-        lines.append("[PREDICTIVE INTELLIGENCE]")
-        lines.append(tier_labels[tier])
-
-    window_labels = {
-        "fresh":       "UYARI: Bu video 6 saatten yeni. Izlenme/yorumlar arkadaslik agi etkisi tasiyabilir -- baslik/thumbnail kalitesine odaklan.",
-        "burst":       "Video patlama penceresinde (6-48 saat) -- gercek organik momentum.",
-        "established": "Video algoritma yayilim evresinde (2-7 gun).",
-        "evergreen":   "Video evergreen evresinde (7+ gun) -- trafik arama/oneri bazli.",
-    }
-    if time_window and time_window in window_labels:
-        lines.append(window_labels[time_window])
-
-    if velocity_per_day is not None and velocity_per_day >= 0:
-        lines.append(f"Tahmini hiz: {velocity_per_day:,.0f} izlenme/gun.")
-
-    if penetration_ratio is not None and penetration_ratio > 0:
-        pstr = "YUKSEK" if penetration_ratio >= 1.0 else "ORTA" if penetration_ratio >= 0.1 else "DUSUK"
-        lines.append(f"Abone penetrasyonu: her 100 abonesine {penetration_ratio*100:.1f} izlenme -- {pstr} baglilik.")
-
-    if comment_signals and comment_signals.strip():
-        lines.append(f"Yorum sinyalleri: {comment_signals[:300].strip()}")
+        lines.append(f"Yorum sinyalleri (gercek veri): {comment_signals[:300].strip()}")
+    elif lines:  # Sadece baska PI verisi varsa eksiklik bildur
+        lines.append("Yorum sinyali yok -- yorumlar kapali veya henuz yuklenmemis. HAYALI YORUM URETME.")
 
     return "\n".join(lines)
 
@@ -3421,14 +3387,7 @@ class CloneVideoRequest(BaseModel):
     title:     str = Field(default="Başlık Yok", description="Video başlığı")
     channel:   str = Field(default="Bilinmeyen Kanal", description="Kanal adı")
     thumbnail: str = Field(default="", description="Thumbnail URL")
-    # -- Predictive Intelligence --
-    upload_date:       Optional[str]   = Field(default=None)
-    subscriber_count:  Optional[int]   = Field(default=None)
-    velocity_per_day:  Optional[float] = Field(default=None)
-    time_window:       Optional[str]   = Field(default=None)
-    tier:              Optional[str]   = Field(default=None)
-    penetration_ratio: Optional[float] = Field(default=None)
-    comment_signals:   Optional[str]   = Field(default=None)
+    views:     int = Field(default=0,  description="Izlenme sayisi")
     # -- Predictive Intelligence --
     upload_date:       Optional[str]   = Field(default=None)
     subscriber_count:  Optional[int]   = Field(default=None)
@@ -3622,6 +3581,138 @@ async def extension_rabbit_hole(payload: RabbitHoleRequest):
         return {"error": "Bu nişte aykırı bir trend bulunamadı veya ağ hatası oluştu."}
 
 
+# ═══════════════════════════════════════════════════════════
+#   PROPHET'S PICK — Otomatik Viral Öneri Sistemi
+#   BabaClutch nişine (Oyun/Kaos) uygun, şu an patlamakta olan
+#   3 adet "Aykırı" videoyu otomatik olarak tespit eder.
+#   Mevcut extract_rabbit_hole_sync modülünü kullanır (KISS).
+#   3 sorgu asyncio ile PARALEL çalışır → maks ~2sn yükleme.
+# ═══════════════════════════════════════════════════════════
+
+class ProphetPicksRequest(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    user_id: Optional[Union[int, str]] = 0
+
+async def _generate_prophet_queries(api_key: str, content_type: str, purpose: str) -> list[str]:
+    import requests, json, re
+    prompt = f"""Kullanıcının kanalı konsepti: {content_type} (Amaç: {purpose}).
+Bu kanal için YouTube'da şu an trend olabilecek, yüksek izlenme potansiyeline sahip 3 farklı arama sorgusu (search query) üret.
+Arama sorguları kısa ve öz olsun (örn: "Teknoloji inceleme", "Kutu açılımı", "Oyun hileleri").
+YALNIZCA geçerli bir JSON dizisi döndür, başka HİÇBİR ŞEY yazma.
+Örnek Format: ["sorgu1", "sorgu2", "sorgu3"]"""
+
+    headers = {"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"}
+    payload = {
+        "model": "llama-3.3-70b-versatile",
+        "messages": [{"role": "user", "content": prompt}],
+        "temperature": 0.5,
+        "max_tokens": 100
+    }
+    resp = await run_in_threadpool(lambda: requests.post("https://api.groq.com/openai/v1/chat/completions", headers=headers, json=payload, timeout=10))
+    if resp.status_code == 200:
+        content = resp.json()["choices"][0]["message"]["content"].strip()
+        content = re.sub(r"```(?:json)?", "", content).replace("```", "").strip()
+        try:
+            queries = json.loads(content)
+            if isinstance(queries, list) and len(queries) >= 3:
+                return queries[:3]
+        except:
+            pass
+    return [f"{content_type} trend", f"{content_type} 2024", f"{content_type} yeni"]
+
+@app.post("/api/extension/prophet_picks")
+async def extension_prophet_picks(payload: ProphetPicksRequest):
+    """
+    Kullanıcının kendi nişine uygun, şu an YouTube'da patlamakta olan 3 adet
+    'Aykırı' videoyu tespit eder.
+    - Kullanıcının kanal konseptine göre 3 farklı niş sorgusu (Groq ile) üretilir.
+    - 3 sorgu PARALEL çalıştırılır (asyncio.gather).
+    - Son 48 saatte yüklenmiş videolar önceliklendirilir.
+    - Kendi kanalı videoları (dinamik öz-karşılaştırma) atlanır.
+    - En yüksek velocity'ye sahip 3 video seçilir.
+    """
+    try:
+        db = await get_async_db()
+        content_type = "Genel İçerik"
+        purpose = "İzleyici Eğlendirmek"
+        channel_names = []
+        if payload.user_id:
+            try:
+                async with db.execute("SELECT name, content_type, purpose FROM channels WHERE user_id = ?", (payload.user_id,)) as c:
+                    rows = await c.fetchall()
+                    if rows:
+                        content_type = rows[0]['content_type'] or content_type
+                        purpose = rows[0]['purpose'] or purpose
+                        for r in rows:
+                            if r['name']:
+                                channel_names.append(r['name'].lower().strip())
+            finally:
+                await db.close()
+
+        api_key = await get_groq_api_key()
+        if api_key:
+            queries = await _generate_prophet_queries(api_key, content_type, purpose)
+        else:
+            queries = [f"{content_type} trend", f"{content_type} yeni", f"{content_type} popüler"]
+
+        # 3 sorguyu PARALEL çalıştır (threadpool'da, async-safe)
+        results_per_query = await asyncio.gather(
+            run_in_threadpool(extract_rabbit_hole_sync, queries[0]),
+            run_in_threadpool(extract_rabbit_hole_sync, queries[1]),
+            run_in_threadpool(extract_rabbit_hole_sync, queries[2]),
+            return_exceptions=True  # Bir sorgu hata verse diğerleri çalışmaya devam eder
+        )
+
+        from datetime import datetime, timezone
+        now = datetime.now()
+
+        # Tüm sonuçları birleştir
+        all_videos = []
+        for idx, result in enumerate(results_per_query):
+            if isinstance(result, Exception):
+                app_logger.warning(f"[Prophet Picks] Sorgu {idx+1} hata: {result}")
+                continue
+            if not isinstance(result, list):
+                continue
+            for v in result:
+                # Dinamik Öz-karşılaştırma bug fix: Kullanıcının kendi videoları atlanır
+                channel_lower = (v.get("channel") or "").lower().strip()
+                is_own_channel = False
+                for c_name in channel_names:
+                    if c_name and (c_name in channel_lower or channel_lower in c_name):
+                        is_own_channel = True
+                        break
+                
+                if is_own_channel:
+                    app_logger.info(f"[Prophet Picks] Öz-filtreleme: {v.get('title')[:50]} atlandı.")
+                    continue
+                # Velocity skoru ile birlikte listeye ekle
+                all_videos.append(v)
+
+        if not all_videos:
+            return {"error": "Şu an trend olan video bulunamadı."}
+
+        # Tekrar eden URL'leri kaldır (birden fazla sorguda aynı video çıkabilir)
+        seen_urls = set()
+        unique_videos = []
+        for v in all_videos:
+            url = v.get("url", "")
+            if url and url not in seen_urls:
+                seen_urls.add(url)
+                unique_videos.append(v)
+
+        # Velocity'ye göre sırala (en yüksek önce) → Top 3 seç
+        unique_videos.sort(key=lambda x: x.get("velocity", 0), reverse=True)
+        top_picks = unique_videos[:3]
+
+        app_logger.info(f"[Prophet Picks] {len(top_picks)} adet öneri seçildi.")
+        return {"success": True, "picks": top_picks}
+
+    except Exception as e:
+        app_logger.error(f"[Prophet Picks] Kritik Hata: {e}", exc_info=True)
+        return {"error": "Prophet Picks yüklenemedi."}
+
+
 @app.post("/api/extension/clone_video")
 async def extension_clone_video(payload: CloneVideoRequest):
     """
@@ -3736,13 +3827,7 @@ async def _call_groq_debate(
     Çıktı kesinlikle ayrıştırılabilir JSON dict olmalı — aksi hâlde HTTPException(500).
     """
 
-    # -- Predictive Intelligence context for judge --
-    _debate_tier = tier or ("mega_viral" if views >= 100_000 else "viral" if views >= 5_000 else "potential" if views >= 500 else "dead")
-    _debate_pi = _build_pi_context(tier=_debate_tier, time_window=time_window,
-        velocity_per_day=velocity_per_day, penetration_ratio=penetration_ratio,
-        comment_signals=comment_signals, views=views)
-
-    # -- Predictive Intelligence context for judge --
+    # -- Predictive Intelligence context (tek sefer hesaplanir) --
     _debate_tier = tier or ("mega_viral" if views >= 100_000 else "viral" if views >= 5_000 else "potential" if views >= 500 else "dead")
     _debate_pi = _build_pi_context(tier=_debate_tier, time_window=time_window,
         velocity_per_day=velocity_per_day, penetration_ratio=penetration_ratio,
@@ -3865,11 +3950,7 @@ Kurallar:
     idea_b = _parse_persona_json(raw_b, "Persona B (Büyücü)")
 
     # ── Hakem AI: Kazananı Seç veya Harmanlayıp Tek Fikir Üret ──────────────
-    if _debate_pi:
-        anatomi_directive = _debate_pi + "\n" + anatomi_directive
-
-    if _debate_pi:
-        anatomi_directive = _debate_pi + "\n" + anatomi_directive
+    # NOT: _debate_pi, prompt_judge tanımlandıktan SONRA enjekte edilir (aşağıda)
 
     prompt_judge = f"""Sen acımasız ve vizyoner bir YouTube İçerik Hakemi ve Algoritma Uzmanısın.
 
@@ -3917,6 +3998,10 @@ YALNIZCA şu JSON formatında döndür (başka hiçbir şey yazma):
   "kazanan_thumbnail": "...",
   "nis_uyarisi": "..."
 }}"""
+
+    # Predictive Intelligence bağlamını hakem promptuna enjekte et (anti-hallüsinasyon)
+    if _debate_pi:
+        prompt_judge = _debate_pi + "\n\n" + prompt_judge
 
     def _post_judge():
         return requests.post(

@@ -3596,10 +3596,12 @@ class ProphetPicksRequest(BaseModel):
 async def _generate_prophet_queries(api_key: str, content_type: str, purpose: str) -> list[str]:
     import requests, json, re
     prompt = f"""Kullanıcının kanalı konsepti: {content_type} (Amaç: {purpose}).
-Bu kanal için YouTube'da şu an trend olabilecek, yüksek izlenme potansiyeline sahip 3 farklı arama sorgusu (search query) üret.
-Arama sorguları kısa ve öz olsun (örn: "Teknoloji inceleme", "Kutu açılımı", "Oyun hileleri").
-YALNIZCA geçerli bir JSON dizisi döndür, başka HİÇBİR ŞEY yazma.
-Örnek Format: ["sorgu1", "sorgu2", "sorgu3"]"""
+Bu kanalın ana nişiyle BİREBİR alakalı, şu an YouTube'da trend olabilecek 3 spesifik "YouTube arama sorgusu" (search query) üret.
+KURALLAR:
+1. Asla genel kelimeler (örn: "komedi", "eğlence", "oyun", "kaos") kullanma. Doğrudan içeriğin ana konusunu/oyununu barındıran çok spesifik sorgular üret (Örn: "Rocket League rage", "Rocket League funny moments", "Rocket League challenge").
+2. Alakasız TV şovları, genel vloglar veya farklı oyunlar çıksın İSTEMİYORUZ. Yalnızca kanalın hedef nişine (oyunsa o oyuna, teknoloiyse o teknolojiye) odaklan!
+3. YALNIZCA geçerli bir JSON dizisi döndür, başka HİÇBİR ŞEY yazma.
+Örnek Format: ["spesifik_sorgu_1", "spesifik_sorgu_2", "spesifik_sorgu_3"]"""
 
     headers = {"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"}
     payload = {

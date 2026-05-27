@@ -3703,9 +3703,42 @@ async def extension_prophet_picks(payload: ProphetPicksRequest):
                 seen_urls.add(url)
                 unique_videos.append(v)
 
-        # Velocity'ye göre sırala (en yüksek önce) → Top 3 seç
+        # Velocity'ye göre sırala (en yüksek önce)
         unique_videos.sort(key=lambda x: x.get("velocity", 0), reverse=True)
-        top_picks = unique_videos[:3]
+        
+        # En hızlı yükselen ilk 10 videoyu al
+        top_candidates = unique_videos[:10]
+        
+        # ── Groq ile Yapay Zeka Uyumluluk Filtresi (Sadece En Hızlılara) ──
+        async def check_comp(v):
+            if not api_key: return v, True # API key yoksa mecburen geçir
+            try:
+                comp = await analyze_rabbit_hole_compatibility(
+                    api_key, v.get("title", ""), v.get("channel", ""), content_type, purpose
+                )
+                return v, ("uyumsuz" not in comp.lower() and "uyumlu" in comp.lower())
+            except Exception:
+                return v, True # Hata olursa yine de geçir
+
+        # 10 videoyu paralel analiz et (Çok hızlıdır, Groq <1sn'de döner)
+        comp_results = await asyncio.gather(*(check_comp(v) for v in top_candidates), return_exceptions=True)
+        
+        top_picks = []
+        for result in comp_results:
+            if isinstance(result, Exception): continue
+            v, is_compatible = result
+            if is_compatible:
+                top_picks.append(v)
+            if len(top_picks) == 3:
+                break
+                
+        # Eğer yapay zeka 3 tane bile uyumlu bulamadıysa, eldekileri doldur (Fallback)
+        if len(top_picks) < 3:
+            for v in top_candidates:
+                if v not in top_picks:
+                    top_picks.append(v)
+                if len(top_picks) == 3:
+                    break
 
         app_logger.info(f"[Prophet Picks] {len(top_picks)} adet öneri seçildi.")
         return {"success": True, "picks": top_picks}

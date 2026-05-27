@@ -992,9 +992,22 @@ async function fetchProphetPicks(userId) {
       });
     });
 
+    // ── Kartlara tıklayınca videoyu yeni sekmede açma ─────────────────────
+    section.querySelectorAll('.prophet-card').forEach(card => {
+      card.style.cursor = 'pointer'; // Tıklanabilir hissi ver
+      card.addEventListener('click', (e) => {
+        // Eğer Klonla, Tartış veya Kapatma butonlarına tıklanmadıysa yeni sekmede aç
+        if (e.target.closest('.prophet-btn') || e.target.closest('.prophet-close-btn')) return;
+        
+        const url = card.dataset.url;
+        if (url) {
+          chrome.tabs.create({ url: url, active: false }); // Arka planda aç
+        }
+      });
+    });
+
   } catch (err) {
-    // Sessizce başarısız ol — bu bir arka plan özelliğidir
-    console.warn('[Prophet Picks] Yüklenemedi:', err.message);
+    console.error("[fetchProphetPicks] Hata:", err);
   }
 }
 

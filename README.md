@@ -5,9 +5,9 @@
 
 ---
 
-✨🚀 **Latest Release (v4.5.0 PROPHET'S PICK EDITION)**
+✨🚀 **Latest Release (v4.5.1 PROPHET'S PICK HOTFIX)**
 > [!IMPORTANT]
-> **v4.5.0 - Prophet's Pick Edition (Dynamic Auto-Suggestion System) 🔮**
+> **v4.5.1 - Prophet's Pick Hotfix (AI Validation & Clickable Cards) 🔮**
 > 
 > **A. Next-Gen Analysis Engine (Predictive Intelligence):**
 > * **5-Tier AI Spectrum:** The system analyzes videos across 5 distinct tiers: 🔴 DEAD, 🟡 POTENTIAL, 🚀 RISING, 🟢 VIRAL, and 🔵 MEGA VIRAL.
@@ -28,6 +28,10 @@
 > * **Dynamic Self-Filtering:** The engine now automatically fetches your channel names from the database and scrubs your own videos from all Rabbit Hole and Prophet's Pick recommendations.
 
 ### 📜 Changelog
+#### 🔮 v4.5.1 — Prophet's Pick Hotfix
+- **[Prophet's Pick] AI Validation Filter:** Added a concurrent Groq AI validation layer for the top 10 highest-velocity videos to actively filter out generic/irrelevant trending videos (e.g., MrBeast) before rendering them on the dashboard.
+- **[UI/UX] Clickable Cards:** Made the entire Prophet's Pick card area clickable, opening the YouTube video in a new background tab without interfering with the Clone/Debate action buttons.
+- **[Prompt Engineering] Strict Niche Enforcement:** Updated the AI prompt generating search queries to explicitly ban generic terms (like "comedy" or "gaming") and strictly enforce content-specific targeting.
 #### 🔮 v4.5.0 — Prophet's Pick Edition
 - **[Prophet's Pick] Dynamic AI Queries:** Generates search queries via Groq specifically tailored to the user's registered `content_type` and `purpose`.
 - **[UI/UX] Matrix Glow Cards:** Injects a dynamic 3-card grid with a neon Matrix glow when the user is not on a video tab.

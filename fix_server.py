@@ -11,9 +11,9 @@ filepath = r"d:\Projeler - Kopya\analizprofinal-main\analizprofinal-main\server.
 with open(filepath, "r", encoding="utf-8") as f:
     content = f.read()
 
-# ── FIX 1: Restore corrupt line 2964 ─────────────────────────────────────────
+# ── FIX 1: Restore corrupt line 2964 ──────────────────── ─────────────────────
 # The line looks like:
-# "            # YouTube genellikle JSON3 formatında subtitle d?    # ── Viral: Mevcut prompt ──"
+# " # YouTube usually has subtitles in JSON3 format? # ── Viral: Current prompt ──"
 # We need to restore just the original part.
 CORRUPT_LINE = (
     "            # YouTube genellikle JSON3 formatında subtitle d"
@@ -29,7 +29,7 @@ content = re.sub(
 # ── FIX 2: Remove the injected block that was placed before _build_thumbnail_rule ends ─
 # The injected block starts right after line 2963 and contains the new if/else/prompt code
 # that was supposed to go inside _call_groq_clone. We need to remove it.
-# It starts with "\n    if is_viral:\n        # views=0 burada teorik" and ends before
+# It starts with "\n if is_viral:\n # views=0 here theoretical" and ends before
 # "async def _call_groq_clone"
 
 INJECTED_START = "\n    if is_viral:\n        # views=0 burada teorik olarak imkânsız"
@@ -56,11 +56,11 @@ OLD_CLONE_BODY = '''async def _call_groq_clone(api_key: str, title: str, channel
     is_viral = views >= VIRAL_THRESHOLD
     thumbnail_rule = _build_thumbnail_rule(content_type)
 
-    # ── Viral: Mevcut prompt ─────────────────────────────────────────────────────
+    # ── Viral: Current prompt ────────────────────────── ───────────────────────────
     if is_viral:
         views_info = f"{views:,} izlenme" if views > 0 else "Yüksek izlenme"
         anatomi_directive = f"""1. VİRAL ANATOMİ: Bu video {views_info} almış. Neden viral olduğunu (psikolojik tetikleyici ve kanca) analiz et."""
-    # ── Viral Değil: Potansiyel analizi promptı ───────────────────────────────
+    # ── Not Viral: Potential analysis prompt ───────────────────────────────
     else:
         views_info = f"yalnızca {views:,} izlenme" if views > 0 else "çok düşük izlenme"
         anatomi_directive = f"""1. VİDEO ANALİZİ (ÖNEMLİ): Bu video henüz {views_info} almış ve viral DEĞİLDİR. \n"Viral Anatomi" başlığını KULLANMA. Bunun yerine "viral_anatomi" alanında şu bilgileri yaz:\n- Bu videonun neden kitle bulamadığını (zayıf başlık, thumbnail sorunu, kanca eksikliği vb.) 2-3 cümleyle analiz et.\n- Videonun çıkarmaya çalıştığı potansiyeli ve ne yaparsa kitleye ulaşabileceğini açıklayıcı öneriler sun."""
@@ -107,15 +107,15 @@ NEW_CLONE_BODY = '''async def _call_groq_clone(api_key: str, title: str, channel
     is_viral = views >= VIRAL_THRESHOLD
     thumbnail_rule = _build_thumbnail_rule(content_type)
 
-    # ── Viral: Mevcut prompt ─────────────────────────────────────────────────────
+    # ── Viral: Current prompt ────────────────────────── ───────────────────────────
     if is_viral:
-        # views=0 burada teorik olarak imkânsız (is_viral=True için views>=5000 gerekir)
+        # views=0 is theoretically impossible here (is_viral=True requires views>=5000)
         views_info = f"{views:,} izlenme"
         anatomi_directive = "1. VİRAL ANATOMİ: Bu video neden viral oldu? İzleyiciyi çeken psikolojik tetikleyiciyi ve kancayı analiz et."
-    # ── Viral Değil: Potansiyel analizi promptı ───────────────────────────────
+    # ── Not Viral: Potential analysis prompt ───────────────────────────────
     else:
-        # views=0 → YouTube izlenme verisini sayfaya yüklememiş olabilir (yeni video, gizli sayaç vb.)
-        # Bu durumu AI'ya "çok düşük" olarak yansıtmak yerine "veri alınamadı" olarak net açıklıyoruz.
+        # views=0 → YouTube may not have uploaded viewing data to the page (new video, hidden counter, etc.)
+        # Instead of reflecting this situation to the AI ​​as "too low", we clearly explain it as "data could not be received".
         if views > 0:
             views_info = f"yalnızca {views:,} izlenme"
             views_context = f"Bu video şu an yalnızca {views:,} izlenmeye sahip ve viral DEĞİLDİR."
@@ -129,14 +129,14 @@ NEW_CLONE_BODY = '''async def _call_groq_clone(api_key: str, title: str, channel
 - Videonun potansiyelini ortaya çıkarmak için somut öneriler sun.
 - Altyazı yoksa yalnızca başlık verisine dayanarak dürüst bir değerlendirme yap, UYDURMA."""
 
-    # Altyazı yoksa AI'yı açıkça uyar (halüsinasyon kalkanı)
+    # Explicitly warn AI if there are no subtitles (hallucination shield)
     transcript_section = (
         transcript[:2000]
         if transcript
         else "[UYARI: Altyazı bulunamadı. Yalnızca video başlığına dayanarak analiz yap. Kesinlikle içerik uydurmaya çalışma.]"
     )
 
-    # JSON örnekteki viral_anatomi açıklaması — düz metin, Python ifadesi değil
+    # viral_anatomy description in JSON example — plain text, not Python expression
     anatomi_example = (
         "Neden patladığını anlatan 2-3 cümlelik psikolojik analiz"
         if is_viral
@@ -198,7 +198,7 @@ with open(filepath, "w", encoding="utf-8") as f:
 
 print("\n✅ All fixes written. Verifying...")
 
-# Verification
+# verification
 with open(filepath, "r", encoding="utf-8") as f:
     verify = f.read()
 

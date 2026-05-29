@@ -14,37 +14,37 @@
 
 if (window.location.href.includes('youtube.com')) {
 
-  // ── Pasif mesaj dinleyicisi ────────────────────────────────────────────────
+  // ── Passive message listener ──────────────────────── ────────────────────────
   chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
     if (msg.type === 'PING') {
       sendResponse({ alive: true, url: window.location.href });
     }
-    return false; // senkron yanıt, kanal açık tutulmaz
+    return false; // synchronous response, channel is not kept open
   });
 
-  // ── YouTube SPA Navigation Detector ────────────────────────────────────────
-  // YouTube kendi için 'yt-navigate-finish' custom event'i fırlatır.
-  // Bu event, AJAX ile video değiştiğinde tetiklenir (history.pushState dahil).
+  // ── YouTube SPA Navigation Detector ──────────────────── ────────────────────
+  // YouTube throws its own 'yt-navigate-finish' custom event.
+  // This event is triggered when the video changes via AJAX (including history.pushState).
   let _lastUrl = window.location.href;
 
   function _notifyUrlChange(newUrl) {
     if (newUrl !== _lastUrl && newUrl.includes('/watch?')) {
       _lastUrl = newUrl;
-      // Popup açıksa bildirim gönder (popup kapalıysa chrome hata loglar, sorun değil)
+      // Send notification if popup is open (chrome logs error if popup is closed, no problem)
       chrome.runtime.sendMessage({
         type: 'YT_URL_CHANGED',
         url: newUrl
-      }).catch(() => {}); // popup kapalıysa sessizce geç
+      }).catch(() => {}); // If the popup is closed, go silently
     }
   }
 
-  // 1. YouTube'un kendi SPA event'i (en güvenilir)
+  // 1. YouTube's own SPA event (most reliable)
   window.addEventListener('yt-navigate-finish', () => {
     _notifyUrlChange(window.location.href);
   });
 
   // 2. Fallback: history.pushState / replaceState intercept
-  // (yt-navigate-finish güncellemelerden sonra kaybolursa bu devreye girer)
+  // (this comes into play if yt-navigate-finish disappears after updates)
   const _origPush = history.pushState.bind(history);
   const _origReplace = history.replaceState.bind(history);
 
@@ -58,16 +58,16 @@ if (window.location.href.includes('youtube.com')) {
     _notifyUrlChange(window.location.href);
   };
 
-  // 3. popstate (geri/ileri navigasyon)
+  // 3. popstate (back/forward navigation)
   window.addEventListener('popstate', () => {
     _notifyUrlChange(window.location.href);
   });
 
   // ==========================================
-  // 🔥 MATRIX VISION: PASİF OUTLIER RADARI 🔥
+  // 🔥 MATRIX VISION: PASSIVE OUTLIER RADAR 🔥
   // ==========================================
   
-  // Matrix Vision CSS Enjeksiyonu
+  // Matrix Vision CSS Injection
   const matrixStyle = document.createElement('style');
   matrixStyle.innerHTML = `
     /* Neon Yeşil ve Altın Sarısı Glow Efekti */

@@ -1,8 +1,8 @@
-# YouTube Analiz Pro Launcher
+# YouTube Analyzer Pro Launcher
 $scriptPath = Split-Path -Parent $MyInvocation.MyCommand.Path
 $serverPath = Join-Path $scriptPath "server.pyw"
 
-# Python komutunu bul
+# Find Python command
 $pythonCmd = $null
 $pythonCommands = @("python", "py", "python3")
 
@@ -20,26 +20,26 @@ foreach ($cmd in $pythonCommands) {
 
 if ($null -eq $pythonCmd) {
     [System.Windows.Forms.MessageBox]::Show(
-        "Python bulunamadı!`n`nLütfen Python yükleyin: https://python.org/downloads",
-        "YouTube Analiz Pro",
+        "Python not found!`n`nPlease install Python: https://python.org/downloads",
+        "YouTube Analyzer Pro",
         [System.Windows.Forms.MessageBoxButtons]::OK,
         [System.Windows.Forms.MessageBoxIcon]::Error
     )
     exit
 }
 
-# Server.py kontrolü
+# Check server.py
 if (-not (Test-Path $serverPath)) {
     [System.Windows.Forms.MessageBox]::Show(
-        "server.py bulunamadı!`n`nDosya yolu: $serverPath",
-        "YouTube Analiz Pro",
+        "server.py not found!`n`nFile path: $serverPath",
+        "YouTube Analyzer Pro",
         [System.Windows.Forms.MessageBoxButtons]::OK,
         [System.Windows.Forms.MessageBoxIcon]::Error
     )
     exit
 }
 
-# Uygulamayı başlat (görünmez)
+# Start application (invisible)
 $psi = New-Object System.Diagnostics.ProcessStartInfo
 $psi.FileName = $pythonCmd
 $psi.Arguments = "`"$serverPath`""

@@ -13,7 +13,7 @@
 
 const SERVER = 'http://127.0.0.1:8000';
 
-// ── DOM Referansları ──────────────────────────────────────────────────────────
+// ── DOM References ───────────────────────────── ─────────────────────────────
 const $ = id => document.getElementById(id);
 
 const views = {
@@ -51,13 +51,13 @@ const elDashUser     = $('dash-username');
 const elBtnLogout    = $('btn-logout');
 const elRecentList   = $('recent-list');
 
-// ── View Geçişi ───────────────────────────────────────────────────────────────
+// ── View Switch ─────────────────────────────── ────────────────────────────────
 function showView(name) {
   Object.values(views).forEach(v => v.classList.remove('active'));
   views[name].classList.add('active');
 }
 
-// ── Sunucu Sağlık Kontrolü ────────────────────────────────────────────────────
+// ── Server Health Check ────────────────────────── ──────────────────────────
 async function checkServer() {
   setServerStatus('checking');
   try {
@@ -87,14 +87,14 @@ function setServerStatus(state) {
   }
 }
 
-// ── Hata Gösterici ────────────────────────────────────────────────────────────
+// ── Error Pointer ────────────────────────────── ──────────────────────────────
 function showError(title, msg) {
   elErrorTitle.textContent = title;
   elErrorMsg.textContent   = msg;
   showView('error');
 }
 
-// ── Auth & Dashboard ──────────────────────────────────────────────────────────
+// ── Auth & Dashboard ───────────────────────────── ─────────────────────────────
 async function loadRecentAnalyses(userId) {
   try {
     const resp = await fetch(`${SERVER}/api/extension/recent_analyses?user_id=${userId}`);
@@ -175,20 +175,20 @@ function handleLogout() {
   });
 }
 
-// ── Aktif Sekme Tespiti (Tam Ekran Desteği İçin) ─────────────────────────────
-// BUG FIX: tabs[0] fallback kaldırıldı. URL query'den gelen passedUrl ile
-// eşleşen sekme yoksa null döner — boş/yanlış URL ile analiz yapılamaz.
+// ── Active Tab Detection (For Full Screen Support) ─────────────────────────────
+// BUG FIX: tabs[0] fallback has been removed. With passedUrl from URL query
+// If there is no matching tab, it returns null — analysis cannot be performed with an empty/wrong URL.
 async function getActiveTab() {
   const urlParams = new URLSearchParams(window.location.search);
   const passedUrl = urlParams.get('url');
   
   if (passedUrl) {
-    // Tam ekran modu: URL'si tam olarak eşleşen sekmeyi bul.
-    // Eşleşme yoksa HATA ver — rastgele bir YouTube sekmesi seçme!
+    // Full screen mode: Find the tab whose URL matches exactly.
+    // If there is no match, return ERROR — don't pick a random YouTube tab!
     let tabs = await chrome.tabs.query({ url: "*://*.youtube.com/*" });
     let matchedTab = tabs.find(t => t.url === passedUrl);
     if (matchedTab) return matchedTab;
-    // Eşleşme bulunamadı: null döndür, çağıran fonksiyon hata gösterecek.
+    // No match found: return null, the calling function will throw an error.
     return null;
   }
   
@@ -196,7 +196,7 @@ async function getActiveTab() {
   return tab;
 }
 
-// ── YouTube Sekme Doğrulama ───────────────────────────────────────────────────
+// ── YouTube Tab Verification ───────────────────────── ──────────────────────────
 function isYouTubeTab(tab) {
   return tab?.url?.match(/https:\/\/(www\.)?youtube\.com\/watch\?/);
 }
@@ -205,10 +205,10 @@ function isYouTubeChannelTab(tab) {
     if (!tab || !tab.url) return false;
     const url = tab.url.toLowerCase();
     
-    // Açık kanal formatları
+    // Open channel formats
     if (url.includes('/@') || url.includes('/channel/') || url.includes('/c/') || url.includes('/user/')) return true;
     
-    // Özel URL'ler (örn: youtube.com/mendeburlemur)
+    // Special URLs (ex: youtube.com/mendeburlemur)
     try {
         const u = new URL(url);
         if (u.hostname.includes('youtube.com')) {
@@ -223,7 +223,7 @@ function isYouTubeChannelTab(tab) {
     return false;
 }
 
-// ── Savaş Raporu Ana Akışı (Kanal Analizi) ────────────────────────────────────
+// ── Battle Report Mainstream (Channel Analysis) ────────────────────────────────────
 async function analyzeChannel() {
   const serverUp = await checkServer();
   if (!serverUp) {
@@ -277,7 +277,7 @@ async function analyzeChannel() {
   }
 }
 
-// ── Tavşan Deliği (Niş Bulucu) Ana Akışı ──────────────────────────────────────
+// ── Rabbit Hole (Niche Finder) Mainstream ──────────────────────────────────────
 async function findRabbitHole() {
   const query = elRabbitQuery.value.trim();
   if (!query) {
@@ -349,12 +349,12 @@ async function findRabbitHole() {
   }
 }
 
-// ── A/B Test Debate Ana Akışı ─────────────────────────────────────────────
+// ── A/B Test Debate Main Flow ────────────────────── ───────────────────────
 async function debateVideo(eventOrData = null) {
   let isAuto = eventOrData && !(eventOrData instanceof Event);
   let autoData = isAuto ? eventOrData : null;
 
-  // 1. Sunucu online mı?
+  // 1. Is the server online?
   const serverUp = await checkServer();
   if (!serverUp) {
     showError('🔴 Sunucu Çevrimdışı', 'YT Analiz Pro masaüstü uygulaması çalışmıyor.');
@@ -363,7 +363,7 @@ async function debateVideo(eventOrData = null) {
 
   let tab = null;
   if (!autoData) {
-      // 2. Aktif sekme YouTube videosu mu?
+      // 2. Is the active tab a YouTube video?
       tab = await getActiveTab();
       if (!tab) {
         showError('🔗 Sekme Bulunamadı', 'Analiz edilecek YouTube video sekmesi bulunamadı.');
@@ -375,11 +375,11 @@ async function debateVideo(eventOrData = null) {
       }
   }
 
-  // 3. Battle yükleme ekranını göster (3s progress bar animasyonu ile)
+  // 3. Show Battle loading screen (with 3s progress bar animation)
   showView('loading');
   elLoadingSub.textContent = 'Persona A vs B savaşıyor...';
 
-  // Progress bar enjekte et (sadece debate modunda)
+  // Inject progress bar (only in debate mode)
   const existingBar = document.getElementById('battle-bar-wrap');
   if (!existingBar) {
     const barWrap = document.createElement('div');
@@ -389,15 +389,15 @@ async function debateVideo(eventOrData = null) {
       <div class="battle-progress-label">⚔️ Ajanlar Kapışıyor... Hakem Karar Veriyor...</div>
       <div class="battle-progress-bar"><div class="battle-progress-fill"></div></div>
     `;
-    // loading view'in sonuna ekle
+    // add at the end of loading view
     views.loading.appendChild(barWrap);
   } else {
-    // Varsa animasyonu yeniden başlat
+    // Restart animation if applicable
     const fill = existingBar.querySelector('.battle-progress-fill');
     if (fill) { fill.style.animation = 'none'; fill.offsetHeight; fill.style.animation = ''; }
   }
 
-  // 4. Metadata çek
+  // 4. Get metadata
   let videoData;
   if (autoData) {
       videoData = autoData;
@@ -425,7 +425,7 @@ async function debateVideo(eventOrData = null) {
 
   const { user_id } = await chrome.storage.local.get(['user_id']);
 
-  // Predictive Intelligence alanları ile zenginleştirilmiş request
+  // Request enriched with Predictive Intelligence fields
   const requestBody = enrichVideoData(videoData, user_id);
 
   // 5. POST /api/extension/clone_debate
@@ -438,7 +438,7 @@ async function debateVideo(eventOrData = null) {
 
     const data = await resp.json();
 
-    // Fail-Fast: HTTP hata veya backend error alanı → dürüstçe ekrana bas
+    // Fail-Fast: HTTP error or backend error field → press screen honestly
     if (!resp.ok || !data.success) {
       const msg = data.detail || data.error || `Bilinmeyen Hata (HTTP ${resp.status})`;
       showError('⚠️ Tartışma Başarısız', msg);
@@ -452,14 +452,14 @@ async function debateVideo(eventOrData = null) {
     const debateWindow   = requestBody.time_window;
     const debatePenetr   = requestBody.penetration_ratio;
 
-    // 6. Debate result view'i doldur
+    // 6. Fill in the Debate result view
     document.getElementById('debate-critic-summary').textContent  = d.eleştirmen_fikri  || '—';
     document.getElementById('debate-wizard-summary').textContent  = d.buyucu_fikri      || '—';
     document.getElementById('debate-winner-title').textContent    = d.kazanan_baslik    || '—';
     document.getElementById('debate-winner-hook').textContent     = d.kazanan_kanca     || '—';
     document.getElementById('debate-winner-thumb').textContent    = d.kazanan_thumbnail || '—';
 
-    // Dinamik alanlar
+    // Dynamic fields
     const winnerCard = document.querySelector('.debate-winner-card');
     if (winnerCard) {
         const oldExtra = winnerCard.querySelector('.dynamic-debate-extras');
@@ -467,7 +467,7 @@ async function debateVideo(eventOrData = null) {
         
         let extraHtml = '';
 
-        // ── 5 Kademeli Tier Banner (Debate) ──────────────────────────────────
+        // ── 5 Tier Tier Banner (Debate) ──────────────────────────────────
         const TIER_CONFIG = {
           dead:       { emoji: '🔴', label: 'ÖLÇÜM',         color: '#ef4444', bg: 'rgba(239,68,68,0.12)',    sub: 'Acil müdahale önerileri aşağıda.' },
           potential:  { emoji: '🟡', label: 'POTANSİYEL VAR', color: '#f59e0b', bg: 'rgba(245,158,11,0.12)', sub: 'Bir hamle eksik — öneriler aşağıda.' },
@@ -526,12 +526,12 @@ async function debateVideo(eventOrData = null) {
   }
 }
 
-// ── Klonlama Ana Akışı ────────────────────────────────────────────────────────
+// ── Cloning Main Flow ──────────────────────────── ────────────────────────────
 async function cloneVideo(eventOrData = null) {
   let isAuto = eventOrData && !(eventOrData instanceof Event);
   let autoData = isAuto ? eventOrData : null;
 
-  // 1. Sunucu online mı?
+  // 1. Is the server online?
   const serverUp = await checkServer();
   if (!serverUp) {
     showError(
@@ -543,9 +543,9 @@ async function cloneVideo(eventOrData = null) {
 
   let tab = null;
   if (!autoData) {
-      // 2. Aktif sekme YouTube'da mı?
-      // BUG FIX: getActiveTab() artık null döndürebilir (tam ekran modunda eşleşme yoksa).
-      // null kontrolü eklendi — URL eksikse analiz KESİNLİKLE reddedilir.
+      // 2. Is the active tab on YouTube?
+      // BUG FIX: getActiveTab() can now return null (if there is no match in fullscreen mode).
+      // Added null check — If the URL is missing, the analysis is STRICTLY rejected.
       tab = await getActiveTab();
       if (!tab) {
         showError(
@@ -563,11 +563,11 @@ async function cloneVideo(eventOrData = null) {
       }
   }
 
-  // 3. Loading göster
+  // 3. Show loading
   showView('loading');
   elLoadingSub.textContent = 'Sayfa verisi okunuyor...';
 
-  // 4. content.js inject et ve metadata çek
+  // 4. Inject content.js and pull metadata
   let videoData;
   if (autoData) {
       videoData = autoData;
@@ -578,10 +578,10 @@ async function cloneVideo(eventOrData = null) {
           func: extractYouTubeData,
         });
 
-        // executeScript dönüşü: { result: <fonksiyonun döndürdüğü değer> }
+        // executeScript return: { result: <function returned value> }
         const extracted = result?.result;
 
-        // Fonksiyon içinden { error: "..." } geldiyse yakala
+        // Catch if { error: "..." } comes from within the function
         if (!extracted || extracted.error) {
           showError('❌ Veri Çekme Hatası', extracted?.error || 'Sayfa verisi okunamadı.');
           return;
@@ -599,7 +599,7 @@ async function cloneVideo(eventOrData = null) {
       }
   }
 
-  // 5. Thumbnail göster
+  // 5. Show thumbnail
   if (videoData.thumbnail) {
     elThumbImg.src     = videoData.thumbnail;
     elThumbMeta.textContent = `${videoData.title || 'Video'} · ${videoData.channel || ''}`;
@@ -610,7 +610,7 @@ async function cloneVideo(eventOrData = null) {
 
   const { user_id } = await chrome.storage.local.get(['user_id']);
 
-  // 6. Backend'e POST — Predictive Intelligence alanları ile zenginleştirilmiş
+  // 6. POST to Backend — enriched with Predictive Intelligence fields
   const requestBody = enrichVideoData(videoData, user_id);
 
   try {
@@ -623,13 +623,13 @@ async function cloneVideo(eventOrData = null) {
     const data = await resp.json();
 
     if (!resp.ok || data.error) {
-      // Backend'den error mesajı geldiyse doğrudan onu göster. Yoksa genel HTTP statüsünü yazdır.
+      // If an error message comes from the backend, show it directly. Otherwise print public HTTP status.
       const msg = data.error || `Bilinmeyen Hata (HTTP ${resp.status})`;
       showError('⚠️ İşlem Başarısız', msg);
       return;
     }
 
-    // 7. Sonucu göster — 5 Kademeli Tier Sistemi
+    // 7. Show result — 5-Level Tier System
     const videoViews    = requestBody.views || 0;
     const videoTier     = requestBody.tier  || (videoViews >= 5000 ? 'viral' : videoViews >= 500 ? 'potential' : 'dead');
     const videoVelocity = requestBody.velocity_per_day;
@@ -644,7 +644,7 @@ async function cloneVideo(eventOrData = null) {
       const parsed = JSON.parse(rawText);
       let htmlCards = '';
 
-      // ── 5 Kademeli Tier Banner ───────────────────────────────────────────────
+      // ── 5 Tier Tier Banner ─────────────────────── ────────────────────────
       const TIER_CONFIG = {
         dead:       { emoji: '🔴', label: 'ÖLÇÜM',        color: '#ef4444', bg: 'rgba(239,68,68,0.12)',       sub: 'Acil müdahale önerileri aşağıda.' },
         potential:  { emoji: '🟡', label: 'POTANSİYEL VAR', color: '#f59e0b', bg: 'rgba(245,158,11,0.12)',    sub: 'Bir hamle eksik — öneriler aşağıda.' },
@@ -655,7 +655,7 @@ async function cloneVideo(eventOrData = null) {
       const tc = TIER_CONFIG[videoTier] || TIER_CONFIG['potential'];
       const viewsStr = videoViews > 0 ? videoViews.toLocaleString('tr-TR') + ' izlenme' : 'İzlenme verisi alınamadı';
 
-      // Chip'ler (varsa göster)
+      // Chips (show if available)
       let chips = '';
       if (videoVelocity !== null && videoVelocity !== undefined) {
         chips += `<span class="pi-chip">📈 ~${videoVelocity.toLocaleString('tr-TR')} izlenme/gün</span>`;
@@ -711,7 +711,7 @@ async function cloneVideo(eventOrData = null) {
   }
 }
 
-// ── YouTube Veri Çekici (Sayfa içinde çalışır) ────────────────────────────────
+// ── YouTube Data Extractor (Works within the page) ────────────────────────────────
 function extractYouTubeData() {
   try {
     const url     = window.location.href;
@@ -735,16 +735,16 @@ function extractYouTubeData() {
 
     const thumbnail = `https://i.ytimg.com/vi/${videoId}/maxresdefault.jpg`;
 
-    // ── İzlenme Sayısı Çekme ──────────────────────────────────────────────────
-    // Önce meta etiketinden dene (en güvenilir)
+    // ── Views Pull ───────────────────────── ─────────────────────────
+    // Try from meta tag first (most reliable)
     let views = 0;
     const metaViewCount = document.querySelector('meta[itemprop="interactionCount"]');
     if (metaViewCount && metaViewCount.content) {
       views = parseInt(metaViewCount.content.replace(/[^\d]/g, ''), 10) || 0;
     }
-    // Fallback: görüntüleme sayısı metninden parse et
-    // GÜVENLI PARSER: Türkçe (1.234.567), İngilizce (1,234,567) ve
-    // kısaltmalı (1.2M, 500B, 3K) formatları doğru işler.
+    // Fallback: parse view count from text
+    // SECURE PARSER: Turkish (1,234,567), English (1,234,567) and
+    // Correctly handles abbreviated (1.2M, 500B, 3K) formats.
     if (views === 0) {
       const viewEl = (
         document.querySelector('.view-count') ||
@@ -753,7 +753,7 @@ function extractYouTubeData() {
       );
       if (viewEl) {
         const raw = viewEl.textContent.trim().toLowerCase();
-        // Kısaltma formatlarını önce çöz (1.2m, 1.2b, 3k, 500b vb.)
+        // Decide the abbreviation formats first (1.2m, 1.2b, 3k, 500b etc.)
         const shortMatch = raw.match(/([\d][\d.,]*)\s*([mbk]|mn|bn|milyon|milyar|bin)/);
         if (shortMatch) {
           const num = parseFloat(shortMatch[1].replace(',', '.'));
@@ -762,22 +762,22 @@ function extractYouTubeData() {
           else if (suffix === 'm' || suffix === 'mn' || suffix === 'milyon') views = Math.round(num * 1_000_000);
           else if (suffix === 'b' || suffix === 'bn' || suffix === 'milyar') views = Math.round(num * 1_000_000_000);
         } else {
-          // Standart sayı: tüm nokta/virgül/boşluk binlik ayraçlarını sil, sonra parse et
+          // Standard issue: delete all dot/comma/space thousands separator, then parse
           const digitsOnly = raw.replace(/[^\d]/g, '');
           views = parseInt(digitsOnly, 10) || 0;
         }
       }
     }
 
-    // ── Yayın Tarihi (Velocity için) ─────────────────────────────────────────
+    // ── Release Date (for Velocity) ──────────────────── ─────────────────────
     let uploadDate = null;
     const uploadMeta = document.querySelector('meta[itemprop="uploadDate"]') ||
                        document.querySelector('meta[itemprop="datePublished"]');
     if (uploadMeta && uploadMeta.content) {
-      uploadDate = uploadMeta.content; // ISO 8601 formatında: "2025-05-20T14:00:00+00:00"
+      uploadDate = uploadMeta.content; // In ISO 8601 format: "2025-05-20T14:00:00+00:00"
     }
 
-    // ── Abone Sayısı (Penetrasyon Oranı için) ────────────────────────────────
+    // ── Number of Subscribers (for Penetration Rate) ────────────────────────────────
     let subscriberCount = null;
     const subEl = (
       document.querySelector('yt-formatted-string#subscriber-count') ||
@@ -786,7 +786,7 @@ function extractYouTubeData() {
     );
     if (subEl && subEl.textContent) {
       const subRaw = subEl.textContent.trim().toLowerCase();
-      // Kısaltma formatlarını çöz: 1.2M, 500B, 3K, vb.
+      // Decode abbreviation formats: 1.2M, 500B, 3K, etc.
       const subMatch = subRaw.match(/([\d][.\d,]*)\s*([mbk]|mn|bn|milyon|milyar|bin)?/);
       if (subMatch) {
         const num = parseFloat(subMatch[1].replace(',', '.'));
@@ -797,16 +797,16 @@ function extractYouTubeData() {
         else if (suffix === 'm' || suffix === 'mn' || suffix === 'milyon') subscriberCount = Math.round(num * 1_000_000);
         else if (suffix === 'bn' || suffix === 'milyar') subscriberCount = Math.round(num * 1_000_000_000);
         else if (suffix === 'b') {
-            // Youtube'da hiçbir kanal 1 milyara sahip değil ama İngilizce'de 'B' billion demektir.
-            // Türkçe'de ise 'B' bin demektir.
+            // No channel on YouTube has 1 billion views, but 'B' means billion in English.
+            // In Turkish, 'B' means thousand.
             subscriberCount = isEnglish ? Math.round(num * 1_000_000_000) : Math.round(num * 1_000);
         }
         else subscriberCount = Math.round(num) || null;
       }
     }
 
-    // ── Yorum Sinyalleri (Kalite Analizi için) ───────────────────────────────
-    // İlk 5 yorumun ham metnini topla — suni artış koruması için AI'ya bildirilecek
+    // ── Comment Signals (for Quality Analysis) ───────────────────────────────
+    // Collect raw text of first 5 comments — will be reported to AI for spiking protection
     let commentSignals = '';
     const commentEls = document.querySelectorAll('ytd-comment-thread-renderer #content-text');
     if (commentEls.length > 0) {
@@ -820,7 +820,7 @@ function extractYouTubeData() {
   }
 }
 
-// ── Predictive Intelligence: Velocity + Tier + Penetrasyon Hesabı ────────────
+// ── Predictive Intelligence: Velocity + Tier + Penetration Calculation ────────────
 /**
  * Ham videoData objesini alır, analitik alanlarla zenginleştirir ve
  * backend'e gönderilmeye hazır requestBody döner.
@@ -837,7 +837,7 @@ function enrichVideoData(videoData, userId) {
   const subscriberCount = videoData.subscriberCount || null;
   const commentSignals = videoData.commentSignals || '';
 
-  // ── Video Yaşı + Velocity ─────────────────────────────────────────────────
+  // ── Video Age + Velocity ──────────────────────── ─────────────────────────
   let videoAgeHours  = null;
   let velocityPerDay = null;
   let timeWindow     = null;
@@ -846,7 +846,7 @@ function enrichVideoData(videoData, userId) {
     try {
       const publishedAt  = new Date(uploadDate).getTime();
       const nowMs        = Date.now();
-      videoAgeHours      = Math.max((nowMs - publishedAt) / 3_600_000, 0.01); // sıfıra bölme koruması
+      videoAgeHours      = Math.max((nowMs - publishedAt) / 3_600_000, 0.01); // division by zero protection
       velocityPerDay     = Math.round((views / videoAgeHours) * 24);
 
       if (videoAgeHours < 6)         timeWindow = 'fresh';
@@ -854,23 +854,23 @@ function enrichVideoData(videoData, userId) {
       else if (videoAgeHours < 168)  timeWindow = 'established'; // 7 gün
       else                           timeWindow = 'evergreen';
     } catch (e) {
-      // Geçersiz tarih formatı — tüm velocity alanları null kalır
+      // Invalid date format — all velocity fields remain null
     }
   }
 
-  // ── Spektrum Kademesi (Tier) ──────────────────────────────────────────────
+  // ── Spectrum Tier ─────────────────────── ───────────────────────
   let tier;
   if      (views >= 100_000) tier = 'mega_viral';
   else if (views >=   5_000) tier = 'viral';
   else if (views >=     500) tier = 'potential';
   else                       tier = 'dead';
 
-  // Özel Kural: Yükselen (Rising) — potential + burst + hız > 1.000/gün
+  // Special Rule: Rising — potential + burst + speed > 1,000/day
   if (tier === 'potential' && timeWindow === 'burst' && velocityPerDay > 1_000) {
     tier = 'rising';
   }
 
-  // ── Abone Penetrasyon Oranı ───────────────────────────────────────────────
+  // ── Subscriber Penetration Rate ─────────────────────── ────────────────────────
   let penetrationRatio = null;
   if (subscriberCount && subscriberCount > 0 && views > 0) {
     penetrationRatio = parseFloat((views / subscriberCount).toFixed(3));
@@ -884,7 +884,7 @@ function enrichVideoData(videoData, userId) {
     thumbnail:         videoData.thumbnail || '',
     views,
     user_id:           userId || 0,
-    // ── Yeni Predictive Alanlar ──
+    // ── New Predictive Fields ──
     upload_date:       uploadDate,
     subscriber_count:  subscriberCount,
     velocity_per_day:  velocityPerDay,
@@ -895,7 +895,7 @@ function enrichVideoData(videoData, userId) {
   };
 }
 
-// ── Prophet's Pick — Otomatik Viral Öneri Sistemi ────────────────────────────
+// ── Prophet's Pick — Automatic Viral Recommendation System
 /**
  * BabaClutch nişine (Oyun/Kaos) uygun, YouTube'da şu an patlamakta olan
  * 3 "Aykırı" videoyu çekip Matrix Vision Glow efektli kart grid'i olarak gösterir.
@@ -907,7 +907,7 @@ function enrichVideoData(videoData, userId) {
  *   3. Her kartta: Başlık (2 satır), 🔥 Hız chip, ⚡ Klonla + ⚔️ Tartış butonları
  */
 async function fetchProphetPicks(userId) {
-  // Zaten gösteriliyorsa tekrar ekleme
+  // Add again if already shown
   if (document.getElementById('prophet-picks-section')) return;
 
   try {
@@ -921,10 +921,10 @@ async function fetchProphetPicks(userId) {
     const data = await resp.json();
     if (!data.success || !data.picks || data.picks.length === 0) return;
 
-    // ── Kart HTML üret ──────────────────────────────────────────────────────
+    // ── Generate card HTML ─────────────────────────── ───────────────────────────
     let cardsHtml = '';
     data.picks.forEach((v, idx) => {
-      // videoId'yi URL'den çıkar (Klonla / Tartış için gerekli)
+      // Remove videoId from URL (Required for Clone/Discuss)
       let videoId = '';
       if (v.url && v.url.includes('v=')) {
         videoId = v.url.split('v=')[1].split('&')[0];
@@ -948,7 +948,7 @@ async function fetchProphetPicks(userId) {
 </div>`;
     });
 
-    // ── Section container ─────────────────────────────────────────────────
+    // ── Section container ──────────────────────── ─────────────────────────
     const section = document.createElement('div');
     section.id = 'prophet-picks-section';
     section.innerHTML = `
@@ -960,7 +960,7 @@ async function fetchProphetPicks(userId) {
       <div class="prophet-picks-grid">${cardsHtml}</div>
     `;
 
-    // Dashboard header'ın hemen altına ekle (en üst pozisyon)
+    // Add just below the dashboard header (top position)
     const idleView = document.getElementById('view-idle');
     if (!idleView) return;
     const dashHeader = idleView.querySelector('.dashboard-header');
@@ -970,13 +970,13 @@ async function fetchProphetPicks(userId) {
       idleView.insertBefore(section, idleView.firstChild);
     }
 
-    // ── Kapat butonu ──────────────────────────────────────────────────────
+    // ── Close button ─────────────────────────── ───────────────────────────
     document.getElementById('btn-prophet-close').addEventListener('click', () => {
       section.remove();
     });
 
-    // ── Kart aksiyonları: videoData objesini kur ve klonla/tartış başlat ─
-    const storedPicks = data.picks; // closure için sakla
+    // ── Card actions: set up videoData object and clone/start discussion ─
+    const storedPicks = data.picks; // save for closure
     section.querySelectorAll('.prophet-btn--clone').forEach(btn => {
       btn.addEventListener('click', () => {
         const card = btn.closest('.prophet-card');
@@ -992,16 +992,16 @@ async function fetchProphetPicks(userId) {
       });
     });
 
-    // ── Kartlara tıklayınca videoyu yeni sekmede açma ─────────────────────
+    // ── Opening the video in a new tab when you click on the cards ─────────────────────
     section.querySelectorAll('.prophet-card').forEach(card => {
       card.style.cursor = 'pointer'; // Tıklanabilir hissi ver
       card.addEventListener('click', (e) => {
-        // Eğer Klonla, Tartış veya Kapatma butonlarına tıklanmadıysa yeni sekmede aç
+        // If the Clone, Discuss or Close buttons are not clicked, open in a new tab
         if (e.target.closest('.prophet-btn') || e.target.closest('.prophet-close-btn')) return;
         
         const url = card.dataset.url;
         if (url) {
-          chrome.tabs.create({ url: url, active: false }); // Arka planda aç
+          chrome.tabs.create({ url: url, active: false }); // open in background
         }
       });
     });
@@ -1025,13 +1025,13 @@ function _prophetCardToVideoData(card, pick) {
   };
 }
 
-// ── Açılış Zekası (Contextual Auto-Suggestion) ────────────────────────────────
+// ── Opening Intelligence (Contextual Auto-Suggestion) ────────────────────────────────
 async function initSuggestion() {
   const tab = await getActiveTab();
   if (!tab || !tab.url) return;
 
   if (isYouTubeTab(tab)) {
-    // --- KRİTİK EKLEME: Ekranı temizle ve odağı videoya ver ---
+    // --- CRITICAL ADD: Clear the screen and give focus to the video ---
     const recentTitle = document.querySelector('.recent-analyses-title') || document.querySelector('.recent-analyses .recent-title');
     const recentList = document.querySelector('.recent-list');
     if (recentTitle) recentTitle.style.display = 'none'; // "Son Analizlerim" yazısını gizle
@@ -1100,10 +1100,10 @@ async function initSuggestion() {
     return;
   }
 
-  // ── Prophet's Pick: Video sayfasında da kanal sayfasında da değiliz ──────
-  // (Ana sayfa, arama sonuçları, trending vb. durumlarda Prophet Picks göster)
+  // ── Prophet's Pick: We are not on the video page or the channel page ──────
+  // (Show Prophet Picks on home page, search results, trending, etc.)
   const { user_id: prophetUserId } = await chrome.storage.local.get(['user_id']);
-  // Arka planda asenkron çalıştır — UI'yi bloklamaz, 2sn içinde yüklenir
+  // Run asynchronously in background — does not block UI, loads in 2 seconds
   fetchProphetPicks(prophetUserId).catch(() => {});
 }
 
@@ -1111,7 +1111,7 @@ function showSuggestionCard(videoData, subtitle) {
   const idleView = document.getElementById('view-idle');
   if (!idleView || document.getElementById('smart-suggestion-card')) return;
 
-  // --- KRİTİK EKLEME: Alttaki yinelenen butonları gizle ---
+  // --- CRITICAL ADD: Hide duplicate buttons at the bottom ---
   const cloneBtnGroup = document.getElementById('clone-btn-group');
   const btnAnalyze = document.getElementById('btn-analyze');
   if (cloneBtnGroup) cloneBtnGroup.style.display = 'none';
@@ -1149,7 +1149,7 @@ function showSuggestionCard(videoData, subtitle) {
     card.remove();
     chrome.storage.local.set({ dismissed_video_id: videoData.videoId });
 
-    // --- KRİTİK İYİLEŞTİRME: Sayfa tipine göre alttaki butonları geri getir ---
+    // --- CRITICAL IMPROVEMENT: Bring back buttons at the bottom according to page type ---
     const tab = await getActiveTab();
     const cloneBtnGroup = document.getElementById('clone-btn-group');
     const btnAnalyze = document.getElementById('btn-analyze');
@@ -1173,7 +1173,7 @@ function showSuggestionCard(videoData, subtitle) {
   }
 }
 
-// ── Event Listeners ───────────────────────────────────────────────────────────
+// ── Event Listeners ───────────────────────────── ──────────────────────────────
 elBtnLogin.addEventListener('click', handleLogin);
 elBtnLogout.addEventListener('click', handleLogout);
 elBtnClone.addEventListener('click', cloneVideo);
@@ -1230,7 +1230,7 @@ if (elBtnInfo) elBtnInfo.addEventListener('click', async () => {
 });
 if (elBtnInfoClose) elBtnInfoClose.addEventListener('click', () => showView('idle'));
 
-// Debate reset butonu
+// Debate reset button
 const elBtnDebateReset = $('btn-debate-reset');
 if (elBtnDebateReset) {
   elBtnDebateReset.addEventListener('click', () => {
@@ -1256,9 +1256,9 @@ elBtnReset.addEventListener('click', () => {
 
 elBtnRetry.addEventListener('click', () => showView('idle'));
 
-// ── Init ──────────────────────────────────────────────────────────────────────
+// ── Init ─────────────────────────────────── ───────────────────────────────────
 (async () => {
-  elBtnClone.disabled = true; // sunucu kontrolü bitene kadar devre dışı
+  elBtnClone.disabled = true; // disabled until server control is finished
   if (elBtnDebate) elBtnDebate.disabled = true;
   await checkServer();
   
@@ -1288,10 +1288,10 @@ elBtnRetry.addEventListener('click', () => showView('idle'));
   initSuggestion();
 })();
 
-// ── YouTube SPA Navigasyon Dinleyicisi ────────────────────────────────────────
-// SPA FIX: content.js'den gelen YT_URL_CHANGED mesajını dinle.
-// YouTube AJAX ile video değiştirdiğinde popup'ı sıfırla.
-// Bu olmadan kullanıcı "Klonla"ya basarsa eski videonun verisini çekebilir.
+// ── YouTube SPA Navigation Listener ──────────────────── ────────────────────
+// SPA FIX: Listen for YT_URL_CHANGED message from content.js.
+// Reset popup when YouTube changes video via AJAX.
+// Without this, if the user presses "Clone", it may pull the data of the old video.
 chrome.runtime.onMessage.addListener((msg) => {
   if (msg.type === 'YT_URL_CHANGED') {
     const prophetPicks = document.getElementById('prophet-picks-section');
@@ -1300,7 +1300,7 @@ chrome.runtime.onMessage.addListener((msg) => {
     const activeView = Object.entries(views).find(([, el]) => el.classList.contains('active'));
     const currentView = activeView ? activeView[0] : 'idle';
 
-    // Sonuç veya loading ekranındaysak sıfırla
+    // If we are on the results or loading screen, reset
     if (currentView === 'result' || currentView === 'loading') {
       elThumbWrap.style.display = 'none';
       elThumbImg.src = '';
@@ -1308,13 +1308,13 @@ chrome.runtime.onMessage.addListener((msg) => {
       showView('idle');
     }
 
-    // BUG FIX: Debate kontrolü currentView'in geçerli olduğu blok içine taşındı.
-    // Önceden blok dışında kullanılıyordu → strict-mode ReferenceError
+    // BUG FIX: Debate control has been moved into the block where currentView is valid.
+    // Previously used outside block → strict-mode ReferenceError
     if (currentView === 'debate') {
       showView('idle');
     }
 
-    // Klonla + Tartış grubunu yeni video için göster
+    // Show Clone + Discuss group for new video
     const btnGroup   = document.getElementById('clone-btn-group');
     const btnAnalyze = document.getElementById('btn-analyze');
     if (btnGroup)   btnGroup.style.display   = 'flex';

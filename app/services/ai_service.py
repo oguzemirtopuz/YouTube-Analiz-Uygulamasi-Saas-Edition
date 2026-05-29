@@ -18,7 +18,7 @@ from app.services.security import CryptoManager, CryptoDecryptionError
 _logger = logging.getLogger("yt_analiz.ai")
 
 
-# ─── Groq API anahtarı ────────────────────────────────────────────────────────
+# ─── Groq API key ──────────────────────────── ────────────────────────────
 
 async def get_groq_api_key() -> str:
     """DB'den Groq API anahtarını çeker (async)."""
@@ -37,7 +37,7 @@ async def get_groq_api_key() -> str:
         return ""
 
 
-# ─── generate_ai_game_feedback ───────────────────────────────────────────────
+# ─── generate_ai_game_feedback ─────────────────────── ────────────────────────
 
 async def generate_ai_game_feedback(c_type: str, c_aud: str, c_purp: str, tech_score: float,
                                retention_score: float, peaks: int, lang: str,
@@ -67,7 +67,7 @@ async def generate_ai_game_feedback(c_type: str, c_aud: str, c_purp: str, tech_s
 
     lang_instr = {"tr": "Türkçe yaz", "es": "Escribe en Español"}.get(lang, "Write in English")
 
-    # Thumbnail gerçeğini belirle — AI asla yanlış yüz bilgisi üretmesin
+    # Identify thumbnail truth — AI should never produce false facial information
     thumb_face_fact = ""
     if visual_insights:
         if "No face detected" in visual_insights or "face detected" not in visual_insights.lower():
@@ -132,7 +132,7 @@ async def generate_ai_game_feedback(c_type: str, c_aud: str, c_purp: str, tech_s
     return ""
 
 
-# ─── analyze_image_with_gemini ───────────────────────────────────────────────
+# ─── analyze_image_with_gemini ─────────────────────── ────────────────────────
 
 async def analyze_image_with_gemini(image_base64: str, mime_type: str) -> str:
     try:
@@ -143,7 +143,7 @@ async def analyze_image_with_gemini(image_base64: str, mime_type: str) -> str:
         finally:
             await db.close()
         gemini_key = CryptoManager.decrypt(row[0]) if row and row[0] else ""
-        #print(f"GEMINI KEY VAR MI: {bool(gemini_key)}, mime: {mime_type}")
+        # print(f"IS THERE A GEMINI KEY: {bool(gemini_key)}, mime: {mime_type}")
         if not gemini_key:
             return ""
 

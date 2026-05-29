@@ -14,7 +14,7 @@ import traceback
 import logging
 from datetime import datetime
 
-# yt-dlp isteğe bağlı
+# yt-dlp optional
 try:
     import yt_dlp
     YT_DLP_AVAILABLE = True
@@ -24,7 +24,7 @@ except ImportError:
 _logger = logging.getLogger("yt_analiz.competitor")
 
 
-# ─── extract_core_keywords ────────────────────────────────────────────────────
+# ─── extract_core_keywords ────────────────────────── ──────────────────────────
 
 def extract_core_keywords(text_str):
     if not text_str:
@@ -32,16 +32,16 @@ def extract_core_keywords(text_str):
     text_str = str(text_str).lower().replace("'", " ").replace('"', ' ').replace('-', ' ')
     words = set(re.findall(r'\b\w+\b', text_str))
     stop_words = {
-        # Türkçe
+        # Turkish
         've', 'ile', 'için', 'bir', 'çok', 'nasıl', 'neden', 'gibi', 'ama', 'bunu', 'böyle',
         'olan', 'olarak', 'kadar', 'sonra', 'önce', 'video', 'oyun', 'yeni', 'bölüm',
         'türkçe', 'izle', 'abone', 'ol', 'görün', 'bu', 'ben', 'sen', 'biz', 'siz', 'onlar',
         'ise', 'da', 'de', 'ki', 'mi', 'mu', 'mı', 'mü', 'ne', 'daha',
-        # İngilizce
+        # English
         'the', 'and', 'for', 'with', 'that', 'this', 'are', 'was', 'how', 'why',
         'what', 'when', 'who', 'from', 'have', 'has', 'had', 'not', 'but', 'they',
         'you', 'your', 'its', 'our', 'can', 'will', 'just', 'into', 'also', 'about',
-        # İspanyolca
+        # spanish
         'que', 'con', 'para', 'por', 'una', 'uno', 'los', 'las', 'del', 'sus',
         'como', 'pero', 'est', 'son', 'han', 'hay', 'todo', 'este', 'esta', 'eso',
         'ese', 'ella', 'ellos', 'nos', 'muy', 'mas', 'sin', 'cuando', 'donde',
@@ -50,7 +50,7 @@ def extract_core_keywords(text_str):
     return {w for w in words if len(w) > 2 and w not in stop_words}
 
 
-# ─── compute_kill_switch ─────────────────────────────────────────────────────
+# ─── compute_kill_switch ────────────────────────── ───────────────────────────
 
 def compute_kill_switch(user_title: str, comp_title: str) -> bool:
     user_kw = extract_core_keywords(user_title)
@@ -64,7 +64,7 @@ def compute_kill_switch(user_title: str, comp_title: str) -> bool:
     return True
 
 
-# ─── CompetitorAnalyzer ───────────────────────────────────────────────────────
+# ─── CompetitorAnalyzer ─────────────────────────── ────────────────────────────
 
 class CompetitorAnalyzer:
 
@@ -110,7 +110,7 @@ class CompetitorAnalyzer:
                     search_query = f"{short_cat} {short_tags}".strip()
                     if not search_query or len(search_query) < 3:
                         search_query = "YouTube trend"
-                    # ytsearch5: daha fazla aday al, kendi kanalı filtrele
+                    # ytsearch5: get more candidates, filter your own channel
                     info = ydl.extract_info(f"ytsearch5:{search_query}", download=False)
                     if 'entries' in info and len(info['entries']) > 0:
                         entry = None
@@ -121,7 +121,7 @@ class CompetitorAnalyzer:
                             uploader = (candidate.get('uploader') or candidate.get('channel') or '').lower().strip()
                             channel_id_str = (candidate.get('channel_id') or candidate.get('uploader_id') or '').lower().strip()
                             
-                            # Blacklist uygulaması: Kendi kanalı (dinamik) VEYA "babaclutch" ise KESİNLİKLE ATLA (continue)
+                            # Blacklist implementation: Own channel (dynamic) OR ABSOLUTELY SKIP if "babaclutch" (continue)
                             if 'babaclutch' in uploader or (own_channel_lower and (
                                 uploader == own_channel_lower or
                                 own_channel_lower in uploader or
@@ -134,7 +134,7 @@ class CompetitorAnalyzer:
                             break
                         
                         if entry is None:
-                            # Fail-Fast: Eğer veritabanında "BabaClutch" dışında başka rakip yoksa hata fırlat
+                            # Fail-Fast: Throw an error if there are no Competitors in the database other than "BabaClutch"
                             raise ValueError("Henüz kıyaslanacak başka bir rakip bulunamadı")
                             
                         comp_desc = entry.get('description', '')
@@ -155,14 +155,14 @@ class CompetitorAnalyzer:
                     else:
                         raise ValueError("Henüz kıyaslanacak başka bir rakip bulunamadı")
         except ValueError as ve:
-            # Sadece ValueError fırlatarak (fallback üretmeden) hatayı üst katmana iletiyoruz
+            # We simply forward the error to the upper layer by throwing a ValueError (without producing a fallback).
             raise ve
         except Exception as e:
             traceback.print_exc()
             raise ValueError(f"Rakip aramasında beklenmeyen bir hata oluştu: {str(e)}")
 
 
-# ─── check_content_consistency ───────────────────────────────────────────────
+# ─── check_content_consistency ─────────────────────── ────────────────────────
 
 def check_content_consistency(title: str, tags: str, description: str) -> dict:
     """
@@ -172,7 +172,7 @@ def check_content_consistency(title: str, tags: str, description: str) -> dict:
     issues = []
     title_kw = extract_core_keywords(title)
 
-    # Etiket kontrolü
+    # label control
     if not tags or not tags.strip():
         issues.append('no_tags')
     else:
@@ -183,7 +183,7 @@ def check_content_consistency(title: str, tags: str, description: str) -> dict:
             if overlap == 0:
                 issues.append('title_tags_mismatch')
 
-    # Açıklama kontrolü
+    # Description control
     if not description or not description.strip():
         issues.append('no_desc')
     else:

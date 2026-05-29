@@ -1,83 +1,83 @@
 @echo off
-title YouTube Analiz Pro - Kisayol Olusturucu
+title YouTube Analyse Pro - Shortcut Creator
 color 0A
 
 echo.
 echo ========================================================
-echo   YOUTUBE ANALIZ PRO - KISAYOL OLUSTURULUYOR
+echo   YOUTUBE ANALYZE PRO - CREATING SHORTCUTS
 echo ========================================================
 echo.
-echo 3 farkli yontemle kisayol olusturulacak:
+echo Shortcuts will be created using 3 different methods:
 echo.
-echo 1. VBS Launcher (Gorunmez pencere)
-echo 2. BAT Launcher (Minimize pencere)  
-echo 3. PowerShell Launcher (En guvenilir)
+echo 1. VBS Launcher (Invisible window)
+2. BAT Launcher (Minimized window)  
+3. PowerShell Launcher (Most reliable)
 echo.
 echo ========================================================
 echo.
 
-REM Python kontrolu
+REM Python check
 python --version >nul 2>&1
 if errorlevel 1 (
     py --version >nul 2>&1
     if errorlevel 1 (
-        echo [UYARI] Python bulunamadi!
-        echo          Lutfen Python yukleyin: https://python.org/downloads
+        echo [WARNING] Python not found!
+        echo          Please install Python: https://python.org/downloads
         echo.
         pause
         exit /b
     ) else (
-        echo [OK] Python bulundu (py komutu)
+        echo [OK] Python found (py command)
     )
 ) else (
-    echo [OK] Python bulundu
+    echo [OK] Python found
 )
 echo.
 
-REM 1. VBS Kisayolu
-echo [1/3] VBS kisayolu olusturuluyor...
-powershell -Command "$WshShell = New-Object -ComObject WScript.Shell; $Shortcut = $WshShell.CreateShortcut('%USERPROFILE%\Desktop\YouTube Analiz Pro (VBS).lnk'); $Shortcut.TargetPath = '%~dp0YouTube Analiz Pro.vbs'; $Shortcut.WorkingDirectory = '%~dp0'; $Shortcut.IconLocation = 'C:\Windows\System32\shell32.dll,165'; $Shortcut.Description = 'YouTube Analiz Pro - VBS Launcher'; $Shortcut.Save()" 2>nul
+REM 1. VBS Shortcut
+echo [1/3] Creating VBS shortcut...
+powershell -Command "$WshShell = New-Object -ComObject WScript.Shell; $Shortcut = $WshShell.CreateShortcut('%USERPROFILE%\Desktop\YouTube Analyse Pro (VBS).lnk'); $Shortcut.TargetPath = '%~dp0YouTube Analiz Pro.vbs'; $Shortcut.WorkingDirectory = '%~dp0'; $Shortcut.IconLocation = 'C:\Windows\System32\shell32.dll,165'; $Shortcut.Description = 'YouTube Analyse Pro - VBS Launcher'; $Shortcut.Save()" 2>nul
 
 if %errorlevel% == 0 (
-    echo       [BASARILI] VBS kisayolu olusturuldu
+    echo       [SUCCESS] VBS shortcut created
 ) else (
-    echo       [HATA] VBS kisayolu olusturulamadi
+    echo       [ERROR] Failed to create VBS shortcut
 )
 
-REM 2. BAT Kisayolu
-echo [2/3] BAT kisayolu olusturuluyor...
-powershell -Command "$WshShell = New-Object -ComObject WScript.Shell; $Shortcut = $WshShell.CreateShortcut('%USERPROFILE%\Desktop\YouTube Analiz Pro (BAT).lnk'); $Shortcut.TargetPath = '%~dp0BASLAT.bat'; $Shortcut.WorkingDirectory = '%~dp0'; $Shortcut.IconLocation = 'C:\Windows\System32\shell32.dll,165'; $Shortcut.Description = 'YouTube Analiz Pro - BAT Launcher'; $Shortcut.Save()" 2>nul
+REM 2. BAT Shortcut
+echo [2/3] Creating BAT shortcut...
+powershell -Command "$WshShell = New-Object -ComObject WScript.Shell; $Shortcut = $WshShell.CreateShortcut('%USERPROFILE%\Desktop\YouTube Analyse Pro (BAT).lnk'); $Shortcut.TargetPath = '%~dp0BASLAT.bat'; $Shortcut.WorkingDirectory = '%~dp0'; $Shortcut.IconLocation = 'C:\Windows\System32\shell32.dll,165'; $Shortcut.Description = 'YouTube Analyse Pro - BAT Launcher'; $Shortcut.Save()" 2>nul
 
 if %errorlevel% == 0 (
-    echo       [BASARILI] BAT kisayolu olusturuldu
+    echo       [SUCCESS] BAT shortcut created
 ) else (
-    echo       [HATA] BAT kisayolu olusturulamadi
+    echo       [ERROR] Failed to create BAT shortcut
 )
 
-REM 3. PowerShell Kisayolu
-echo [3/3] PowerShell kisayolu olusturuluyor...
-powershell -Command "$WshShell = New-Object -ComObject WScript.Shell; $Shortcut = $WshShell.CreateShortcut('%USERPROFILE%\Desktop\YouTube Analiz Pro (PS).lnk'); $Shortcut.TargetPath = 'powershell.exe'; $Shortcut.Arguments = '-ExecutionPolicy Bypass -WindowStyle Hidden -File \"%~dp0Start-YouTubeAnalyzer.ps1\"'; $Shortcut.WorkingDirectory = '%~dp0'; $Shortcut.IconLocation = 'C:\Windows\System32\shell32.dll,165'; $Shortcut.Description = 'YouTube Analiz Pro - PowerShell Launcher'; $Shortcut.Save()" 2>nul
+REM 3. PowerShell Shortcut
+echo [3/3] Creating PowerShell shortcut...
+powershell -Command "$WshShell = New-Object -ComObject WScript.Shell; $Shortcut = $WshShell.CreateShortcut('%USERPROFILE%\Desktop\YouTube Analyse Pro (PS).lnk'); $Shortcut.TargetPath = 'powershell.exe'; $Shortcut.Arguments = '-ExecutionPolicy Bypass -WindowStyle Hidden -File \"%~dp0Start-YouTubeAnalyzer.ps1\"'; $Shortcut.WorkingDirectory = '%~dp0'; $Shortcut.IconLocation = 'C:\Windows\System32\shell32.dll,165'; $Shortcut.Description = 'YouTube Analyse Pro - PowerShell Launcher'; $Shortcut.Save()" 2>nul
 
 if %errorlevel% == 0 (
-    echo       [BASARILI] PowerShell kisayolu olusturuldu
+    echo       [SUCCESS] PowerShell shortcut created
 ) else (
-    echo       [HATA] PowerShell kisayolu olusturulamadi
+    echo       [ERROR] Failed to create PowerShell shortcut
 )
 
 echo.
 echo ========================================================
-echo   TAMAMLANDI!
+echo   COMPLETED!
 echo ========================================================
 echo.
-echo Masaustunde 3 kisayol olusturuldu:
+echo 3 shortcuts have been created on the desktop:
 echo.
-echo 1. "YouTube Analiz Pro (VBS)" - Gorunmez pencere
-echo 2. "YouTube Analiz Pro (BAT)" - Minimize pencere
-echo 3. "YouTube Analiz Pro (PS)"  - PowerShell (en guvenilir)
+echo 1. "YouTube Analyse Pro (VBS)" - Invisible window
+echo 2. "YouTube Analyse Pro (BAT)" - Minimized window
+echo 3. "YouTube Analyse Pro (PS)"  - PowerShell (most reliable)
 echo.
-echo ONERILEN: PowerShell (PS) versiyonunu deneyin!
+echo RECOMMENDED: Try the PowerShell (PS) version!
 echo.
-echo Hangisi calismiyorsa digerleri calisir.
+echo If one does not work, the others will.
 echo.
 echo ========================================================
 pause

@@ -21,7 +21,7 @@ const state = {
 
 
 // ═══════════════════════════════════════════════════════════
-//   GÜVENLİK & BELLEK YÖNETİMİ
+// SECURITY & MEMORY MANAGEMENT
 // ═══════════════════════════════════════════════════════════
 function escapeHTML(str) {
     if (str === null || str === undefined) return '';
@@ -115,14 +115,14 @@ async function loadTranslations() {
         const res = await fetch(`${API_URL}/api/translations`);
         const data = await res.json();
         if (data.error) {
-            // Backend dosyayı bulamadı veya okuyamadı — ham key'lerin görünmesini önlemek için
-            // mevcut LANGS boş kalır; sorun konsolda detaylıca görünür.
+            // Backend could not find or read the file — to prevent raw keys from being visible
+            // existing LANGS remain empty; The problem appears in detail on the console.
             console.error(
                 '[loadTranslations] ❌ Backend çeviri hatası döndürdü:',
                 data.error,
                 '\nÇözüm: translations.xlsx dosyasını proje kök dizinine koyun ve sunucuyu yeniden başlatın.'
             );
-            return; // LANGS'ı boş bırak (t() fallback'e düşer)
+            return; // Leave LANGS blank (t() falls back to fallback)
         }
         if (data.tr) {
             LANGS = data;
@@ -212,7 +212,7 @@ function goHome() {
 }
 
 function navigateTo(view) {
-    // Analiz görünümünden çıkılıyorsa Object URL'i temizle
+    // Clear Object URL if exiting analysis view
     if (state.currentView === 'analyze' && view !== 'analyze') {
         revokeVideoObjectURL();
     }
@@ -231,7 +231,7 @@ function render() {
     const appLayout = document.getElementById('app-layout');
     const sidebarContainer = document.getElementById('sidebar-container');
 
-    // 1. Auth Kontrolü
+    // 1. Auth Check
     if (!state.currentUser) {
         authView.innerHTML = renderLoginScreen();
         authView.style.display = 'block';
@@ -239,17 +239,17 @@ function render() {
         return;
     }
 
-    // 2. Uygulama İskeletini Göster
+    // 2. Show App Skeleton
     authView.style.display = 'none';
     if (appLayout) appLayout.style.display = 'flex';
 
-    // 3. Sidebar'ı Sadece Gerekliyse Güncelle (DOM Optimizasyonu)
+    // 3. Update Sidebar Only If Necessary (DOM Optimization)
     const newSidebarHTML = renderSidebar();
     if (sidebarContainer.innerHTML !== newSidebarHTML) {
         sidebarContainer.innerHTML = newSidebarHTML;
     }
 
-    // 4. İçerik Alanını Belirle
+    // 4. Determine Content Area
     let contentHTML = '';
     let targetViewId = 'view-dashboard';
 
@@ -284,7 +284,7 @@ function render() {
         targetViewId = 'view-dashboard';
     }
 
-    // 5. Sadece İlgili View'in İçini Güncelle ve Göster
+    // 5. Update and Show Only the Inside of the Related View
     const views = ['view-dashboard', 'view-analyze', 'view-result', 'view-settings'];
     views.forEach(id => {
         const el = document.getElementById(id);
@@ -298,7 +298,7 @@ function render() {
         }
     });
 
-    // 6. Ekstra Render İşlemleri (Grafik, Video vb.)
+    // 6. Extra Rendering Processes (Graphics, Video, etc.)
     if (state.result && state.clientCombined && state.clientCombined.length > 0 && targetViewId === 'view-result') {
         requestAnimationFrame(() => {
             drawViralTimeline('viral-timeline-canvas', state.clientCombined, state.clientMoments || [], state.clientVideoDuration || 0, 0);
@@ -313,7 +313,7 @@ function render() {
     }
 }
 
-// ── Sayfa geçişi ile render (fade-out → render → fade-in) ──
+// ── Render with page transition (fade-out → render → fade-in) ──
 let _lastView = '';
 function navigateWithTransition(view) {
     if (view === _lastView && !state.loading && !state.result) return;
@@ -337,7 +337,7 @@ function navigateWithTransition(view) {
 }
 
 // ═══════════════════════════════════════════════════════════
-//   GİRİŞ / KAYIT EKRANI
+// LOGIN / REGISTRATION SCREEN
 // ═══════════════════════════════════════════════════════════
 
 
@@ -612,7 +612,7 @@ function logOut() {
 }
 
 // ═══════════════════════════════════════════════════════════
-//   SIDEBAR
+// SIDEBAR
 // ═══════════════════════════════════════════════════════════
 function renderSidebar() {
     const nav = [
@@ -655,9 +655,9 @@ function renderSidebar() {
 }
 
 // ═══════════════════════════════════════════════════════════
-//   DASHBOARD
+// DASHBOARD
 // ═══════════════════════════════════════════════════════════
-//   SON ANALİZLER — HELPER FONKSİYONLARI
+// LATEST ANALYSIS — HELPER FUNCTIONS
 // ═══════════════════════════════════════════════════════════
 let _dashShowAll = false;
 
@@ -732,7 +732,7 @@ async function inspectAnalysis(id) {
         const data = await res.json();
         if (data.error) { alert('Analiz yüklenemedi: ' + data.error); return; }
 
-        // API yanıtını renderResultScreen'in beklediği formata dönüştür
+        // Convert API response to the format renderResultScreen expects
         let compData = null;
         try { compData = data.competitor_data ? JSON.parse(data.competitor_data) : null; } catch(e) {}
 
@@ -786,7 +786,7 @@ async function deleteAnalysis(id) {
         const data = await res.json();
         if (!data.success) { alert('Silme başarısız: ' + (data.error || '')); return; }
 
-        // Dashboard verisini güncelle ve render
+        // Update dashboard data and render
         if (state.dashboardData && state.dashboardData.recent_analyses) {
             state.dashboardData.recent_analyses = state.dashboardData.recent_analyses.filter(a => a.id !== id);
             state.dashboardData.analysis_count = Math.max(0, (state.dashboardData.analysis_count || 1) - 1);
@@ -892,7 +892,7 @@ async function loadDashboard() {
 }
 
 // ═══════════════════════════════════════════════════════════
-//   AI KOÇ SAYFASI
+// AI COACH PAGE
 // ═══════════════════════════════════════════════════════════
 function renderCoachPage() {
     const tips = [
@@ -966,7 +966,7 @@ function openChatFromCoach() {
 }
 
 // ═══════════════════════════════════════════════════════════
-//   AYARLAR
+// SETTINGS
 // ═══════════════════════════════════════════════════════════
 function renderSettings() {
     const activeLang = state.lang || 'tr';
@@ -1097,7 +1097,7 @@ async function saveSmtpSettings() {
 
 
 // ═══════════════════════════════════════════════════════════
-//   İÇERİK BULUCU
+// CONTENT FINDER
 // ═══════════════════════════════════════════════════════════
 function renderContentFinder() {
     const data = state.contentFinderData;
@@ -1218,7 +1218,7 @@ async function startContentSearch() {
 }
 
 // ═══════════════════════════════════════════════════════════
-//   KANAL YÖNETİMİ
+// CHANNEL MANAGEMENT
 // ═══════════════════════════════════════════════════════════
 function renderCreateChannel() {
     const isEdit = !!state.editingChannel;
@@ -1308,7 +1308,7 @@ function startEditChannel(id) {
     if (ch) { state.editingChannel = ch; state.isCreatingChannel = true; render(); }
 }
 
-// ── PDF EXPORT — lang parametresi ile (GÜNCELLENDİ) ──
+// ── PDF EXPORT — with lang parameters (UPDATED) ──
 function exportPDF() {
     if (!state.result || !state.result.analysis_id) return alert(t('error'));
     window.location.href = `${API_URL}/export_pdf/${state.result.analysis_id}?lang=${state.lang}`;
@@ -1384,7 +1384,7 @@ function renderChannelSelection() {
 function selectChannel(id) { currentChannelId = id; render(); }
 
 // ═══════════════════════════════════════════════════════════
-//   ANALİZ FORMU
+// ANALYSIS FORM
 // ═══════════════════════════════════════════════════════════
 function renderFormScreen() {
     const isShorts = state.mode === "shorts";
@@ -1443,7 +1443,7 @@ function renderFormScreen() {
 }
 
 // ═══════════════════════════════════════════════════════════
-//   LOADING & RESULT
+// LOADING & RESULT
 // ═══════════════════════════════════════════════════════════
 function renderLoadingScreen() {
     const analysisSteps = getAnalysisSteps();
@@ -1517,7 +1517,7 @@ function getVideoSpecificFeedback(res) {
 }
 
 // ═══════════════════════════════════════════════════════════
-//   SONUÇ EKRANI
+// RESULT SCREEN
 // ═══════════════════════════════════════════════════════════
 function renderResultScreen() {
     const res = state.result;
@@ -1670,7 +1670,7 @@ function renderResultScreen() {
             </div>`;
     }
 
-    // E-posta Bildirimi HTML
+    // Email Notification HTML
     let emailBoxHTML = '';
     if (res.user_has_email) {
         emailBoxHTML = `
@@ -1686,7 +1686,7 @@ function renderResultScreen() {
         `;
     }
 
-    // Sistem Caps Badge HTML
+    // System Caps Badge HTML
     let sysCapsHTML = '';
     if (res.system_caps) {
         const caps = res.system_caps;
@@ -1721,7 +1721,7 @@ function renderResultScreen() {
         </div>`;
 }
 
-// ── VİDEO MODAL ──
+// ── VIDEO MODAL ──
 function openVideoModal(downloadUrl) {
     const modal = document.getElementById('videoModal');
     const video = document.getElementById('modalVideo');
@@ -1817,7 +1817,7 @@ function startProgressBar() {
 function finishProgressBar() {
     if (progressIntervalId) { clearInterval(progressIntervalId); progressIntervalId = null; }
     state.progress = 100; state.currentStep = getAnalysisSteps().length - 1;
-    // Tamamlanma animasyonu
+    // completion animation
     const fill = document.getElementById('progressBarFill');
     const text = document.getElementById('progressBarText');
     if (fill) {
@@ -1833,7 +1833,7 @@ function finishProgressBar() {
 }
 
 // ═══════════════════════════════════════════════════════════
-//   POE ANALİZ MOTORU — CLIENT-SIDE
+// POE ANALYSIS ENGINE — CLIENT-SIDE
 // ═══════════════════════════════════════════════════════════
 async function poeAnalyzeAudio(file) {
     try {
@@ -2204,7 +2204,7 @@ function reset() {
 }
 
 // ═══════════════════════════════════════════════════════════
-//   GROQ CHATBOT
+// GROQ CHATBOT
 // ═══════════════════════════════════════════════════════════
 let chatOpen = false, chatExpanded = false, chatSideOpen = false;
 function getCoachWelcome() {
@@ -2483,7 +2483,7 @@ function renderChatbot() {
             if (inp) inp.focus();
         }, 40);
     }
-}   // ← renderChatbot fonksiyonu burada kapanıyor
+}   // ← renderChatbot function closes here
 
 document.addEventListener('DOMContentLoaded', async () => {
     console.log('🎬 YouTube Analiz Pro V4.0 — SaaS Edition başlatıldı');

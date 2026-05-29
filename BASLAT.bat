@@ -1,5 +1,5 @@
 @echo off
 cd /d "%~dp0"
-echo Uygulama baslatiliyor...
+echo Starting the application...
 start /min pythonw server.pyw
 exit

@@ -624,7 +624,7 @@ async function startAnalysis() {
     }
 }
 
-// MM:SS, M.SS veya düz saniye — FIX: \d{1,2} ile "0.5" → 5sn doğru çalışır
+// MM:SS, M.SS or plain seconds — FIX: \d{1,2} with "0.5" → 5sec works correctly
 function parseTimeInput(val) {
     const s = String(val).trim();
     if (/^\d+\.\d{1,2}$/.test(s)) {

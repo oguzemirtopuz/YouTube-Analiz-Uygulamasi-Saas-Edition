@@ -123,7 +123,7 @@ LOG_FILE = str(LOGS_DIR / "crash.log")
 _user_loggers: Dict[int, logging.Logger] = {}
 
 def get_user_logger(user_id: int) -> logging.Logger:
-    """Returns a per-user logger. Writes to logs/user_X.log."""
+    """Kullanıcı bazlı logger döndürür. logs/user_X.log dosyasına yazar."""
     if user_id in _user_loggers:
         return _user_loggers[user_id]
     logger = logging.getLogger(f"yt_analiz.user_{user_id}")
@@ -141,7 +141,7 @@ def get_user_logger(user_id: int) -> logging.Logger:
 
 def log_exception(exc_type, exc_value, exc_traceback):
     with open(LOG_FILE, "a", encoding="utf-8") as f:
-        f.write(f"\n--- ERROR TIME: {time.ctime()} ---\n")
+        f.write(f"\n--- HATA ZAMANI: {time.ctime()} ---\n")
         traceback.print_exception(exc_type, exc_value, exc_traceback, file=f)
     app_logger.critical(f"Unhandled exception: {exc_value}", exc_info=(exc_type, exc_value, exc_traceback))
 
@@ -151,7 +151,7 @@ try:
     sys.stdout = open(str(LOGS_DIR / "stdout.log"), "a", encoding="utf-8")
     sys.stderr = sys.stdout
 except Exception as e:
-    app_logger.error(f"Error [stdout_redirect]: {str(e)}", exc_info=True)
+    app_logger.error(f"Hata [stdout_redirect]: {str(e)}", exc_info=True)
 
 templates_dir = str(BUNDLE_DIR / "templates")
 static_dir = str(BUNDLE_DIR / "static")
@@ -197,7 +197,7 @@ def _load_pdf_lang():
                 ]
         return result
     except Exception as e:
-        print(f"translations.xlsx could not be read, falling back to empty dict: {e}")
+        print(f"translations.xlsx okunamadı, fallback boş dict: {e}")
         return {'tr': {}, 'en': {}, 'es': {}}
 
 PDF_LANG = _load_pdf_lang()
@@ -208,9 +208,9 @@ PDF_LANG = _load_pdf_lang()
 # First look in the project folder, then in the system folders, last resort Helvetica
 def _try_register_arial():
     """
-    Search order for arial.ttf / arialbd.ttf:
-      1. BASE_DIR (project folder)
-      2. Windows system fonts folder (C:/Windows/Fonts)
+    arial.ttf / arialbd.ttf için arama sırası:
+      1. BASE_DIR (proje klasörü)
+      2. Windows sistem font klasörü  (C:/Windows/Fonts)
       3. Helvetica fallback
     """
     candidates = [
@@ -235,7 +235,7 @@ FONT_REGULAR, FONT_BOLD = _try_register_arial()
 
 INDUSTRY_STANDARDS = {
     'gaming': {'tempo': 8.8, 'seo': 7.5, 'retention': 4.5},
-    'education': {'tempo': 4.5, 'seo': 9.5, 'retention': 7.0},
+    'eğitim': {'tempo': 4.5, 'seo': 9.5, 'retention': 7.0},
     'vlog': {'tempo': 7.5, 'seo': 6.5, 'retention': 5.5},
     'finance': {'tempo': 5.0, 'seo': 8.5, 'retention': 6.5},
     'shorts': {'tempo': 9.5, 'seo': 5.0, 'retention': 8.5},
@@ -257,8 +257,8 @@ GPU_CODEC = "libx264"  # default CPU codec
 
 def detect_gpu_codec():
     """
-    Tries NVIDIA, AMD, and Intel GPU codecs in order.
-    Returns the first working one; falls back to libx264 (CPU) if none work.
+    Sırasıyla NVIDIA, AMD, Intel GPU codec'lerini dener.
+    Çalışan ilkini döndürür, hiçbiri çalışmazsa libx264 (CPU) döndürür.
     """
     candidates = [
         ("h264_nvenc", "NVIDIA"),
@@ -281,11 +281,11 @@ def detect_gpu_codec():
                 creationflags=0x08000000 if os.name == 'nt' else 0
             )
             if result.returncode == 0:
-                print(f"✅ GPU Codec found: {codec} ({brand})")
+                print(f"✅ GPU Codec bulundu: {codec} ({brand})")
                 return codec
         except Exception:
             pass
-    print("ℹ️ No GPU codec found, falling back to CPU (libx264).")
+    print("ℹ️ GPU codec bulunamadı, CPU (libx264) kullanılacak.")
     return "libx264"
 
 
@@ -296,7 +296,7 @@ def check_ffmpeg():
         FFMPEG_AVAILABLE = True
         GPU_CODEC = detect_gpu_codec()
     except Exception as e:
-        app_logger.error(f"Error [check_ffmpeg]: FFmpeg not found or could not be executed. {e}")
+        app_logger.error(f"Hata [check_ffmpeg]: FFmpeg bulunamadı veya çalıştırılamadı. {e}")
         FFMPEG_AVAILABLE = False
 
 
@@ -320,7 +320,7 @@ SYSTEM_CAPS = {
 
 
 def detect_system_capabilities():
-    """Detects hardware profile at system startup."""
+    """Sistem başlangıcında donanım profilini tespit eder."""
     global SYSTEM_CAPS
     # CPU
     cpu_count = os.cpu_count() or 1
@@ -366,7 +366,7 @@ def detect_system_capabilities():
     SYSTEM_CAPS["fast_mode"] = (cpu_count >= 8 or GPU_CODEC != "libx264")
 
     app_logger.info(
-        f"🖥️ System profile: CPU={cpu_count} cores, RAM={SYSTEM_CAPS['ram_gb']}GB, "
+        f"🖥️ Sistem profili: CPU={cpu_count} çekirdek, RAM={SYSTEM_CAPS['ram_gb']}GB, "
         f"GPU={GPU_CODEC}, CUDA={'✅' if SYSTEM_CAPS['cuda_available'] else '❌'}, "
         f"Fast Mode={'ON' if SYSTEM_CAPS['fast_mode'] else 'OFF'}"
     )
@@ -405,9 +405,9 @@ def cleanup_temp_videos():
                 try:
                     f.unlink()
                 except Exception as e:
-                    app_logger.warning(f"Error [cleanup_temp_videos]: {f} could not be deleted: {e}")
+                    app_logger.warning(f"Hata [cleanup_temp_videos]: {f} silinemedi: {e}")
     except Exception as e:
-        app_logger.error(f"Error [cleanup_temp_videos] general error: {e}")
+        app_logger.error(f"Hata [cleanup_temp_videos] genel hata: {e}")
 
 
 
@@ -419,10 +419,10 @@ from app.services.analysis_engine import INDUSTRY_STANDARDS, AnalysisEngine
 
 def get_dynamic_timeout(video_path: str, min_timeout: int = 120) -> Optional[int]:
     """
-    Calculates a dynamic FFmpeg timeout based on video duration.
-    Rule: max(min_timeout, video_duration * 2)
-    Provides sufficient margin even for 20GB+ files.
-    Returns None if duration cannot be determined (no timeout).
+    Video süresine göre dinamik FFmpeg timeout hesaplar.
+    Kural: max(min_timeout, video_süresi * 2)
+    20GB+ dosyalar için bile yeterli marj sağlar.
+    Süre bulunamazsa None döner (timeout yok).
     """
     try:
         probe_cmd = ["ffmpeg", "-i", video_path, "-hide_banner"]
@@ -441,7 +441,7 @@ def get_dynamic_timeout(video_path: str, min_timeout: int = 120) -> Optional[int
 
 
 def _copy_uploads(video_file_obj, csv_file_obj, thumb_file_obj, v_path, c_path, t_path):
-    """Copies uploaded files to disk (intended to run inside a threadpool)."""
+    """Yüklenen dosyaları diske kopyalar (threadpool içinde çalıştırılmak üzere)."""
     with open(v_path, "wb") as f:
         shutil.copyfileobj(video_file_obj, f)
     if csv_file_obj and c_path:
@@ -460,21 +460,21 @@ from fastapi.exceptions import RequestValidationError
 
 @app.exception_handler(RequestValidationError)
 async def validation_exception_handler(request: Request, exc: RequestValidationError):
-    """Logs 422 Pydantic validation errors and returns a meaningful JSON response."""
+    """422 Pydantic validation hatalarını logla ve anlamlı JSON dön."""
     try:
         body = await request.body()
         body_str = body.decode('utf-8', errors='replace')
     except Exception:
-        body_str = "<unreadable>"
+        body_str = "<okunamadı>"
     app_logger.error(
         f"[VALIDATION ERROR] endpoint={request.url.path}\n"
-        f"  Incoming body: {body_str}\n"
-        f"  Validation errors: {exc.errors()}"
+        f"  Gelen body: {body_str}\n"
+        f"  Validation hataları: {exc.errors()}"
     )
     return JSONResponse(
         status_code=422,
         content={
-            "error": "The submitted data format is invalid.",
+            "error": "Gönderilen veri formatı hatalı.",
             "detail": exc.errors(),
             "body": body_str
         }
@@ -483,18 +483,18 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
 @app.exception_handler(CryptoDecryptionError)
 async def crypto_exception_handler(request: Request, exc: CryptoDecryptionError):
     """
-    Fail-Fast (Phase 1) Rule: Silently returning an empty string when decryption fails is FORBIDDEN.
-    This global handler returns an honest 500 error with a meaningful message
-    whenever a CryptoDecryptionError is raised in any API endpoint.
+    Fail-Fast (Aşama 1) Kuralı: Şifreleme çözülemediğinde sessizce boş string dönmek YASAKTIR.
+    Bu global handler, herhangi bir API endpointinde CryptoDecryptionError fırlatıldığında
+    dürüstçe 500 hatası ve anlamlı mesaj döner.
     """
-    app_logger.error(f"[CRYPTO_ERROR] endpoint={request.url.path} message={str(exc)}")
+    app_logger.error(f"[CRYPTO_ERROR] endpoint={request.url.path} mesaj={str(exc)}")
     return JSONResponse(
         status_code=500,
         content={
             "success": False,
             "error": "CRYPTO_ERROR",
             "details": str(exc),
-            "detail": str(exc)  # Some frontend fetches may look for "detail"
+            "detail": str(exc)  # Bazı frontend fetch'leri "detail" arayabilir
         }
     )
 # Static files and Template engine (PyInstaller BUNDLE_DIR compatible)
@@ -508,7 +508,7 @@ templates = Jinja2Templates(directory=templates_dir)
 # ═══════════════════════════════════════════════════════════
 @app.middleware("http")
 async def global_error_handler(request: Request, call_next):
-    """Catches all unexpected errors and returns an error code to the user."""
+    """Tüm beklenmeyen hataları yakalayıp kullanıcıya hata kodu gösterir."""
     try:
         response = await call_next(request)
         return response
@@ -538,7 +538,7 @@ async def global_error_handler(request: Request, call_next):
         return JSONResponse(
             status_code=500,
             content={
-                "error": f"Something went wrong. Error code: {error_code}. Please send this code to the support team.",
+                "error": f"Bir sorun oluştu. Hata kodu: {error_code}. Lütfen bu kodu destek ekibine gönderin.",
                 "error_code": error_code
             }
         )
@@ -549,7 +549,7 @@ async def global_error_handler(request: Request, call_next):
 # ═══════════════════════════════════════════════════════════
 @app.get("/api/auth/google/url")
 async def google_auth_url():
-    """Generates the Google OAuth2 authorization URL."""
+    """Google OAuth2 yetkilendirme URL'sini oluşturur."""
     try:
         db = await get_async_db()
         try:
@@ -563,7 +563,7 @@ async def google_auth_url():
             await db.close()
 
         if not client_id:
-            return {"error": "Google Client ID is not configured. Please add it from the Settings page."}
+            return {"error": "Google Client ID ayarlanmamış. Ayarlar sayfasından ekleyin."}
 
         scope = "openid email profile"
         auth_url = (
@@ -573,15 +573,15 @@ async def google_auth_url():
         )
         return {"url": auth_url}
     except Exception as e:
-        app_logger.error(f"Google auth URL creation error: {e}", exc_info=True)
-        return {"error": "Google auth URL could not be created."}
+        app_logger.error(f"Google auth URL oluşturma hatası: {e}", exc_info=True)
+        return {"error": "Google auth URL oluşturulamadı."}
 
 
 @app.get("/api/auth/google/callback")
 async def google_auth_callback(code: str = ""):
-    """Google OAuth2 callback — token exchange and user creation/login."""
+    """Google OAuth2 callback — token exchange ve kullanıcı oluşturma/giriş."""
     if not code:
-        return HTMLResponse("<h2>Error: Authorization code could not be retrieved.</h2>")
+        return HTMLResponse("<h2>Hata: Yetkilendirme kodu alınamadı.</h2>")
     try:
         db = await get_async_db()
         try:
@@ -593,7 +593,7 @@ async def google_auth_callback(code: str = ""):
             redirect_uri = settings.get('google_redirect_uri', 'http://127.0.0.1:8000/api/auth/google/callback')
 
             if not client_id or not client_secret:
-                return HTMLResponse("<h2>Google OAuth configuration is incomplete.</h2>")
+                return HTMLResponse("<h2>Google OAuth yapılandırması eksik.</h2>")
 
             # token exchange
             token_resp = requests.post("https://oauth2.googleapis.com/token", data={
@@ -605,8 +605,8 @@ async def google_auth_callback(code: str = ""):
             }, timeout=10)
 
             if token_resp.status_code != 200:
-                app_logger.error(f"Google token exchange error: {token_resp.text}")
-                return HTMLResponse("<h2>Sign-in with Google failed.</h2>")
+                app_logger.error(f"Google token exchange hatası: {token_resp.text}")
+                return HTMLResponse("<h2>Google ile giriş başarısız.</h2>")
 
             token_data = token_resp.json()
             access_token = token_data.get("access_token", "")
@@ -618,7 +618,7 @@ async def google_auth_callback(code: str = ""):
                 timeout=10
             )
             if user_info_resp.status_code != 200:
-                return HTMLResponse("<h2>Google user information could not be retrieved.</h2>")
+                return HTMLResponse("<h2>Google kullanıcı bilgileri alınamadı.</h2>")
 
             guser = user_info_resp.json()
             google_id = guser.get("id", "")
@@ -671,7 +671,7 @@ async def google_auth_callback(code: str = ""):
         finally:
             await db_session.close()
 
-        app_logger.info(f"✅ Google login successful: user_id={user_id}, username={username}")
+        app_logger.info(f"✅ Google login başarılı: user_id={user_id}, username={username}")
         # XSS protection: json.dumps uses double quotes, preventing single quote injection
         import json as _json
         session_json_safe = _json.dumps(session_json)  # JSON string wrapped in double quotes
@@ -681,17 +681,17 @@ async def google_auth_callback(code: str = ""):
                 localStorage.setItem('yt_user', {session_json_safe});
                 window.location.href = '/';
             </script>
-            <p>Logging in...</p>
+            <p>Giriş yapılıyor...</p>
             </body></html>
         """)
     except Exception as e:
-        app_logger.error(f"Google auth callback error: {e}", exc_info=True)
-        return HTMLResponse("<h2>An error occurred during Google sign-in.</h2>")
+        app_logger.error(f"Google auth callback hatası: {e}", exc_info=True)
+        return HTMLResponse("<h2>Google ile giriş sırasında bir hata oluştu.</h2>")
 
 
 @app.post("/api/settings/google_oauth")
 async def save_google_oauth(request: Request):
-    """Save Google OAuth Client ID and Secret."""
+    """Google OAuth Client ID ve Secret kaydet."""
     try:
         data = await request.json()
         client_id = data.get("client_id", "").strip()
@@ -699,7 +699,7 @@ async def save_google_oauth(request: Request):
         redirect_uri = data.get("redirect_uri", "http://127.0.0.1:8000/api/auth/google/callback").strip()
 
         if not client_id or not client_secret:
-            return {"success": False, "error": "Client ID and Secret cannot be empty."}
+            return {"success": False, "error": "Client ID ve Secret boş olamaz."}
 
         db = await get_async_db()
         try:
@@ -711,8 +711,8 @@ async def save_google_oauth(request: Request):
             await db.close()
         return {"success": True}
     except Exception as e:
-        app_logger.error(f"Google OAuth settings save error: {e}")
-        return {"success": False, "error": "Save error."}
+        app_logger.error(f"Google OAuth ayarları kayıt hatası: {e}")
+        return {"success": False, "error": "Kayıt hatası."}
 
 
 @app.post("/create_channel")
@@ -748,13 +748,13 @@ async def register(request: Request):
         lang = data.get("lang", "tr")
 
         if not username or len(username) < 3:
-            return {"error": "Username must be at least 3 characters long."}
+            return {"error": "Kullanıcı adı en az 3 karakter olmalıdır."}
         if not password or len(password) < 6:
-            return {"error": "Password must be at least 6 characters long."}
+            return {"error": "Şifre en az 6 karakter olmalıdır."}
         if " " in username:
-            return {"error": "Username cannot contain spaces."}
+            return {"error": "Kullanıcı adında boşluk olamaz."}
         if not email or "@" not in email:
-            return {"error": "Please enter a valid email address."}
+            return {"error": "Geçerli bir email adresi girin."}
 
         pw_hash = hash_password(password)
         db = await get_async_db()
@@ -765,7 +765,7 @@ async def register(request: Request):
                 await db.commit()
                 user_id = cursor.lastrowid
             except sqlite3.IntegrityError:
-                return {"error": "This username is already taken."}
+                return {"error": "Bu kullanıcı adı zaten kullanılıyor."}
 
             # Generate verification code
             code = generate_verification_code()
@@ -777,7 +777,7 @@ async def register(request: Request):
         finally:
             await db.close()
 
-        print(f"SENDING EMAIL: {email}, code: {code}")
+        print(f"MAIL GÖNDERİLİYOR: {email}, kod: {code}")
         mail_sent = send_verification_email(email, code, lang)
         print(f"MAIL SONUCU: {mail_sent}")
         return {
@@ -790,7 +790,7 @@ async def register(request: Request):
         }
     except Exception:
         traceback.print_exc()
-        return {"error": "An unexpected error occurred during registration."}
+        return {"error": "Kayıt sırasında beklenmeyen bir hata oluştu."}
 
 
 @app.post("/api/auth/login")
@@ -800,7 +800,7 @@ async def login(request: Request):
         username = data.get("username", "").strip()
         password = data.get("password", "")
         if not username or not password:
-            return {"error": "Username and password cannot be empty."}
+            return {"error": "Kullanıcı adı ve şifre boş olamaz."}
         db = await get_async_db()
         try:
             async with db.execute("SELECT id, password_hash, is_verified, email FROM users WHERE username=?", (username,)) as cursor:
@@ -809,18 +809,18 @@ async def login(request: Request):
             await db.close()
         
         if not row:
-            return {"error": "User not found."}
+            return {"error": "Kullanıcı bulunamadı."}
         user_id, stored_hash, is_verified, user_email = row
         if not stored_hash:
-            return {"error": "Cannot sign in to this account."}
+            return {"error": "Bu hesaba giriş yapılamaz."}
         if not verify_password(password, stored_hash):
-            return {"error": "Incorrect password."}
+            return {"error": "Şifre yanlış."}
         if is_verified == 0 and user_email:
             return {"error": "EMAIL_NOT_VERIFIED", "email": user_email, "user_id": user_id}
         return {"success": True, "user_id": user_id, "username": username}
     except Exception:
         traceback.print_exc()
-        return {"error": "An unexpected error occurred during login."}
+        return {"error": "Giriş sırasında beklenmeyen bir hata oluştu."}
 
 
 @app.post("/api/auth/verify")
@@ -831,7 +831,7 @@ async def verify_email(request: Request):
         code = data.get("code", "").strip()
 
         if not user_id or not code:
-            return {"error": "Missing information."}
+            return {"error": "Eksik bilgi."}
 
         db = await get_async_db()
         try:
@@ -841,14 +841,14 @@ async def verify_email(request: Request):
                 row = await cursor.fetchone()
 
             if not row:
-                return {"error": "Incorrect code."}
+                return {"error": "Kod yanlış."}
 
             ver_id, expires_at, verified = row
             if verified:
-                return {"error": "This code has already been used."}
+                return {"error": "Bu kod zaten kullanılmış."}
 
             if datetime.now() > datetime.strptime(expires_at, '%Y-%m-%d %H:%M:%S'):
-                return {"error": "The code has expired. Please register again."}
+                return {"error": "Kodun süresi dolmuş. Tekrar kayıt ol."}
 
             await db.execute("UPDATE users SET is_verified=1 WHERE id=?", (user_id,))
             await db.execute("UPDATE email_verifications SET verified=1 WHERE id=?", (ver_id,))
@@ -862,7 +862,7 @@ async def verify_email(request: Request):
             await db.close()
     except Exception:
         traceback.print_exc()
-        return {"error": "An error occurred during verification."}
+        return {"error": "Doğrulama sırasında hata oluştu."}
 
 
 @app.post("/api/auth/resend")
@@ -877,7 +877,7 @@ async def resend_verification(request: Request):
             async with db.execute("SELECT email FROM users WHERE id=?", (user_id,)) as cursor:
                 row = await cursor.fetchone()
             if not row:
-                return {"error": "User not found."}
+                return {"error": "Kullanıcı bulunamadı."}
 
             email = row[0]
             code = generate_verification_code()
@@ -893,7 +893,7 @@ async def resend_verification(request: Request):
         return {"success": True, "mail_sent": mail_sent}
     except Exception:
         traceback.print_exc()
-        return {"error": "Code could not be sent."}
+        return {"error": "Kod gönderilemedi."}
 
 
 @app.get("/api/profile")
@@ -905,7 +905,7 @@ async def get_profile(user_id: int = 1):
         row = c.fetchone()
         if not row:
             conn.close()
-            return {"error": "User not found."}
+            return {"error": "Kullanıcı bulunamadı."}
         uid, uname, created = row
         c.execute("SELECT COUNT(*) FROM channels WHERE user_id=?", (uid,))
         channel_count = c.fetchone()[0]
@@ -924,7 +924,7 @@ async def get_profile(user_id: int = 1):
                 "avg_score": avg_score, "recent_analyses": recent}
     except Exception:
         traceback.print_exc()
-        return {"error": "An error occurred while loading the profile."}
+        return {"error": "Profil yüklenirken hata oluştu."}
 
 
 @app.get("/api/analyses/{analysis_id}")
@@ -940,7 +940,7 @@ async def get_analysis_by_id(analysis_id: int):
         row = c.fetchone()
         conn.close()
         if not row:
-            return {"error": "Analysis not found."}
+            return {"error": "Analiz bulunamadı."}
         return {
             "analysis_id": row[0],
             "video_name": row[1],
@@ -961,7 +961,7 @@ async def get_analysis_by_id(analysis_id: int):
         }
     except Exception:
         traceback.print_exc()
-        return {"error": "An error occurred while loading the analysis."}
+        return {"error": "Analiz yüklenirken hata oluştu."}
 
 
 @app.delete("/api/analyses/{analysis_id}")
@@ -975,7 +975,7 @@ async def delete_analysis(analysis_id: int):
         return {"success": True}
     except Exception:
         traceback.print_exc()
-        return {"success": False, "error": "Delete operation failed."}
+        return {"success": False, "error": "Silme işlemi başarısız."}
 
 
 @app.get("/api/settings/gemini")
@@ -992,17 +992,17 @@ async def get_gemini_key():
 @app.post("/api/settings/gemini")
 async def set_gemini_key(key: str = Form(...)):
     key = key.strip()
-    if key == "(saved)":
+    if key == "(kayıtlı)":
         return {"success": True}
     if not key:
-        return {"success": False, "error": "Invalid Gemini API Key"}
+        return {"success": False, "error": "Geçersiz Gemini API Anahtarı"}
     try:
         test_url = f"https://generativelanguage.googleapis.com/v1beta/models?key={key}"
         resp = requests.get(test_url, timeout=5)
         if resp.status_code != 200:
-            return {"success": False, "error": "Invalid Gemini API Key"}
+            return {"success": False, "error": "Geçersiz Gemini API Anahtarı"}
     except requests.exceptions.RequestException:
-        return {"success": False, "error": "Could not connect to Gemini API"}
+        return {"success": False, "error": "Gemini API ile bağlantı kurulamadı"}
     conn = get_db()
     c = conn.cursor()
     c.execute("INSERT OR REPLACE INTO app_settings (key, value) VALUES ('gemini_api_key', ?)", (CryptoManager.encrypt(key),))
@@ -1019,9 +1019,9 @@ async def content_finder(request: Request):
         lang = data.get("lang", "tr")  
         user_id = data.get("user_id", 1)
         if not keyword:
-            return {"error": "Please enter a keyword or concept to search for."}
+            return {"error": "Lütfen aranacak bir kelime veya konsept girin."}
         if not YT_DLP_AVAILABLE:
-            return {"error": "yt-dlp is not installed, search is unavailable."}
+            return {"error": "yt-dlp yüklü değil, arama yapılamıyor."}
 
         ydl_opts = {
             'quiet': True,
@@ -1036,7 +1036,7 @@ async def content_finder(request: Request):
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                 info = ydl.extract_info(search_query, download=False)
                 if not info or 'entries' not in info or not info['entries']:
-                    return {"error": f"No search results found for '{keyword}'."}
+                    return {"error": f"'{keyword}' için arama sonucu bulunamadı."}
                 for entry in info['entries']:
                     if not entry:
                         continue
@@ -1048,7 +1048,7 @@ async def content_finder(request: Request):
                             d = datetime.strptime(raw_date, '%Y%m%d')
                             days_passed = max(1, (datetime.now() - d).days)
                         except Exception as e:
-                            app_logger.debug(f"Error [content_finder date parse]: {e}")
+                            app_logger.debug(f"Hata [content_finder date parse]: {e}")
                     view_velocity = views / days_passed if views > 0 else 0
                     videos.append({
                         'id': entry.get('id', ''),
@@ -1062,10 +1062,10 @@ async def content_finder(request: Request):
                     })
         except Exception as e:
             traceback.print_exc()
-            return {"error": f"Error during YouTube search: {str(e)[:100]}"}
+            return {"error": f"YouTube araması sırasında hata: {str(e)[:100]}"}
 
         if not videos:
-            return {"error": "No videos found in search results."}
+            return {"error": "Arama sonucunda hiç video bulunamadı."}
 
         avg_velocity = sum(v['view_velocity'] for v in videos) / len(videos)
         outliers = []
@@ -1157,7 +1157,7 @@ Devuelve SOLO un Array JSON, responde en Español:
                       (user_id, keyword, json.dumps(ai_ideas, ensure_ascii=False), json.dumps(videos, ensure_ascii=False)))
             conn.commit()
         except Exception as e:
-            app_logger.error(f"Error [content_finder db save]: {e}")
+            app_logger.error(f"Hata [content_finder db save]: {e}")
         conn.close()
 
         return {"success": True, "keyword": keyword, "videos": videos,
@@ -1165,7 +1165,7 @@ Devuelve SOLO un Array JSON, responde en Español:
 
     except Exception as e:
         traceback.print_exc()
-        return {"error": "A server error occurred while running the content finder."}
+        return {"error": "İçerik bulucu çalıştırılırken sunucu hatası oluştu."}
 
 
 @app.get("/channels")
@@ -1227,7 +1227,7 @@ async def analyze_video(
 
     try:
         if not video_file.filename:
-            raise HTTPException(status_code=400, detail="No uploaded video file selected.")
+            raise HTTPException(status_code=400, detail="Yüklenen video dosyası seçilmedi.")
 
         # --- NON-BLOCKING: File copying (heavy I/O) ---
         await run_in_threadpool(
@@ -1398,7 +1398,7 @@ async def analyze_video(
             "visual_intelligence_summary": visual_insights_str,
             "ffmpeg_available": FFMPEG_AVAILABLE,
             "yt_dlp_available": YT_DLP_AVAILABLE,
-            "critical_warning": f"Hook {retention['score']}/10 | Tempo {tech['tech_score']}/10 | Peaks {tech['peaks']} total",
+            "critical_warning": f"Giriş {retention['score']}/10 | Tempo {tech['tech_score']}/10 | Patlama {tech['peaks']} adet",
             "kill_switch_active": kill_switch_active,
             "temp_video_name": f"v_{uid}.mp4",
             "analysis_duration_sec": round(time.time() - analysis_start_time, 1)
@@ -1430,7 +1430,7 @@ async def analyze_video(
                 # Non-blocking: Notify Frontend that SMTP settings are ready
                 # The actual email is triggered via /api/send_report when the user exports a PDF
                 email_sent = True  # SMTP configuration available, sending can be triggered
-                app_logger.info(f"SMTP ready, analysis report can be sent by email: user={user_email}")
+                app_logger.info(f"SMTP hazır, analiz raporu e-postaya gönderilebilir: user={user_email}")
         except Exception:
             pass
 
@@ -1463,7 +1463,7 @@ async def create_short(
     video_file: Optional[UploadFile] = File(None)
 ):
     if not FFMPEG_AVAILABLE:
-        return {"error": "FFmpeg was not found on this system."}
+        return {"error": "FFmpeg sistemde bulunamadı."}
 
     uid = str(uuid.uuid4())[:8]
     output_name = f"short_{uid}.mp4"
@@ -1482,7 +1482,7 @@ async def create_short(
                     shutil.copyfileobj(video_file.file, f)
             await run_in_threadpool(_copy_fallback)
         else:
-            return {"error": "Video file not found. Please re-analyse the video."}
+            return {"error": "Video dosyası bulunamadı. Lütfen videoyu tekrar analiz edin."}
 
         # Set parameters based on GPU codec
         if GPU_CODEC == "libx264":
@@ -1521,8 +1521,8 @@ async def create_short(
         process = await run_in_threadpool(_run_ffmpeg_short)
 
         if process.returncode != 0:
-            print(f"FFmpeg Error Details: {process.stderr}")
-            return {"error": f"Cut operation failed: {process.stderr[:100]}"}
+            print(f"FFmpeg Hatası Detayı: {process.stderr}")
+            return {"error": f"Kesme işlemi başarısız: {process.stderr[:100]}"}
 
         return {
             "success": True,
@@ -1532,7 +1532,7 @@ async def create_short(
 
     except Exception as e:
         traceback.print_exc()
-        return {"error": f"System Error: {str(e)}"}
+        return {"error": f"Sistem Hatası: {str(e)}"}
 
 
 @app.get("/export_pdf/{analysis_id}")
@@ -1986,7 +1986,7 @@ async def export_pdf(analysis_id: int, lang: str = "tr"):
                 t1 = f"¡NADIE ESPERABA ESTO! {clean_user}"
                 t2 = f"{clean_user} (El Final Es Impactante) 😱"
                 t3 = f"¡DIJERON QUE ERA IMPOSIBLE! {clean_user} 🔥"
-            else:  # Turkish fallback titles (intentional — tr-locale content)
+            else:
                 t1 = f"BUNU KİMSE BEKLEMİYORDU! {clean_user}"
                 t2 = f"{clean_user} (Oyunun Sonu Çok Garip) 😱"
                 t3 = f"İMKANSIZ DENİLDİ! {clean_user} 🔥"
@@ -2017,18 +2017,18 @@ async def export_pdf(analysis_id: int, lang: str = "tr"):
     # ═══════════════════════════════════════════════════════════
     # Translation fallbacks (inline since translations.xlsx is binary)
     _pdf2_tr = {
-        "emotion_title": "THUMBNAIL EMOTION ANALYSIS",
-        "emotion": "Emotion", "score": "Score (%)", "dominant": "Dominant",
-        "no_face": "No face detected in thumbnail.",
-        "visual_title": "VISUAL QUALITY METRICS",
-        "metric": "Metric", "value": "Value", "status": "Status",
-        "contrast": "Contrast (Michelson)", "vibrant": "Vibrant Color Harmony",
-        "text_space": "Text Area Score", "brightness": "Brightness",
-        "excellent": "Excellent", "good": "Good", "low": "Low", "medium": "Medium",
-        "excitement_title": "EXCITEMENT SCORE SUMMARY",
-        "segment": "Segment", "time_range": "Time Range",
-        "excitement": "Excitement", "audio": "Audio Den.", "cut": "Cut Den.",
-        "motion": "Motion Den.", "no_segments": "No viral segments detected.",
+        "emotion_title": "THUMBNAIL DUYGU ANALİZİ",
+        "emotion": "Duygu", "score": "Skor (%)", "dominant": "Baskın",
+        "no_face": "Thumbnail'de yüz tespit edilemedi.",
+        "visual_title": "GÖRSEL KALİTE METRİKLERİ",
+        "metric": "Metrik", "value": "Değer", "status": "Durum",
+        "contrast": "Kontrast (Michelson)", "vibrant": "Canlı Renk Uyumu",
+        "text_space": "Metin Alanı Skoru", "brightness": "Parlaklık",
+        "excellent": "Mükemmel", "good": "İyi", "low": "Düşük", "medium": "Orta",
+        "excitement_title": "HEYECAN KATSAYISI ÖZETİ (Excitement Score)",
+        "segment": "Segment", "time_range": "Zaman Aralığı",
+        "excitement": "Heyecan", "audio": "Ses Yoğ.", "cut": "Kesim Yoğ.",
+        "motion": "Hareket Yoğ.", "no_segments": "Viral segment tespit edilemedi.",
     }
     _pdf2_en = {
         "emotion_title": "THUMBNAIL EMOTION ANALYSIS",
@@ -2097,9 +2097,9 @@ async def export_pdf(analysis_id: int, lang: str = "tr"):
         ]))
         elements.append(emo_table)
         gaze_info = _faces[0].get("looking_at_camera", False)
-        gaze_txt = "👀 Looking at camera ✅" if lang == "en" else "👀 Mirando a cámara ✅" if lang == "es" else "👀 Looking at camera ✅"
+        gaze_txt = "👀 Kameraya bakıyor ✅" if lang == "tr" else "👀 Looking at camera ✅" if lang == "en" else "👀 Mirando a cámara ✅"
         if not gaze_info:
-            gaze_txt = "👀 Not looking at camera" if lang == "en" else "👀 No mira a cámara" if lang == "es" else "👀 Not looking at camera"
+            gaze_txt = "👀 Kameraya bakmıyor" if lang == "tr" else "👀 Not looking at camera" if lang == "en" else "👀 No mira a cámara"
         elements.append(Spacer(1, 0.1 * inch))
         elements.append(Paragraph(f"<font size=9 color='#6b21a8'><b>{gaze_txt}</b></font>", normal_s))
     else:
@@ -2237,11 +2237,11 @@ async def export_pdf(analysis_id: int, lang: str = "tr"):
         reasons.append(L['seo_low'].format(seo=seo))
         actions.append(L['seo_action'])
     elif seo >= 8.0:
-        positives.append(f"SEO optimization is very strong (Score: {seo:.1f}/10)")
+        positives.append(f"SEO optimizasyonu çok başarılı (Skor: {seo:.1f}/10)")
         
     cr = _saved_thumb.get("contrast_ratio", 0)
     if cr >= 0.5:
-        positives.append(f"Thumbnail contrast is excellent ({cr:.2f}), eye-catching")
+        positives.append(f"Thumbnail kontrastı mükemmel ({cr:.2f}), dikkat çekici")
 
     reasons_text = "\n".join([f"• {r}" for r in reasons]) or L['no_weak']
     actions_text = "\n".join([f"• {a}" for a in actions]) or L['no_action']
@@ -2303,7 +2303,7 @@ async def export_channel_pdf(channel_id: int, lang: str = "tr"):
     c.execute("SELECT * FROM channels WHERE id=?", (channel_id,))
     channel = c.fetchone()
     if not channel:
-        raise HTTPException(status_code=404, detail="Channel not found")
+        raise HTTPException(status_code=404, detail="Kanal bulunamadı")
     c.execute("SELECT video_name, overall_score, retention_score, tech_score, seo_score, timestamp FROM analyses WHERE channel_id=? ORDER BY timestamp DESC", (channel_id,))
     analyses = c.fetchall()
     avgs = await AnalysisEngine.get_channel_averages(channel_id)
@@ -2370,7 +2370,7 @@ async def get_session():
             try:
                 return {"session": json.loads(row[0])}
             except Exception as e:
-                app_logger.warning(f"Error [get_session json load]: {e}")
+                app_logger.warning(f"Hata [get_session json load]: {e}")
         return {"session": None}
     finally:
         await db.close()
@@ -2417,7 +2417,7 @@ async def get_groq_key():
 
 @app.post("/api/settings/groq")
 async def set_groq_key(key: str = Form(...)):
-    if key.strip() == "(saved)":
+    if key.strip() == "(kayıtlı)":
         return {"success": True}
     db = await get_async_db()
     try:
@@ -2447,7 +2447,7 @@ async def set_smtp_settings(request: Request):
         email = data.get("email", "").strip()
         password = data.get("password", "").strip()
         if not email or not password:
-            return {"success": False, "error": "Email and password cannot be empty."}
+            return {"success": False, "error": "Email ve şifre boş olamaz."}
         db = await get_async_db()
         try:
             await db.execute("INSERT OR REPLACE INTO app_settings (key, value) VALUES ('smtp_email', ?)", (email,))
@@ -2457,7 +2457,7 @@ async def set_smtp_settings(request: Request):
             await db.close()
         return {"success": True}
     except Exception:
-        return {"success": False, "error": "Save error."}
+        return {"success": False, "error": "Kayıt hatası."}
 
 
 @app.get("/api/chat/sessions")
@@ -2483,7 +2483,7 @@ async def get_chat_sessions(user_id: int = 1):
 @app.post("/api/chat/sessions")
 async def create_chat_session(request: Request):
     data = await request.json()
-    title = data.get("title", "New Chat")[:80]
+    title = data.get("title", "Yeni Sohbet")[:80]
     user_id = data.get("user_id", 1)
     db = await get_async_db()
     try:
@@ -2500,7 +2500,7 @@ async def create_chat_session(request: Request):
 @app.put("/api/chat/sessions/{session_id}")
 async def rename_chat_session(session_id: int, request: Request):
     data = await request.json()
-    title = data.get("title", "Chat")[:80]
+    title = data.get("title", "Sohbet")[:80]
     user_id = data.get("user_id", 1)
     db = await get_async_db()
     try:
@@ -2597,7 +2597,7 @@ async def ai_chat(request: Request):
 
     api_key = CryptoManager.decrypt(row[0]) if row and row[0] else ""
     if not api_key:
-        return {"error": "NO_KEY", "details": "API key not found. Please enter your Groq API key."}
+        return {"error": "NO_KEY", "details": "API anahtarı bulunamadı. Lütfen Groq API anahtarını gir."}
 
     attached_file = data.get("attached_file", None)
     file_context = ""
@@ -2620,7 +2620,7 @@ async def ai_chat(request: Request):
                     file_context = await analyze_image_with_gemini(file_base64, "application/pdf")
                 else:
                     decoded = decoded_bytes.decode('utf-8', errors='ignore')
-                    file_context = f"File uploaded by user ({file_name}):\n{decoded[:3000]}"
+                    file_context = f"Kullanıcının yüklediği dosya ({file_name}):\n{decoded[:3000]}"
             except Exception as e:
                 # print(f"FILE PARSE ERROR: {e}")
                 file_context = ""
@@ -2635,7 +2635,7 @@ async def ai_chat(request: Request):
             break
 
     last_user_msg_lower = last_user_msg.lower()
-    title_keywords = ["başlık", "title", "isim", "name", "ne yazayım", "nasıl adlandır", "başlık öner", "başlık yaz"]  # bilingual intent keywords — do not translate
+    title_keywords = ["başlık", "title", "isim", "name", "ne yazayım", "nasıl adlandır", "başlık öner", "başlık yaz"]
     is_title_question = any(kw in last_user_msg_lower for kw in title_keywords)
 
     analysis_block = f"User's latest analysis:\n{context}" if has_analysis else "The user has not performed any video analysis yet."
@@ -2681,9 +2681,9 @@ NO ANALYSIS RULE — The user has not analyzed any video yet. At the very end of
     # --- MEMORY SYSTEM: Create memory block ---
     memory_block = ""
     if channel_rules_text:
-        memory_block += f"\\n\\n🔒 FIXED CHANNEL RULES (Follow these rules STRICTLY, never break them):\\n{channel_rules_text}"
+        memory_block += f"\\n\\n🔒 SABİT KANAL KURALLARI (Bu kurallara MUTLAKA uy, asla çiğneme):\\n{channel_rules_text}"
     if past_feedbacks_text:
-        memory_block += f"\\n\\n📚 PAST ANALYSIS NOTES (Last 5 analysis coach comments, oldest to newest):\\n{past_feedbacks_text}"
+        memory_block += f"\\n\\n📚 GEÇMİŞ ANALİZ NOTLARI (Son 5 analiz koç yorumu, eskiden yeniye):\\n{past_feedbacks_text}"
 
     system_prompt = f"""IDENTITY: You are 'Analiz Pro AI: Stratejik Veri Analisti' (Strategic Data Analyst) — the world's most elite, data-driven, and ruthless YouTube strategist.
 Channel Type: {ch_type}
@@ -2748,22 +2748,22 @@ Detect the exact language of the user's message and respond EXCLUSIVELY in that 
         if resp.status_code != 200:
             err = res_data.get("error", {}).get("message", "Bilinmeyen hata")
             if resp.status_code == 401:
-                return {"error": "INVALID_KEY", "details": "Your API key is invalid."}
+                return {"error": "INVALID_KEY", "details": "API anahtarın geçersiz."}
             if resp.status_code == 429:
-                return {"error": "QUOTA", "details": "Quota exceeded. Please wait a moment."}
-            return {"error": "API_ERROR", "details": f"Groq error: {err}"}
+                return {"error": "QUOTA", "details": "Sınır aşıldı. Lütfen biraz bekleyin."}
+            return {"error": "API_ERROR", "details": f"Groq hatası: {err}"}
 
         reply = res_data["choices"][0]["message"]["content"]
         return {"reply": reply}
 
     except requests.exceptions.Timeout:
-        return {"error": "TIMEOUT", "details": "Server did not respond. Please try again."}
+        return {"error": "TIMEOUT", "details": "Sunucu yanıt vermedi. Tekrar dene."}
     except Exception as e:
-        return {"error": "NETWORK_ERROR", "details": f"Connection error: {str(e)}"}
+        return {"error": "NETWORK_ERROR", "details": f"Bağlantı hatası: {str(e)}"}
 
 @app.post("/api/send_report")
 async def api_send_report(request: Request):
-    """Manual report dispatch — triggered by the 'Resend Report' button on the results screen."""
+    """Manuel rapor gönderimi — Sonuç ekranından 'Raporu Tekrar Gönder' butonu."""
     data = await request.json()
     analysis_id = data.get("analysis_id")
     user_id = data.get("user_id", 1)
@@ -2780,7 +2780,7 @@ async def api_send_report(request: Request):
         u_row = c.fetchone()
         conn.close()
         if not a_row or not u_row or not u_row['email']:
-            return {"success": False, "error": "User email not found."}
+            return {"success": False, "error": "Kullanıcı e-postası bulunamadı."}
 
         # Create the PDF first (simulate export_pdf endpoint)
         pdf_path = str(output_dir / f"report_{analysis_id}_{req_lang}.pdf")
@@ -2799,9 +2799,9 @@ async def api_send_report(request: Request):
         user_email = u_row['email']
         sent = await run_in_threadpool(send_report_email, user_email, pdf_path, video_name, req_lang)
         if sent:
-            return {"success": True, "message": "Report sent to your email!"}
+            return {"success": True, "message": "Rapor e-postanıza gönderildi!"}
         else:
-            return {"success": False, "error": "SMTP settings are incomplete or sending failed."}
+            return {"success": False, "error": "SMTP ayarları eksik veya gönderim başarısız."}
     except Exception as e:
         return {"success": False, "error": str(e)}
 
@@ -2824,16 +2824,16 @@ async def get_translations():
     if xlsx_path is None:
         tried = [str(p) for p in search_paths]
         app_logger.error(
-            f"[translations] translations.xlsx not found! "
+            f"[translations] translations.xlsx bulunamadı! "
             f"Aranan yollar: {tried}"
         )
         return {
-            'error': f"translations.xlsx not found. Searched paths: {tried}",
+            'error': f"translations.xlsx bulunamadı. Aranan yollar: {tried}",
             'tr': {}, 'en': {}, 'es': {}
         }
 
     try:
-        app_logger.info(f"[translations] Loading: {xlsx_path}")
+        app_logger.info(f"[translations] Yükleniyor: {xlsx_path}")
         df = pd.read_excel(str(xlsx_path), sheet_name='ui', dtype=str).fillna('')
         result = {'tr': {}, 'en': {}, 'es': {}}
         for _, row in df.iterrows():
@@ -2844,18 +2844,18 @@ async def get_translations():
                 if lang in df.columns:
                     result[lang][key] = str(row[lang]).strip()
         app_logger.info(
-            f"[translations] ✅ Loaded: {len(result.get('tr', {}))} keys "
+            f"[translations] ✅ Yüklendi: {len(result.get('tr', {}))} anahtar "
             f"({xlsx_path.name})"
         )
         return result
     except Exception as e:
         app_logger.error(
             f"[translations] translations.xlsx okunurken hata! "
-            f"File: {xlsx_path} | Error type: {type(e).__name__} | Detail: {e}",
+            f"Dosya: {xlsx_path} | Hata türü: {type(e).__name__} | Detay: {e}",
             exc_info=True
         )
         return {
-            'error': f"Translation file could not be read: {type(e).__name__}: {e}",
+            'error': f"Çeviri dosyası okunamadı: {type(e).__name__}: {e}",
             'tr': {}, 'en': {}, 'es': {}
         }
 
@@ -2898,7 +2898,7 @@ async def test_gemini_ping():
 
 def _fetch_transcript_sync(video_id: str) -> str:
     # Stage 1: Pull all subtitles with YouTubeTranscriptApi (First choice)
-    last_api_error = "YouTubeTranscriptApi not available"  # NameError guard
+    last_api_error = "YouTubeTranscriptApi kullanılabilir değil"  # NameError koruyası
     try:
         from youtube_transcript_api import YouTubeTranscriptApi
         transcript_list = YouTubeTranscriptApi.list_transcripts(video_id)
@@ -2994,7 +2994,7 @@ def _fetch_transcript_sync(video_id: str) -> str:
             
     except Exception as e:
         # Return errors as a last resort
-        raise ValueError(f"Subtitle could not be fetched. API Error: {last_api_error} | Fallback Engine Error: {e}")
+        raise ValueError(f"Altyazı çekilemedi. API Hatası: {last_api_error} | Yedek Motor Hatası: {e}")
 
 
 # ── Thumbnail Rule: Create dynamically according to content type ─────────────────────
@@ -3002,7 +3002,7 @@ def _fetch_transcript_sync(video_id: str) -> str:
 # The main AI (chat) prompt included this rule, but inside _call_groq_clone
 # It wasn't cascade — so the hallucination was being produced. It's now fixed.
 def _build_thumbnail_rule(content_type: str) -> str:
-    """Returns a thumbnail directive based on content_type."""
+    """content_type'a göre thumbnail direktifi döndürür."""
     gaming_keywords = ['oyun', 'gaming', 'game', 'fps', 'rpg', 'minecraft', 'valorant',
                        'left 4 dead', 'cod', 'gta', 'esport', 'turnuva']
     is_gaming = any(kw in content_type.lower() for kw in gaming_keywords)
@@ -3033,8 +3033,8 @@ async def _call_groq_clone(
     comment_signals: str = None,
 ) -> str:
     """
-    Generates a viral cloning concept using Groq Llama-3.
-    Wraps the synchronous requests call with run_in_threadpool.
+    Groq Llama-3 ile viral klonlama konsepti üretir.
+    Senkron requests çağrısını run_in_threadpool ile sarmalar.
     """
     thumbnail_rule = _build_thumbnail_rule(content_type)
 
@@ -3097,20 +3097,20 @@ KURALLAR:
     if resp.status_code == 200:
         return resp.json()["choices"][0]["message"]["content"].strip()
     elif resp.status_code == 401:
-        raise ValueError("Groq API key is invalid. Please check from the Settings panel.")
+        raise ValueError("Groq API anahtarı geçersiz. Ayarlar panelinden kontrol edin.")
     elif resp.status_code == 429:
-        raise ValueError("Groq API quota is exhausted. Please wait a moment.")
+        raise ValueError("Groq API kotası doldu. Lütfen bir süre bekleyin.")
     else:
-        raise ValueError(f"Groq API error: HTTP {resp.status_code}")
+        raise ValueError(f"Groq API hatası: HTTP {resp.status_code}")
 
 
 
 
 def _build_pi_context(tier=None, time_window=None, velocity_per_day=None, penetration_ratio=None, comment_signals=None, views=0):
     """
-    Builds Predictive Intelligence context.
-    Explains tier, time window, velocity, penetration, and comment signals to the AI.
-    Anti-hallucination: if there are no comment signals, the AI is explicitly informed.
+    Predictive Intelligence bağlamı oluşturur.
+    Tier, zaman penceresi, hız, penetrasyon ve yorum sinyallerini AI'ya açıklar.
+    Anti-hallüsinasyon: yorum sinyali yoksa AI'ya açıkça bildirilir.
     """
     lines = []
     tier_labels = {
@@ -3199,9 +3199,9 @@ def calculate_chaos_score(transcript: str, titles: list[str]) -> dict:
     # FatherClutch Clause
     if final_score < 6:
         potential = int((6 - final_score) * 15)
-        verdict = f"The competitor doesn't have enough chaos. If you add your own style, there's an estimated %{potential} more view potential.\n<br><span style='font-size:11px; color:#94a3b8; font-style:italic;'>(Note: This ratio is calculated by our mathematical algorithm that analyses the aggressiveness of the competitor's titles, speaking pace, and emotionally loaded word count.)</span>"
+        verdict = f"Rakipte yeterince kaos yok. Kendi tarzınızı eklerseniz tahminen %{potential} daha fazla izlenme potansiyeli var.\n<br><span style='font-size:11px; color:#94a3b8; font-style:italic;'>(Not: Bu oran; rakibinizin başlıklarındaki agresifliği, videodaki konuşma hızını ve duygu yüklü kelime sayısını analiz eden matematiksel algoritmamız tarafından hesaplanmıştır.)</span>"
     else:
-        verdict = "The competitor is just as aggressive in style! Your advantage lies in niche expertise."
+        verdict = "Rakip de sizin kadar agresif bir tarzda! Avantajınız niş uzmanlığında."
 
     return {
         "score": final_score,
@@ -3228,7 +3228,7 @@ def extract_channel_stats_sync(channel_url: str):
         'no_warnings': True,
         # STRESS TEST FIX #6: yt-dlp rate-limit and IP ban protection
         # Opening sockets too quickly triggers 429; A little sleep can be added.
-        'sleep_interval': 1,        # minimum 1s wait between requests
+        'sleep_interval': 1,        # istekler arası minimum 1sn bekle
         'max_sleep_interval': 3,    # maksimum 3sn
         'socket_timeout': 15,
     }
@@ -3249,7 +3249,7 @@ def extract_channel_stats_sync(channel_url: str):
             if (is_rate_limit or is_temporary) and attempt < 2:
                 wait_secs = 3 ** attempt  # 1, 3, 9 seconds
                 app_logger.warning(
-                    f"[Channel Battles] yt-dlp error (attempt {attempt+1}/3): {e} | "
+                    f"[Kanal Savaşları] yt-dlp hata (deneme {attempt+1}/3): {e} | "
                     f"{wait_secs}sn sonra tekrar deneniyor..."
                 )
                 _time.sleep(wait_secs)
@@ -3257,18 +3257,18 @@ def extract_channel_stats_sync(channel_url: str):
                 # Persistent error or 3rd attempt: throw
                 if '429' in err_str or 'too many requests' in err_str:
                     raise ValueError(
-                        "YouTube applied rate-limiting (HTTP 429). "
-                        "Channel Battles can be retried in a few minutes. "
-                        "Scanning too frequently increases the risk of an IP ban."
+                        "YouTube rate-limit uyguladı (HTTP 429). "
+                        "Kanal Savaşları birkaç dakika içinde tekrar denenebilir. "
+                        "Çok sık tarama yapmak IP ban riskini artırır."
                     )
-                raise ValueError(f"Channel data could not be fetched: {e}")
+                raise ValueError(f"Kanal verileri çekilemedi: {e}")
     else:
         # All attempts fail
-        raise ValueError(f"Channel data could not be fetched in 3 attempts: {last_error}")
+        raise ValueError(f"Kanal verileri 3 denemede de çekilemedi: {last_error}")
 
     entries = info.get('entries', [])
     if not entries:
-        raise ValueError("Channel videos not found.")
+        raise ValueError("Kanal videoları bulunamadı.")
         
     total_views = 0
     count = 0
@@ -3374,7 +3374,7 @@ Aşağıdaki formatın DIŞINA ÇIKMA:
     if resp.status_code == 200:
         return resp.json()["choices"][0]["message"]["content"].strip()
     else:
-        raise ValueError(f"Groq API error: HTTP {resp.status_code}")
+        raise ValueError(f"Groq API hatası: HTTP {resp.status_code}")
 
 
 class CloneVideoRequest(BaseModel):
@@ -3384,8 +3384,8 @@ class CloneVideoRequest(BaseModel):
 
     url:       str = Field(default="", description="Tam YouTube video URL'si")
     videoId:   str = Field(default="", description="YouTube video ID (v= parametresi)")
-    title:     str = Field(default="No Title", description="Video title")
-    channel:   str = Field(default="Unknown Channel", description="Channel name")
+    title:     str = Field(default="Başlık Yok", description="Video başlığı")
+    channel:   str = Field(default="Bilinmeyen Kanal", description="Kanal adı")
     thumbnail: str = Field(default="", description="Thumbnail URL")
     views:     int = Field(default=0,  description="Izlenme sayisi")
     # -- Predictive Intelligence --
@@ -3396,7 +3396,7 @@ class CloneVideoRequest(BaseModel):
     tier:              Optional[str]   = Field(default=None)
     penetration_ratio: Optional[float] = Field(default=None)
     comment_signals:   Optional[str]   = Field(default=None)
-    user_id:   int = Field(default=0, description="User ID")
+    user_id:   int = Field(default=0, description="Kullanıcı ID")
 
 class AnalyzeChannelRequest(BaseModel):
     channel_url: str
@@ -3406,12 +3406,12 @@ class AnalyzeChannelRequest(BaseModel):
 async def extension_analyze_channel(payload: AnalyzeChannelRequest):
     api_key = await get_groq_api_key()
     if not api_key:
-        return {"error": "Groq API key is not configured."}
+        return {"error": "Groq API anahtarı ayarlanmamış."}
         
     try:
         rival_data = await run_in_threadpool(extract_channel_stats_sync, payload.channel_url)
     except Exception as e:
-        return {"error": f"Channel data could not be read: {str(e)}"}
+        return {"error": f"Kanal verileri okunamadı: {str(e)}"}
         
     db = await get_async_db()
     try:
@@ -3429,7 +3429,7 @@ async def extension_analyze_channel(payload: AnalyzeChannelRequest):
         report = await _call_groq_battle(api_key, my_data, rival_data)
         return {"result": report, "rival_name": rival_data["channel_name"], "chaos_metrics": rival_data.get("chaos_metrics")}
     except Exception as e:
-        return {"error": f"Battle report could not be generated: {str(e)}"}
+        return {"error": f"Savaş raporu oluşturulamadı: {str(e)}"}
 
 class ExtensionLoginRequest(BaseModel):
     username: str
@@ -3443,10 +3443,10 @@ async def extension_login(req: ExtensionLoginRequest):
             user = await cursor.fetchone()
             
         if not user:
-            raise HTTPException(status_code=401, detail="Invalid username or password.")
+            raise HTTPException(status_code=401, detail="Geçersiz kullanıcı adı veya şifre.")
             
         if not verify_password(req.password, user['password_hash']):
-            raise HTTPException(status_code=401, detail="Invalid username or password.")
+            raise HTTPException(status_code=401, detail="Geçersiz kullanıcı adı veya şifre.")
             
         return {"success": True, "user_id": user['id'], "username": user['username']}
     finally:
@@ -3491,7 +3491,7 @@ def extract_rabbit_hole_sync(query: str):
         entries = info.get('entries', [])
         
         if not entries:
-            raise ValueError("No videos found in this niche.")
+            raise ValueError("Bu nişte video bulunamadı.")
             
         results = []
         today = datetime.now()
@@ -3523,7 +3523,7 @@ def extract_rabbit_hole_sync(query: str):
             })
                 
         if not results:
-            raise ValueError("No valid data found.")
+            raise ValueError("Geçerli veri bulunamadı.")
             
         # Sort by velocity descending
         results.sort(key=lambda x: x['velocity'], reverse=True)
@@ -3535,7 +3535,7 @@ class RabbitHoleRequest(BaseModel):
 
 async def analyze_rabbit_hole_compatibility(api_key: str, title: str, channel: str, content_type: str, purpose: str) -> str:
     import requests
-    prompt = f"User's channel concept: {content_type} (Goal: {purpose}). Is this trending video (Title: {title}, Channel: {channel}) compatible with the user's concept? If not (e.g. Esports tournament, official announcement, or serious tutorial etc.) say 'Incompatible' and explain why. If it aligns with the concept, say 'Compatible'. Your output must be at most 2 short sentences."
+    prompt = f"Kullanıcının kanalı konsepti: {content_type} (Amaç: {purpose}). Bulunan bu trend video (Başlık: {title}, Kanal: {channel}) kullanıcının konseptine uygun mu? Eğer uyumsuzsa (Örn: Espor turnuvası, resmi duyuru veya ciddi bir rehber videosu vs.) 'Uyumsuz' de ve nedenini açıkla. Eğer konseptle örtüşüyorsa 'Uyumlu' de. Çıktın maksimum 2 kısa cümle olsun."
     
     headers = {"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"}
     payload = {
@@ -3547,19 +3547,19 @@ async def analyze_rabbit_hole_compatibility(api_key: str, title: str, channel: s
     resp = await run_in_threadpool(lambda: requests.post("https://api.groq.com/openai/v1/chat/completions", headers=headers, json=payload, timeout=10))
     if resp.status_code == 200:
         return resp.json()["choices"][0]["message"]["content"].strip()
-    return "Analysis could not be performed."
+    return "Analiz yapılamadı."
 
 @app.post("/api/extension/rabbit_hole")
 async def extension_rabbit_hole(payload: RabbitHoleRequest):
     try:
         top_outliers = await run_in_threadpool(extract_rabbit_hole_sync, payload.query)
         if not top_outliers:
-            return {"error": "No outlier trend found in this niche."}
+            return {"error": "Bu nişte aykırı bir trend bulunamadı."}
             
         api_key = await get_groq_api_key()
         if api_key:
-            content_type = "General Content"
-            purpose = "Entertaining the Audience"
+            content_type = "Genel İçerik"
+            purpose = "İzleyici Eğlendirmek"
             if payload.user_id:
                 db = await get_async_db()
                 try:
@@ -3577,8 +3577,8 @@ async def extension_rabbit_hole(payload: RabbitHoleRequest):
                 
         return {"success": True, "outliers": top_outliers}
     except Exception as e:
-        app_logger.error(f"Rabbit Hole Error: {e}", exc_info=True)
-        return {"error": "No outlier trend found in this niche or a network error occurred."}
+        app_logger.error(f"Rabbit Hole Hatası: {e}", exc_info=True)
+        return {"error": "Bu nişte aykırı bir trend bulunamadı veya ağ hatası oluştu."}
 
 
 # ═══════════════════════════════════════════════════════════
@@ -3625,18 +3625,18 @@ KURALLAR:
 @app.post("/api/extension/prophet_picks")
 async def extension_prophet_picks(payload: ProphetPicksRequest):
     """
-    Detects 3 'Outlier' videos currently trending on YouTube
-    that match the user's own niche.
-    - 3 different niche queries (via Groq) are generated based on the user's channel concept.
-    - 3 queries run IN PARALLEL (asyncio.gather).
-    - Videos uploaded in the last 48 hours are prioritized.
-    - The user's own channel videos are skipped (dynamic self-filtering).
-    - The 3 videos with the highest velocity are selected.
+    Kullanıcının kendi nişine uygun, şu an YouTube'da patlamakta olan 3 adet
+    'Aykırı' videoyu tespit eder.
+    - Kullanıcının kanal konseptine göre 3 farklı niş sorgusu (Groq ile) üretilir.
+    - 3 sorgu PARALEL çalıştırılır (asyncio.gather).
+    - Son 48 saatte yüklenmiş videolar önceliklendirilir.
+    - Kendi kanalı videoları (dinamik öz-karşılaştırma) atlanır.
+    - En yüksek velocity'ye sahip 3 video seçilir.
     """
     try:
         db = await get_async_db()
-        content_type = "General Content"
-        purpose = "Entertaining the Audience"
+        content_type = "Genel İçerik"
+        purpose = "İzleyici Eğlendirmek"
         channel_names = []
         if payload.user_id:
             try:
@@ -3655,7 +3655,7 @@ async def extension_prophet_picks(payload: ProphetPicksRequest):
         if api_key:
             queries = await _generate_prophet_queries(api_key, content_type, purpose)
         else:
-            queries = [f"{content_type} trend", f"{content_type} new", f"{content_type} popular"]
+            queries = [f"{content_type} trend", f"{content_type} yeni", f"{content_type} popüler"]
 
         # Run 3 queries IN PARALLEL (in threadpool, async-safe)
         results_per_query = await asyncio.gather(
@@ -3686,13 +3686,13 @@ async def extension_prophet_picks(payload: ProphetPicksRequest):
                         break
                 
                 if is_own_channel:
-                    app_logger.info(f"[Prophet Picks] Self-filtering: {v.get('title')[:50]} skipped.")
+                    app_logger.info(f"[Prophet Picks] Öz-filtreleme: {v.get('title')[:50]} atlandı.")
                     continue
                 # Add to list with velocity score
                 all_videos.append(v)
 
         if not all_videos:
-            return {"error": "No currently trending videos found."}
+            return {"error": "Şu an trend olan video bulunamadı."}
 
         # Remove duplicate URLs (the same video may appear in multiple queries)
         seen_urls = set()
@@ -3740,21 +3740,21 @@ async def extension_prophet_picks(payload: ProphetPicksRequest):
                 if len(top_picks) == 3:
                     break
 
-        app_logger.info(f"[Prophet Picks] {len(top_picks)} recommendations selected.")
+        app_logger.info(f"[Prophet Picks] {len(top_picks)} adet öneri seçildi.")
         return {"success": True, "picks": top_picks}
 
     except Exception as e:
         app_logger.error(f"[Prophet Picks] Kritik Hata: {e}", exc_info=True)
-        return {"error": "Prophet Picks could not be loaded."}
+        return {"error": "Prophet Picks yüklenemedi."}
 
 
 @app.post("/api/extension/clone_video")
 async def extension_clone_video(payload: CloneVideoRequest):
     """
-    Receives video data from the Chrome extension.
-    1. Fetches transcript (youtube-transcript-api, inside thread-pool)
-    2. Generates viral concept with Groq
-    3. Returns the result as JSON
+    Chrome eklentisinden gelen video verilerini karşılar.
+    1. Transcript çeker (youtube-transcript-api, thread-pool içinde)
+    2. Groq ile viral konsept üretir
+    3. Sonucu JSON olarak döner
 
     Beklenen JSON body:
         { "url": "...", "videoId": "...", "title": "...", "channel": "...", "thumbnail": "..." }
@@ -3764,7 +3764,7 @@ async def extension_clone_video(payload: CloneVideoRequest):
 
     url      = payload.url.strip()
     video_id = payload.videoId.strip()
-    title    = payload.title.strip() or "No Title"
+    title    = payload.title.strip() or "Başlık Yok"
     channel  = payload.channel.strip() or "Bilinmeyen Kanal"
 
     if not video_id and "v=" in url:
@@ -3772,7 +3772,7 @@ async def extension_clone_video(payload: CloneVideoRequest):
         video_id = parse_qs(urlparse(url).query).get("v", [""])[0]
 
     if not video_id:
-        raise HTTPException(status_code=400, detail="Video ID not found. Please provide a valid YouTube URL.")
+        raise HTTPException(status_code=400, detail="Video ID bulunamadı. Geçerli bir YouTube URL'si gönderin.")
 
     app_logger.info(f"[clone_video] video_id={video_id} title='{title[:60]}'") 
 
@@ -3780,11 +3780,11 @@ async def extension_clone_video(payload: CloneVideoRequest):
     try:
         transcript = await run_in_threadpool(_fetch_transcript_sync, video_id)
     except Exception as e:
-        app_logger.warning(f"[clone_video] Transcript call error (using Fallback): {e}")
+        app_logger.warning(f"[clone_video] Transcript çağrısında hata (Fallback kullanılacak): {e}")
         transcript = ""
 
-    if not transcript or transcript.startswith("ERROR:"):
-        app_logger.warning(f"[clone_video] Transcript unavailable (using Fallback): {transcript}")
+    if not transcript or transcript.startswith("HATA:"):
+        app_logger.warning(f"[clone_video] Transcript alınamadı (Fallback kullanılacak): {transcript}")
         transcript = ""
 
     # ── 2. Groq API key ─────────────────────────────────
@@ -3792,13 +3792,13 @@ async def extension_clone_video(payload: CloneVideoRequest):
     if not api_key:
         raise HTTPException(
             status_code=503,
-            detail="Groq API key is not set. Please add it from the application Settings panel."
+            detail="Groq API anahtarı ayarlanmamış. Uygulamanın Ayarlar panelinden ekleyin."
         )
 
     # ── 3. AI Concept Generation ────────────────────────────────
     db = await get_async_db()
-    content_type = "General Content"
-    purpose = "Entertaining the Audience"
+    content_type = "Genel İçerik"
+    purpose = "İzleyici Eğlendirmek"
     if payload.user_id:
         try:
             async with db.execute("SELECT content_type, purpose FROM channels WHERE user_id = ? LIMIT 1", (payload.user_id,)) as c:
@@ -3818,13 +3818,13 @@ async def extension_clone_video(payload: CloneVideoRequest):
             comment_signals=payload.comment_signals,
         )
     except ValueError as e:
-        app_logger.warning(f"[clone_video] Groq error: {e}")
+        app_logger.warning(f"[clone_video] Groq hatası: {e}")
         raise HTTPException(status_code=502, detail=str(e))
     except Exception as e:
-        app_logger.error(f"[clone_video] AI error: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=f"AI concept generation failed: {e}")
+        app_logger.error(f"[clone_video] AI hatası: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"AI konsept üretimi başarısız: {e}")
 
-    app_logger.info(f"[clone_video] ✅ Concept generated: video_id={video_id}")
+    app_logger.info(f"[clone_video] ✅ Konsept üretildi: video_id={video_id}")
 
     return {
         "success":   True,
@@ -3858,8 +3858,8 @@ async def _call_groq_debate(
     comment_signals: str = None,
 ) -> dict:
     """
-    Two personas run in parallel (asyncio.gather), then the Judge AI makes the decision.
-    Output must be a parseable JSON dict — otherwise HTTPException(500) is raised.
+    İki persona paralel çalışır (asyncio.gather), ardından Hakem AI karar verir.
+    Çıktı kesinlikle ayrıştırılabilir JSON dict olmalı — aksi hâlde HTTPException(500).
     """
 
     # -- Predictive Intelligence context (calculated once) --
@@ -3871,7 +3871,7 @@ async def _call_groq_debate(
     # Human face ban for gaming channels is injected into both agents
     thumbnail_rule = _build_thumbnail_rule(content_type)
 
-    transcript_excerpt = transcript[:2000] if transcript else "(No subtitle available)"
+    transcript_excerpt = transcript[:2000] if transcript else "(Altyazı mevcut değil)"
 
     # ── Persona A: Cruel Critic ──────────────────── ────────────────────
     prompt_a = f"""Sen acımasız, veriye dayalı, CTR (Tıklanma Oranı) odaklı bir YouTube stratejistisin.
@@ -3916,7 +3916,7 @@ Kurallar:
                     {"role": "user",   "content": prompt_a},
                 ],
                 "max_tokens": 512,
-                "temperature": 0.3,  # Persona A: cold and analytical
+                "temperature": 0.3,  # Persona A: soğuk ve mantıklı
             },
             timeout=30,
         )
@@ -3932,7 +3932,7 @@ Kurallar:
                     {"role": "user",   "content": prompt_b},
                 ],
                 "max_tokens": 512,
-                "temperature": 0.95,  # Persona B: chaotic creative
+                "temperature": 0.95,  # Persona B: kaotik yaratıcı
             },
             timeout=30,
         )
@@ -3944,15 +3944,15 @@ Kurallar:
     )
 
     # Fail-Fast: Throw HTTPException directly on HTTP errors
-    for label, resp in [("Persona A (Critic)", resp_a), ("Persona B (Mage)", resp_b)]:
+    for label, resp in [("Persona A (Eleştirmen)", resp_a), ("Persona B (Büyücü)", resp_b)]:
         if resp.status_code == 401:
-            raise HTTPException(status_code=502, detail="Groq API key is invalid.")
+            raise HTTPException(status_code=502, detail="Groq API anahtarı geçersiz.")
         if resp.status_code == 429:
-            raise HTTPException(status_code=429, detail="Groq API quota exceeded. Please wait.")
+            raise HTTPException(status_code=429, detail="Groq API kotası doldu. Lütfen bekleyin.")
         if resp.status_code != 200:
             raise HTTPException(
                 status_code=502,
-                detail=f"{label} Groq error: HTTP {resp.status_code}"
+                detail=f"{label} Groq hatası: HTTP {resp.status_code}"
             )
 
     raw_a = resp_a.json()["choices"][0]["message"]["content"].strip()
@@ -3960,29 +3960,29 @@ Kurallar:
 
     # ── JSON parse — Fail-Fast ──────────────────────── ────────────────────────
     def _parse_persona_json(raw: str, label: str) -> dict:
-        """Extract and parse the JSON block. Raise HTTPException(500) on error."""
+        """JSON bloğunu çıkar ve parse et. Hata varsa HTTPException(500) fırlat."""
         import re as _re
         # Clear markdown code blocks
         cleaned = _re.sub(r"```(?:json)?", "", raw).replace("```", "").strip()
         # Find the first { ... } block
         match = _re.search(r"\{.*\}", cleaned, _re.DOTALL)
         if not match:
-            app_logger.error(f"[clone_debate] {label} JSON parse error — raw response: {raw[:300]}")
+            app_logger.error(f"[clone_debate] {label} JSON parse hatası — ham yanıt: {raw[:300]}")
             raise HTTPException(
                 status_code=500,
-                detail=f"{label} did not return valid JSON. Raw response: {raw[:200]}"
+                detail=f"{label} geçerli bir JSON döndürmedi. Ham yanıt: {raw[:200]}"
             )
         try:
             return json.loads(match.group(), strict=False)
         except json.JSONDecodeError as exc:
-            app_logger.error(f"[clone_debate] {label} JSON decode error: {exc} | Raw: {raw[:300]}")
+            app_logger.error(f"[clone_debate] {label} JSON decode hatası: {exc} | Ham: {raw[:300]}")
             raise HTTPException(
                 status_code=500,
-                detail=f"{label} JSON could not be parsed: {exc}"
+                detail=f"{label} JSON ayrıştırılamadı: {exc}"
             )
 
-    idea_a = _parse_persona_json(raw_a, "Persona A (Critic)")
-    idea_b = _parse_persona_json(raw_b, "Persona B (Mage)")
+    idea_a = _parse_persona_json(raw_a, "Persona A (Eleştirmen)")
+    idea_b = _parse_persona_json(raw_b, "Persona B (Büyücü)")
 
     # ── Judge AI: Pick the Winner or Blend and Generate One Idea ──────────────
     # NOTE: _debate_pi is injected AFTER prompt_judge is defined (below)
@@ -4059,7 +4059,7 @@ YALNIZCA şu JSON formatında döndür (başka hiçbir şey yazma):
     if resp_judge.status_code != 200:
         raise HTTPException(
             status_code=502,
-            detail=f"Judge AI Groq error: HTTP {resp_judge.status_code}"
+            detail=f"Hakem AI Groq hatası: HTTP {resp_judge.status_code}"
         )
 
     raw_judge = resp_judge.json()["choices"][0]["message"]["content"].strip()
@@ -4069,28 +4069,28 @@ YALNIZCA şu JSON formatında döndür (başka hiçbir şey yazma):
     cleaned_judge = _re2.sub(r"```(?:json)?", "", raw_judge).replace("```", "").strip()
     match_judge = _re2.search(r"\{.*\}", cleaned_judge, _re2.DOTALL)
     if not match_judge:
-        app_logger.error(f"[clone_debate] Judge JSON parse error — raw: {raw_judge[:300]}")
+        app_logger.error(f"[clone_debate] Hakem JSON parse hatası — ham: {raw_judge[:300]}")
         raise HTTPException(
             status_code=500,
-            detail=f"Judge AI did not return valid JSON. Raw response: {raw_judge[:200]}"
+            detail=f"Hakem AI geçerli bir JSON döndürmedi. Ham yanıt: {raw_judge[:200]}"
         )
     try:
         result_dict = json.loads(match_judge.group(), strict=False)
     except json.JSONDecodeError as exc:
-        app_logger.error(f"[clone_debate] Judge JSON decode error: {exc} | Raw: {raw_judge[:300]}")
+        app_logger.error(f"[clone_debate] Hakem JSON decode hatası: {exc} | Ham: {raw_judge[:300]}")
         raise HTTPException(
             status_code=500,
-            detail=f"Judge AI JSON could not be parsed: {exc}"
+            detail=f"Hakem AI JSON ayrıştırılamadı: {exc}"
         )
 
     # Verify mandatory keys
     required_keys = {"eleştirmen_fikri", "buyucu_fikri", "kazanan_baslik", "kazanan_kanca", "kazanan_thumbnail"}
     missing = required_keys - result_dict.keys()
     if missing:
-        app_logger.error(f"[clone_debate] Judge JSON missing key(s): {missing} | Raw: {raw_judge[:300]}")
+        app_logger.error(f"[clone_debate] Hakem JSON eksik anahtar(lar): {missing} | Ham: {raw_judge[:300]}")
         raise HTTPException(
             status_code=500,
-            detail=f"Judge AI output is missing key(s): {missing}"
+            detail=f"Hakem AI çıktısında eksik anahtar(lar): {missing}"
         )
 
     return result_dict
@@ -4099,19 +4099,18 @@ YALNIZCA şu JSON formatında döndür (başka hiçbir şey yazma):
 @app.post("/api/extension/clone_debate")
 async def extension_clone_debate(payload: CloneVideoRequest):
     """
-    A/B Test Simulator — Multi-Agent Debate Endpoint.
-    Persona A (Critic) + Persona B (Mage) run in parallel.
-    Judge AI selects/blends the best idea and returns JSON.
+    A/B Test Simülatörü — Multi-Agent Debate Endpoint.
+    Persona A (Eleştirmen) + Persona B (Büyücü) paralel çalışır.
+    Hakem AI en iyi fikri seçer/harmanlayarak JSON döner.
 
-    Expected JSON body: { "url": "...", "videoId": "...", "title": "...", "channel": "...", "thumbnail": "..." }
-    Output: { "success": true, "debate": { eleştirmen_fikri, buyucu_fikri, kazanan_baslik, kazanan_kanca, kazanan_thumbnail } }
-    # NOTE: JSON keys are intentionally left in Turkish — they are DB/API contract keys used by the frontend extension.
+    Beklenen JSON body: { "url": "...", "videoId": "...", "title": "...", "channel": "...", "thumbnail": "..." }
+    Çıktı: { "success": true, "debate": { eleştirmen_fikri, buyucu_fikri, kazanan_baslik, kazanan_kanca, kazanan_thumbnail } }
     """
-    app_logger.info(f"[clone_debate] ⚔️ Debate started: {payload.model_dump()}")
+    app_logger.info(f"[clone_debate] ⚔️ Tartışma başlatıldı: {payload.model_dump()}")
 
     url      = payload.url.strip()
     video_id = payload.videoId.strip()
-    title    = payload.title.strip() or "No Title"
+    title    = payload.title.strip() or "Başlık Yok"
     channel  = payload.channel.strip() or "Bilinmeyen Kanal"
 
     if not video_id and "v=" in url:
@@ -4119,16 +4118,16 @@ async def extension_clone_debate(payload: CloneVideoRequest):
         video_id = parse_qs(urlparse(url).query).get("v", [""])[0]
 
     if not video_id:
-        raise HTTPException(status_code=400, detail="Video ID not found. Please provide a valid YouTube URL.")
+        raise HTTPException(status_code=400, detail="Video ID bulunamadı. Geçerli bir YouTube URL'si gönderin.")
 
     # ── Transcript ────────────────────────────── ───────────────────────────────
     try:
         transcript = await run_in_threadpool(_fetch_transcript_sync, video_id)
     except Exception as e:
-        app_logger.warning(f"[clone_debate] Transcript error (Fallback): {e}")
+        app_logger.warning(f"[clone_debate] Transcript hatası (Fallback): {e}")
         transcript = ""
 
-    if not transcript or transcript.startswith("ERROR:"):
+    if not transcript or transcript.startswith("HATA:"):
         transcript = ""
 
     # ── API Key ──────────────────────────────── ────────────────────────────────
@@ -4136,12 +4135,12 @@ async def extension_clone_debate(payload: CloneVideoRequest):
     if not api_key:
         raise HTTPException(
             status_code=503,
-            detail="Groq API key is not set. Please add it from the application Settings panel."
+            detail="Groq API anahtarı ayarlanmamış. Uygulamanın Ayarlar panelinden ekleyin."
         )
 
     # ── Channel Profile ───────────────────────────── ─────────────────────────────
-    content_type = "General Content"
-    purpose      = "Entertaining the Audience"
+    content_type = "Genel İçerik"
+    purpose      = "İzleyici Eğlendirmek"
     if payload.user_id:
         db = await get_async_db()
         try:
@@ -4165,7 +4164,7 @@ async def extension_clone_debate(payload: CloneVideoRequest):
         comment_signals=payload.comment_signals,
     )
 
-    app_logger.info(f"[clone_debate] ✅ Debate completed: video_id={video_id}")
+    app_logger.info(f"[clone_debate] ✅ Tartışma tamamlandı: video_id={video_id}")
 
     return {
         "success":  True,

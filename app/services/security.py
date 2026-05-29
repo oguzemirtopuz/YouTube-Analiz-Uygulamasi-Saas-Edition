@@ -19,17 +19,17 @@ import logging
 from pathlib import Path
 from cryptography.fernet import Fernet
 
-# ─── Yol ayrımı: EXE vs geliştirme ───────────────────────────────────────────
+# ─── Crossroads: EXE vs development ───────────────────── ──────────────────────
 if getattr(sys, 'frozen', False):
     _APP_DIR = Path(os.path.dirname(sys.executable)).resolve()
 else:
-    # Bu dosya  app/services/security.py  konumunda; proje kökü 2 seviye üstte
+    # This file is located at app/services/security.py; project root 2 levels up
     _APP_DIR = Path(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))).resolve()
 
 _logger = logging.getLogger("yt_analiz.security")
 
 
-# ─── Özel Exception ─────────────────────────────────────────────────────────────────────
+# ─── Special Exception ────────────────────────────────── ───────────────────────────────────
 
 class CryptoDecryptionError(RuntimeError):
     """Şifreli veri çözülemediğinde fırlatılır.
@@ -45,7 +45,7 @@ class CryptoDecryptionError(RuntimeError):
     pass
 
 
-# ─── CryptoManager ────────────────────────────────────────────────────────────
+# ─── CryptoManager ────────────────────────────── ──────────────────────────────
 
 class CryptoManager:
     """Fernet simetrik şifreleme ile hassas verileri (API key, SMTP şifre) korur.
@@ -90,8 +90,8 @@ class CryptoManager:
         except Exception as e:
             from cryptography.fernet import InvalidToken
             if isinstance(e, InvalidToken):
-                # Anahtar değişmiş ya da veri bozulmuş: bu bir GÜVENLİK OLAYI.
-                # Aşama 1 (Fail-Fast) kuralı gereği: Sahte veri/boş string dönmek YASAKTIR.
+                # The key has changed or data has been corrupted: this is a SECURITY INCIDENT.
+                # According to the Phase 1 (Fail-Fast) rule: It is PROHIBITED to return fake data/empty string.
                 _logger.error(
                     "[CryptoManager] KRİTİK HATA: decrypt() InvalidToken hatası. "
                     "'.secret.key' dosyası değişmiş veya veri bozulmuş olabilir. "
@@ -99,11 +99,11 @@ class CryptoManager:
                     len(text)
                 )
                 raise CryptoDecryptionError("Şifreleme anahtarı bozuk veya veri geçersiz. Veriler okunamadı.")
-            # Eski şifrelenmemiş veri (geriye dönük uyumluluk)
+            # Legacy unencrypted data (backwards compatibility)
             return text
 
 
-# ─── Şifre işlemleri ─────────────────────────────────────────────────────────
+# ─── Password transactions ──────────────────────────── ─────────────────────────────
 
 def hash_password(password: str) -> str:
     salt = secrets.token_hex(16)
@@ -120,7 +120,7 @@ def verify_password(password: str, stored_hash: str) -> bool:
         return False
 
 
-# ─── E-posta doğrulama kodu üreteci ──────────────────────────────────────────
+# ─── Email verification code generator ───────────────────── ─────────────────────
 
 def generate_verification_code() -> str:
     """6 haneli kriptografik olarak güvenli doğrulama kodu üretir."""

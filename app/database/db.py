@@ -18,21 +18,21 @@ import sqlite3
 import aiosqlite
 import logging
 
-# ─── Yol ayrımı: EXE vs geliştirme ───────────────────────────────────────────
+# ─── Crossroads: EXE vs development ───────────────────── ──────────────────────
 if getattr(sys, 'frozen', False):
     _APP_DIR = os.path.dirname(sys.executable)
 else:
-    # Bu dosya  app/database/db.py  konumunda; proje kökü 2 seviye üstte
+    # This file is located at app/database/db.py; project root 2 levels up
     _APP_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 db_path = os.path.join(_APP_DIR, 'channels.db')
 
-# server.pyw'daki app_logger'ı paylaşmak yerine modülün kendi logger'ını kullan.
-# server.pyw başladığında kök logger zaten yapılandırılmış olacak.
+# Instead of sharing the app_logger in server.pyw, use the module's own logger.
+# The root logger will already be configured when server.pyw starts.
 _logger = logging.getLogger("yt_analiz.database")
 
 
-# ─── Bağlantı fonksiyonları ───────────────────────────────────────────────────
+# ─── Connection functions ───────────────────────── ──────────────────────────
 
 def get_db():
     """Senkron SQLite bağlantısı döndürür.
@@ -44,7 +44,7 @@ def get_db():
     """
     conn = sqlite3.connect(str(db_path), check_same_thread=False, timeout=5)
     conn.row_factory = sqlite3.Row
-    # WAL modu: okuma hiçbir zaman yazmayı bloke etmez
+    # WAL mode: reading never blocks writing
     conn.execute("PRAGMA journal_mode=WAL;")
     conn.execute("PRAGMA synchronous=NORMAL;")  # WAL ile güvenli, daha hızlı
     return conn
@@ -58,7 +58,7 @@ async def get_async_db():
     return db
 
 
-# ─── init_db ─────────────────────────────────────────────────────────────────
+# ─── init_db ──────────────────────────────── ─────────────────────────────────
 
 def init_db():
     """Senkron init_db — asyncio.run ile aiosqlite kullanır."""
@@ -171,7 +171,7 @@ def init_db():
     asyncio.run(_init())
 
 
-# ─── migrate_data ─────────────────────────────────────────────────────────────
+# ─── migrate_data ────────────────────────────── ───────────────────────────────
 
 def migrate_data(target_user_id):
     """Misafir (user_id=1) verilerini hedef kullanıcıya taşır."""

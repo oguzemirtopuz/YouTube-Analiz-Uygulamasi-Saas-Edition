@@ -1,5 +1,5 @@
 $desktop = [System.Environment]::GetFolderPath("Desktop")
-$shortcutPath = Join-Path $desktop "YouTube Analiz Pro.lnk"
+$shortcutPath = Join-Path $desktop "YouTube Analyzer Pro.lnk"
 $workingDir = $PSScriptRoot
 $targetPath = Join-Path $workingDir "YouTube Analiz Pro.vbs"
 
@@ -9,7 +9,7 @@ $Shortcut.TargetPath = "wscript.exe"
 $Shortcut.Arguments = "`"$targetPath`""
 $Shortcut.WorkingDirectory = $workingDir
 $Shortcut.IconLocation = "C:\Windows\System32\shell32.dll,165"
-$Shortcut.Description = "YouTube Analiz Pro - Terminalsiz Başlat"
+$Shortcut.Description = "YouTube Analyzer Pro - Start Without Terminal"
 $Shortcut.Save()
 
-Write-Host "Kısayol masaüstüne başarıyla oluşturuldu: $shortcutPath"
+Write-Host "Shortcut successfully created on desktop: $shortcutPath"

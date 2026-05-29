@@ -24,14 +24,14 @@ from typing import Dict, List, Optional
 from app.database.db import get_async_db
 from app.services.ai_service import generate_ai_game_feedback
 
-# DeepFace isteğe bağlı
+# DeepFace optional
 try:
     from deepface import DeepFace
     DEEPFACE_AVAILABLE = True
 except ImportError:
     DEEPFACE_AVAILABLE = False
 
-# ColorThief isteğe bağlı
+# ColorThief optional
 try:
     from colorthief import ColorThief
     COLORTHIEF_AVAILABLE = True
@@ -41,7 +41,7 @@ except ImportError:
 _logger = logging.getLogger("yt_analiz.analysis_engine")
 
 
-# ─── run_cmd yardımcısı (server.pyw'daki aynı fonksiyonun kopyası) ────────────
+# ─── run_cmd helper (duplicate of the same function in server.pyw) ────────────
 def _run_cmd(cmd_list, timeout=None):
     kwargs = {'stdout': subprocess.DEVNULL, 'stderr': subprocess.DEVNULL}
     if os.name == 'nt':
@@ -49,7 +49,7 @@ def _run_cmd(cmd_list, timeout=None):
     return subprocess.run(cmd_list, check=True, timeout=timeout, **kwargs)
 
 
-# ─── get_dynamic_timeout yardımcısı ──────────────────────────────────────────
+# ─── get_dynamic_timeout helper ───────────────────── ─────────────────────
 import re as _re
 
 def _get_dynamic_timeout(video_path: str, min_timeout: int = 120) -> Optional[int]:
@@ -69,7 +69,7 @@ def _get_dynamic_timeout(video_path: str, min_timeout: int = 120) -> Optional[in
     return None
 
 
-# ─── INDUSTRY_STANDARDS ──────────────────────────────────────────────────────
+# ─── INDUSTRY_STANDARDS ─────────────────────────── ───────────────────────────
 
 INDUSTRY_STANDARDS = {
     'gaming': {'tempo': 8.8, 'seo': 7.5, 'retention': 4.5},
@@ -81,7 +81,7 @@ INDUSTRY_STANDARDS = {
 }
 
 
-# ─── AnalysisEngine ───────────────────────────────────────────────────────────
+# ─── AnalysisEngine ───────────────────────────── ──────────────────────────────
 
 class AnalysisEngine:
 
@@ -131,7 +131,7 @@ class AnalysisEngine:
                             f"Has encontrado un buen equilibrio adecuado para el tipo de tu canal." if is_es else
                             f"Kanalının türüne uygun bir denge yakalamışsın."))
 
-        # ── Görsel zeka ek notu (Aşama 3) ──
+        # ── Visual intelligence annotation (Stage 3) ──
         if thumb_insights and thumb_insights.get("visual_summary"):
             vs = thumb_insights["visual_summary"]
             feedback += f" 📸 [{vs}]"
@@ -164,7 +164,7 @@ class AnalysisEngine:
                         del thresh
                     prev_frame = gray
                     del frame, small_frame
-                    # Her en az 1 değer toplandığında (ya da pro modda fps kadar) tempo haritasına ekle
+                    # Every time at least 1 value is collected (or as many fps in pro mode) add it to the tempo map
                     threshold_count = int(fps) if pro_mode else 1
                     if len(current_sec_diffs) >= threshold_count:
                         tempo_map.append(round(float(np.mean(current_sec_diffs)), 2))
@@ -188,9 +188,9 @@ class AnalysisEngine:
         try:
             _run_cmd(["ffmpeg", "-y", "-hwaccel", "auto", "-i", video_path, "-vn", "-acodec", "pcm_s16le", "-ar", str(sr_val), "-ac", "1", temp_audio], timeout=_get_dynamic_timeout(video_path))
 
-            # --- CHUNK-BASED: Sesi parça parça işle, RAM'e basmadan ---
+            # --- CHUNK-BASED: Process audio piece by piece, without pressing RAM ---
             frame_length = 2048
-            hop_length = sr_val  # Orijinal: her saniye 1 RMS değeri
+            hop_length = sr_val  # Original: 1 RMS value every second
             block_length = 256
 
             all_rms = []
@@ -297,7 +297,7 @@ class AnalysisEngine:
         total_duration = frame_count / fps if fps > 0 else 1.0
         cut_frequency = round(len(cut_times) / max(1.0, total_duration / 60.0), 1)
         avg_motion = round(float(np.mean(motion_values)), 2) if motion_values else 0.0
-        # Downsample motion_values for response size
+        # Downsample motion_values ​​for response size
         step = max(1, len(motion_values) // 200)
         sampled_motion = [round(v, 2) for v in motion_values[::step]] if motion_values else []
 
@@ -336,7 +336,7 @@ class AnalysisEngine:
             summary_parts = []
             face_bonus = 0.0
 
-            # ── 1. DEEPFACE: Yüz + Duygu + Bakış Yönü ──
+            # ── 1. DEEPFACE: Face + Emotion + Gaze Direction ──
             if DEEPFACE_AVAILABLE:
                 try:
                     analyses = None
@@ -401,16 +401,16 @@ class AnalysisEngine:
                         emo_tr = {"surprise": "şaşkın", "happy": "mutlu", "fear": "korkmuş",
                                   "angry": "kızgın", "sad": "üzgün", "neutral": "nötr",
                                   "disgust": "tiksinti"}
-                        # Kullanıcının talebi üzerine hardcoded yüz metinleri tamamen temizlendi
-                        # summary_parts.append(f"Thumbnail'de {emo_tr.get(emo, emo)} bir yüz var")
+                        # Hardcoded face texts were completely scrubbed upon user request
+                        # summary_parts.append(f"Thumbnail has a face {emo_tr.get(emo, emo)}")
                         # if primary["looking_at_camera"]:
-                        #     summary_parts.append("kameraya bakıyor")
+                        # summary_parts.append("looking at camera")
                 except Exception as e:
                     print(f"DeepFace analiz hatası: {e}")
             else:
                 pass
 
-            # ── 2. KONTRAST ORANI (Michelson Contrast) ──
+            # ── 2. CONTRAST RATIO (Michelson Contrast) ──
             lab = cv2.cvtColor(img, cv2.COLOR_BGR2LAB)
             l_ch, a_ch, b_ch = cv2.split(lab)
             l_min = float(np.percentile(l_ch, 5))
@@ -436,7 +436,7 @@ class AnalysisEngine:
             else:
                 summary_parts.append("kontrast düşük")
 
-            # ── 3. METİN YERLEŞİM ALANI ──
+            # ── 3. TEXT SETTLEMENT AREA ──
             gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
             regions_var = [
                 float(np.std(gray[:h // 4, :])),
@@ -455,7 +455,7 @@ class AnalysisEngine:
                 text_space_10 = max(2.0, 10.0 - (min_var - 30) * 0.15)
             result["text_space_score"] = round(text_space_10, 1)
 
-            # ── 4. CANLI RENK PALETİ UYUMU ──
+            # ── 4. VIBRANT COLOR PALETTE HARMONY ──
             vibrant_palette_bgr = [
                 (0, 0, 255), (0, 215, 255), (212, 188, 0), (53, 107, 255),
                 (20, 255, 57), (182, 89, 155), (0, 69, 255), (0, 165, 255),
@@ -498,7 +498,7 @@ class AnalysisEngine:
             if vibrant_10 >= 7:
                 summary_parts.append("canlı renk paleti güçlü")
 
-            # ── 5. PARLAKLIK + DOYGUNLUK ──
+            # ── 5. BRIGHTNESS + SATURATION ──
             mean_l = float(np.mean(l_ch))
             if 40 <= mean_l <= 80:
                 brightness_10 = 10.0
@@ -509,7 +509,7 @@ class AnalysisEngine:
             sat_std = (float(np.std(a_ch)) + float(np.std(b_ch))) / 2
             saturation_10 = min(10.0, sat_std * 0.4)
 
-            # ── 6. TOPLAM SKOR ──
+            # ── 6. TOTAL SCORE ──
             face_10 = min(10.0, face_bonus * 3.3)
             if result["face_detected"]:
                 total = (brightness_10 * 0.10 + saturation_10 * 0.10 +
@@ -574,10 +574,10 @@ class AnalysisEngine:
         try:
             _run_cmd(["ffmpeg", "-y", "-hwaccel", "auto", "-i", video_path, "-vn", "-acodec", "pcm_s16le", "-ar", str(sr_val), "-ac", "1", temp_audio], timeout=_get_dynamic_timeout(video_path))
 
-            # --- CHUNK-BASED: Tüm sesi RAM'e yüklemeden parça parça analiz ---
+            # --- CHUNK-BASED: Analyzing the entire audio piece by piece without loading it into RAM ---
             frame_length = 2048
             hop_length = 512
-            block_length = 256  # ~6 saniye/blok
+            block_length = 256  # ~6 seconds/block
 
             all_rms_blocks = []
             total_samples = 0
@@ -649,7 +649,7 @@ class AnalysisEngine:
         rms_max = float(np.max(rms_array)) if len(rms_array) > 0 else 1.0
         time_per_frame = duration / len(rms_data)
 
-        # Sahne değişim ve hareket verileri
+        # Scene change and motion data
         cut_times = scene_changes.get("cut_times", []) if scene_changes else []
         motion_vals = visual_tempo if visual_tempo else []
         motion_max = max(motion_vals) if motion_vals else 1.0
@@ -684,11 +684,11 @@ class AnalysisEngine:
             start_sec = round(start_sec, 1)
             end_sec = round(end_sec, 1)
 
-            # ── Multimodal Heyecan Katsayısı ──
-            # 1. Ses skoru (normalize)
+            # ── Multimodal Excitement Coefficient ──
+            # 1. Audio score (normalized)
             rms_norm = (local_peak_val / rms_max) if rms_max > 0 else 0.0
 
-            # 2. Sahne değişim yoğunluğu (bu penceredeki cut sayısı)
+            # 2. Scene change intensity (number of cuts in this window)
             cuts_in_window = sum(
                 1 for ct in cut_times if start_sec <= ct <= end_sec
             )
@@ -696,7 +696,7 @@ class AnalysisEngine:
             cut_density = cuts_in_window / (seg_dur / 10.0)  # cuts per 10sec
             cut_density_norm = min(1.0, cut_density / 5.0)
 
-            # 3. Hareket yoğunluğu (bu penceredeki ortalama motion)
+            # 3. Motion intensity (average motion in this window)
             motion_norm = 0.0
             if motion_vals:
                 m_start = int(start_sec)

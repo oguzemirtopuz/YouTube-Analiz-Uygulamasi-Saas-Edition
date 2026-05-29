@@ -22,7 +22,7 @@ set "FFMPEG_BIN=%FFMPEG_DIR%\bin"
 
 :: ─── Renk fonksiyonu icin gecici vbs ────────────────────────
 set "LOG_FILE=%PROJECT_DIR%install_log.txt"
-echo. > "%LOG_FILE%"
+echo . > "%LOG_FILE%"
 
 call :print_banner
 call :step_python
@@ -39,15 +39,15 @@ goto :eof
 cls
 echo.
 echo  ==========================================================
-echo    YouTube Analiz Pro ^| 1-Click Installer
-echo    Global SaaS Setup Wizard - v1.0
+echo YouTube Analysis Pro ^| 1-Click Installer
+echo Global SaaS Setup Wizard - v1.0
 echo  ==========================================================
 echo.
-echo  Bu sihirbaz asagidaki adimlari otomatik gerceklestirecek:
-echo    [1] Python kontrolu
-echo    [2] Virtual Environment (venv) kurulumu
-echo    [3] FFmpeg kurulumu ^(yoksa otomatik indirilir^)
-echo    [4] Masaustu kisayolu olusturma
+echo This wizard will automatically perform the following steps:
+echo [1] Python control
+echo [2] Virtual Environment (venv) installation
+echo [3] FFmpeg installation ^(otherwise it will be downloaded automatically^)
+echo [4] Creating a desktop shortcut
 echo.
 echo  ==========================================================
 echo.
@@ -58,7 +58,7 @@ goto :eof
 :: ADIM 1 — PYTHON KONTROLU
 :: ============================================================
 :step_python
-echo  [1/4] Python kontrol ediliyor...
+echo [1/4] Checking Python...
 echo.
 
 :: python komutunu dene
@@ -78,22 +78,22 @@ if %errorlevel% == 0 (
 )
 
 :: Python bulunamadi
-echo  [HATA] Python sisteminizde bulunamadi!
+echo [ERROR] Python was not found on your system!
 echo.
-echo  Lutfen Python 3.10 veya uzeri yukleyin:
-echo    https://www.python.org/downloads/
+echo Please install Python 3.10 or later:
+echo https://www.python.org/downloads/
 echo.
-echo  ONEMLI: Kurulum sirasinda "Add Python to PATH"
-echo           kutucugunu isaretle!
+echo IMPORTANT: "Add Python to PATH" during installation
+echo Check the box!
 echo.
-echo  Kurulumdan sonra bu scripti tekrar calistirin.
+echo After installation, run this script again.
 echo.
-echo  [Herhangi bir tusa basin cikmak icin...]
+echo [Press any key to exit...]
 pause >nul
 exit /b 1
 
 :python_ok
-echo  [OK] !PY_VER! bulundu  (komut: !PYTHON_CMD!)
+echo [OK] !PY_VER! found (command: !PYTHON_CMD!)
 echo.
 goto :eof
 
@@ -102,33 +102,33 @@ goto :eof
 :: ADIM 2 — VIRTUAL ENVIRONMENT + REQUIREMENTS
 :: ============================================================
 :step_venv
-echo  [2/4] Virtual Environment kurulumu...
+echo [2/4] Virtual Environment installation...
 echo.
 
 :: Zaten venv var mi?
 if exist "%VENV_DIR%\Scripts\activate.bat" (
-    echo  [OK] Mevcut venv bulundu, atlanıyor...
-    echo       Konum: %VENV_DIR%
+    echo [OK] Existing venv found, skipping...
+    echo Location: %VENV_DIR%
     echo.
     goto :install_requirements
 )
 
 :: venv olustur
-echo  [..] venv olusturuluyor: %VENV_DIR%
+echo [..] creating venv: %VENV_DIR%
 !PYTHON_CMD! -m venv "%VENV_DIR%"
 if %errorlevel% neq 0 (
     echo.
-    echo  [HATA] venv olusturulamadi!
-    echo         Lutfen Python kurulumunu kontrol edin.
+    echo [ERROR] Failed to create venv!
+    echo Please check the Python installation.
     pause >nul
     exit /b 1
 )
-echo  [OK] venv olusturuldu.
+echo [OK] venv created.
 echo.
 
 :install_requirements
-echo  [..] Gerekli paketler yukleniyor (bu birkaç dakika surebilir)...
-echo       Lutfen bekleyin...
+echo [..] Installing the necessary packages (this may take a few minutes)...
+echo Please wait...
 echo.
 
 :: pip'i guncelle
@@ -137,10 +137,10 @@ echo.
 :: requirements.txt kur
 "%VENV_DIR%\Scripts\pip.exe" install -r "%PROJECT_DIR%requirements.txt" --quiet 2>>"%LOG_FILE%"
 if %errorlevel% neq 0 (
-    echo  [UYARI] Bazi paketler yuklenemedi. Detaylar icin install_log.txt dosyasina bakin.
+    echo [WARNING] Some packages could not be installed. See install_log.txt for details.
     echo.
 ) else (
-    echo  [OK] Tum Python paketleri basariyla yuklendi.
+    echo [OK] All Python packages have been installed successfully.
     echo.
 )
 goto :eof
@@ -150,7 +150,7 @@ goto :eof
 :: ADIM 3 — FFMPEG KONTROLU + OTOMATIK KURULUM
 :: ============================================================
 :step_ffmpeg
-echo  [3/4] FFmpeg kontrol ediliyor...
+echo [3/4] Checking FFmpeg...
 echo.
 
 :: 1) Sistem PATH'inde var mi?
@@ -161,25 +161,25 @@ if %errorlevel% == 0 (
         goto :ffmpeg_sys_ok
     )
     :ffmpeg_sys_ok
-    echo  [OK] FFmpeg sistem PATH'inde bulundu.
-    echo       !FF_VER!
+    echo [OK] FFmpeg found in system PATH.
+    echo !FF_VER!
     echo.
     goto :eof
 )
 
 :: 2) Proje icinde (./ffmpeg/bin) var mi?
 if exist "%FFMPEG_BIN%\ffmpeg.exe" (
-    echo  [OK] FFmpeg proje icinde bulundu: %FFMPEG_BIN%
+    echo [OK] FFmpeg found in project: %FFMPEG_BIN%
     echo.
     goto :eof
 )
 
 :: 3) FFmpeg yok — otomatik indir
-echo  [!!] FFmpeg bulunamadi. Otomatik olarak indiriliyor...
+echo [!!] FFmpeg not found. Downloading automatically...
 echo.
-echo       Kaynak: https://github.com/BtbN/FFmpeg-Builds
-echo       Bu islem internet baglantisi gerektirir.
-echo       Lutfen bekleyin...
+echo Source: https://github.com/BtbN/FFmpeg-Builds
+echo This process requires an internet connection.
+echo Please wait...
 echo.
 
 :: Indirme URL'si (BtbN FFmpeg-Builds — GPL, essentials, win64)
@@ -192,7 +192,7 @@ if exist "%FFMPEG_ZIP%" del /f /q "%FFMPEG_ZIP%"
 if exist "%FFMPEG_EXTRACT%" rmdir /s /q "%FFMPEG_EXTRACT%"
 
 :: PowerShell ile indir (progress goster)
-echo  [..] Indiriliyor, lutfen bekleyin (bu biraz zaman alabilir)...
+echo [..] Downloading, please wait (this may take some time)...
 powershell -NoProfile -ExecutionPolicy Bypass -Command ^
     "[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; " ^
     "$progressPreference='silentlyContinue'; " ^
@@ -200,28 +200,28 @@ powershell -NoProfile -ExecutionPolicy Bypass -Command ^
 
 if %errorlevel% neq 0 (
     echo.
-    echo  [HATA] FFmpeg indirilemedi!
+    echo [ERROR] Failed to download FFmpeg!
     echo.
-    echo  Manuel kurulum secenekleri:
-    echo    1) winget : PowerShell'de  winget install Gyan.FFmpeg  calistirin
-    echo    2) Choco  : choco install ffmpeg
-    echo    3) Manuel : https://ffmpeg.org/download.html adresinden indirip
-    echo               ffmpeg.exe'yi  %FFMPEG_BIN%  klasorune koyun.
+    echo Manual installation options:
+    echo 1) winget : Run winget install Gyan.FFmpeg in PowerShell
+    echo 2) Choco: choco install ffmpeg
+    echo 3) Manual: Download from https://ffmpeg.org/download.html
+    echo Put ffmpeg.exe in the %FFMPEG_BIN% folder.
     echo.
-    echo  Kuruluma devam ediliyor (FFmpeg olmadan bazi ozellikler calismayabilir)...
+    echo Installation continues (some features may not work without FFmpeg)...
     echo.
     goto :eof
 )
 
-echo  [OK] Indirme tamamlandi.
-echo  [..] ZIP dosyasi aciliyor...
+echo [OK] Download completed.
+echo [..] Opening the ZIP file...
 
 :: Zip'i cikart
 powershell -NoProfile -ExecutionPolicy Bypass -Command ^
     "Expand-Archive -Path '%FFMPEG_ZIP%' -DestinationPath '%FFMPEG_EXTRACT%' -Force"
 
 if %errorlevel% neq 0 (
-    echo  [HATA] ZIP acilamadi. Kurulum devam ediyor (FFmpeg eksik olabilir).
+    echo [ERROR] ZIP could not be opened. Installation in progress (FFmpeg may be missing).
     goto :eof
 )
 
@@ -232,7 +232,7 @@ for /d %%d in ("%FFMPEG_EXTRACT%\*") do (
 )
 
 if not defined FFMPEG_INNER (
-    echo  [HATA] ZIP icinden ffmpeg.exe bulunamadi.
+    echo [ERROR] ffmpeg.exe could not be found in the ZIP.
     goto :eof
 )
 
@@ -247,16 +247,16 @@ rmdir /s /q "%FFMPEG_EXTRACT%" >nul 2>&1
 
 :: Dogrula
 if exist "%FFMPEG_BIN%\ffmpeg.exe" (
-    echo  [OK] FFmpeg basariyla kuruldu: %FFMPEG_BIN%
+    echo [OK] FFmpeg installed successfully: %FFMPEG_BIN%
     echo.
-    echo  NOT: FFmpeg proje klasorune kuruldu.
-    echo       Uygulama otomatik olarak bu yolu kullanacak.
+    echo NOTE: FFmpeg was installed in the project folder.
+    echo The application will automatically use this path.
     echo.
     
     :: Bu oturum icin PATH'e ekle (kalici degil, sadece dogrulama icin)
     set "PATH=%FFMPEG_BIN%;%PATH%"
 ) else (
-    echo  [UYARI] FFmpeg kopyalanamadi. Lutfen manuel kurun.
+    echo [WARNING] Failed to copy FFmpeg. Please install manually.
     echo.
 )
 goto :eof
@@ -266,7 +266,7 @@ goto :eof
 :: ADIM 4 — MASAUSTU KISAYOLU
 :: ============================================================
 :step_shortcut
-echo  [4/4] Masaustu kisayolu olusturuluyor...
+echo [4/4] Creating a desktop shortcut...
 echo.
 
 set "SHORTCUT_NAME=YouTube Analiz Pro"
@@ -280,16 +280,16 @@ set "SMART_LAUNCHER=%PROJECT_DIR%launch.bat"
     echo setlocal
     echo cd /d "%PROJECT_DIR%"
     echo.
-    echo :: FFmpeg PATH'e ekle (proje icinde kurulduysa^)
+    echo :: Add FFmpeg to PATH (if installed within the project^)
     echo if exist "%FFMPEG_BIN%\ffmpeg.exe" (
-    echo     set "PATH=%FFMPEG_BIN%;%%PATH%%"
+    echo set "PATH=%FFMPEG_BIN%;%%PATH%%"
     echo ^)
     echo.
-    echo :: venv aktif et ve uygulamayi baslat
+    echo ::activate venv and start the application
     echo if exist "%VENV_DIR%\Scripts\pythonw.exe" (
-    echo     start /min "" "%VENV_DIR%\Scripts\pythonw.exe" "%PROJECT_DIR%server.pyw"
+    echo start /min "" "%VENV_DIR%\Scripts\pythonw.exe" "%PROJECT_DIR%server.pyw"
     echo ^) else (
-    echo     start /min "" pythonw "%PROJECT_DIR%server.pyw"
+    echo start /min "" pythonw "%PROJECT_DIR%server.pyw"
     echo ^)
     echo exit
 ) > "%SMART_LAUNCHER%"
@@ -306,11 +306,11 @@ powershell -NoProfile -ExecutionPolicy Bypass -Command ^
     "$Shortcut.Save()"
 
 if %errorlevel% == 0 (
-    echo  [OK] Masaustu kisayolu olusturuldu:
-    echo       "%SHORTCUT_PATH%"
+    echo [OK] Desktop shortcut created:
+    echo "%SHORTCUT_PATH%"
     echo.
 ) else (
-    echo  [UYARI] Kisayol olusturulamadi. Uygulamayi BASLAT.bat ile balatabilirsiniz.
+    echo [WARNING] Failed to create shortcut. You can start the application with START.bat.
     echo.
 )
 goto :eof
@@ -322,25 +322,25 @@ goto :eof
 :finish
 echo.
 echo  ==========================================================
-echo    KURULUM TAMAMLANDI!
+echo INSTALLATION IS COMPLETE!
 echo  ==========================================================
 echo.
-echo  Uygulamayi asagidaki yontemlerden biriyle baslatabilirsiniz:
+echo You can start the application in one of the following ways:
 echo.
-echo    [1] Masaustu'ndeki "YouTube Analiz Pro" kisayoluna cift tiklayin
-echo    [2] launch.bat dosyasini calistirin
-echo    [3] BASLAT.bat dosyasini calistirin
+echo [1] Double-click the "YouTube Analysis Pro" shortcut on the desktop
+echo [2] Run launch.bat
+echo [3] Run the START.bat file
 echo.
-echo  Uygulama basladiktan sonra tarayicinizda acilir:
-echo    http://127.0.0.1:8000
+echo After the application starts, it opens in your browser:
+echo http://127.0.0.1:8000
 echo.
-echo  Herhangi bir sorun icin install_log.txt dosyasini inceleyin.
+echo Review the install_log.txt file for any problems.
 echo  ==========================================================
 echo.
 
 :: Bekleme sayaci (5sn sonra kapanir ya da tusa basinca)
-echo  Bu pencere 10 saniye sonra kapanacak...
-echo  (Hemen kapatmak icin herhangi bir tusa basin)
+echo This window will close in 10 seconds...
+echo (Press any key to close immediately)
 echo.
 timeout /t 10 /nobreak >nul 2>&1
 exit /b 0

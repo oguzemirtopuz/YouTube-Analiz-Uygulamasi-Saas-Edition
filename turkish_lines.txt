@@ -1,0 +1,464 @@
+54: # --- RAKİP ANALİZİ KÜTÜPHANESİ ---
+61: # --- GÖRSEL ZEKA KÜTÜPHANELERİ (Aşama 3) ---
+76: #   LOGGING & HATA YÖNETİMİ (SaaS Seviye)
+78: # PyInstaller EXE uyumlu yol ayrımı
+80:     # EXE modunda: APP_DIR = exe'nin yanı (yazılabilir), BUNDLE_DIR = paket içi (salt okunur)
+96: #   GÜVENLİK SERVİSİ (app/services/security.py)
+114: # Konsol handler kapatıldı (Unicode hatasını engellemek için)
+120: # Crash log dosyası (eski uyumluluk)
+126:     """Kullanıcı bazlı logger döndürür. logs/user_X.log dosyasına yazar."""
+160: # --- VERİTABANI KATMANI (app/database/db.py) ---
+167: # EXE modunda templates/static zaten paket içinde; geliştirme modunda oluştur
+189:         # comparison_headers listesini özel olarak kur
+200:         print(f"translations.xlsx okunamadı, fallback boş dict: {e}")
+207: # --- PDF FONT ENTEGRASYONU (GÜVENLİ) ---
+208: # Önce proje klasörüne bak, sonra sistem klasörlerine, son çare Helvetica
+211:     arial.ttf / arialbd.ttf için arama sırası:
+212:       1. BASE_DIR (proje klasörü)
+213:       2. Windows sistem font klasörü  (C:/Windows/Fonts)
+230:                 pass  # Bozuk font dosyası → sonraki adıma geç
+238:     'eğitim': {'tempo': 4.5, 'seo': 9.5, 'retention': 7.0},
+260:     Sırasıyla NVIDIA, AMD, Intel GPU codec'lerini dener.
+261:     Çalışan ilkini döndürür, hiçbiri çalışmazsa libx264 (CPU) döndürür.
+288:     print("ℹ️ GPU codec bulunamadı, CPU (libx264) kullanılacak.")
+299:         app_logger.error(f"Hata [check_ffmpeg]: FFmpeg bulunamadı veya çalıştırılamadı. {e}")
+307: #   DONANIM / PERFORMANS OTO-PİLOTU
+323:     """Sistem başlangıcında donanım profilini tespit eder."""
+332:     # RAM (platform bağımsız, psutil olmadan)
+365:     # Fast mode: 8+ çekirdek veya GPU codec varsa agresif ayarlar kullan
+369:         f"🖥️ Sistem profili: CPU={cpu_count} çekirdek, RAM={SYSTEM_CAPS['ram_gb']}GB, "
+379: #   AI SERVİSİ (app/services/ai_service.py)
+385: #   E-POSTA SERVİSİ (app/services/email_service.py)
+395: #   RAKİP ANALİZ SERVİSİ (app/services/competitor.py)
+415: #   ANALİZ MOTORU (app/services/analysis_engine.py)
+422:     Video süresine göre dinamik FFmpeg timeout hesaplar.
+423:     Kural: max(min_timeout, video_süresi * 2)
+424:     20GB+ dosyalar için bile yeterli marj sağlar.
+425:     Süre bulunamazsa None döner (timeout yok).
+444:     """Yüklenen dosyaları diske kopyalar (threadpool içinde çalıştırılmak üzere)."""
+458: # ── Pydantic 422 Validation hata detaylarını logla ──────────────────────────
+463:     """422 Pydantic validation hatalarını logla ve anlamlı JSON dön."""
+468:         body_str = "<okunamadı>"
+472:         f"  Validation hataları: {exc.errors()}"
+477:             "error": "Gönderilen veri formatı hatalı.",
+486:     Fail-Fast (Aşama 1) Kuralı: Şifreleme çözülemediğinde sessizce boş string dönmek YASAKTIR.
+487:     Bu global handler, herhangi bir API endpointinde CryptoDecryptionError fırlatıldığında
+488:     dürüstçe 500 hatası ve anlamlı mesaj döner.
+497:             "detail": str(exc)  # Bazı frontend fetch'leri "detail" arayabilir
+507: #   GLOBAL HATA YÖNETİCİ (SaaS Seviye)
+511:     """Tüm beklenmeyen hataları yakalayıp kullanıcıya hata kodu gösterir."""
+517:         # Kullanıcı ID'sini çıkarmaya çalış
+541:                 "error": f"Bir sorun oluştu. Hata kodu: {error_code}. Lütfen bu kodu destek ekibine gönderin.",
+552:     """Google OAuth2 yetkilendirme URL'sini oluşturur."""
+566:             return {"error": "Google Client ID ayarlanmamış. Ayarlar sayfasından ekleyin."}
+576:         app_logger.error(f"Google auth URL oluşturma hatası: {e}", exc_info=True)
+577:         return {"error": "Google auth URL oluşturulamadı."}
+582:     """Google OAuth2 callback — token exchange ve kullanıcı oluşturma/giriş."""
+584:         return HTMLResponse("<h2>Hata: Yetkilendirme kodu alınamadı.</h2>")
+596:                 return HTMLResponse("<h2>Google OAuth yapılandırması eksik.</h2>")
+608:                 app_logger.error(f"Google token exchange hatası: {token_resp.text}")
+609:                 return HTMLResponse("<h2>Google ile giriş başarısız.</h2>")
+614:             # Kullanıcı bilgilerini al
+621:                 return HTMLResponse("<h2>Google kullanıcı bilgileri alınamadı.</h2>")
+629:             # Kullanıcı var mı kontrol et
+641:                 # Benzersiz username oluştur
+665:         # Session oluştur ve redirect yap
+674:         app_logger.info(f"✅ Google login başarılı: user_id={user_id}, username={username}")
+675:         # XSS koruması: json.dumps çift tırnak kullanır, tek tırnak injection engellenmiş olur
+677:         session_json_safe = _json.dumps(session_json)  # çift tırnakla sarılı JSON string
+684:             <p>Giriş yapılıyor...</p>
+688:         app_logger.error(f"Google auth callback hatası: {e}", exc_info=True)
+689:         return HTMLResponse("<h2>Google ile giriş sırasında bir hata oluştu.</h2>")
+702:             return {"success": False, "error": "Client ID ve Secret boş olamaz."}
+714:         app_logger.error(f"Google OAuth ayarları kayıt hatası: {e}")
+715:         return {"success": False, "error": "Kayıt hatası."}
+751:             return {"error": "Kullanıcı adı en az 3 karakter olmalıdır."}
+753:             return {"error": "Şifre en az 6 karakter olmalıdır."}
+755:             return {"error": "Kullanıcı adında boşluk olamaz."}
+757:             return {"error": "Geçerli bir email adresi girin."}
+768:                 return {"error": "Bu kullanıcı adı zaten kullanılıyor."}
+770:             # Doğrulama kodu oluştur
+780:         print(f"MAIL GÖNDERİLİYOR: {email}, kod: {code}")
+793:         return {"error": "Kayıt sırasında beklenmeyen bir hata oluştu."}
+803:             return {"error": "Kullanıcı adı ve şifre boş olamaz."}
+812:             return {"error": "Kullanıcı bulunamadı."}
+815:             return {"error": "Bu hesaba giriş yapılamaz."}
+817:             return {"error": "Şifre yanlış."}
+823:         return {"error": "Giriş sırasında beklenmeyen bir hata oluştu."}
+844:                 return {"error": "Kod yanlış."}
+848:                 return {"error": "Bu kod zaten kullanılmış."}
+851:                 return {"error": "Kodun süresi dolmuş. Tekrar kayıt ol."}
+865:         return {"error": "Doğrulama sırasında hata oluştu."}
+880:                 return {"error": "Kullanıcı bulunamadı."}
+896:         return {"error": "Kod gönderilemedi."}
+908:             return {"error": "Kullanıcı bulunamadı."}
+927:         return {"error": "Profil yüklenirken hata oluştu."}
+943:             return {"error": "Analiz bulunamadı."}
+964:         return {"error": "Analiz yüklenirken hata oluştu."}
+978:         return {"success": False, "error": "Silme işlemi başarısız."}
+995:     if key == "(kayıtlı)":
+998:         return {"success": False, "error": "Geçersiz Gemini API Anahtarı"}
+1003:             return {"success": False, "error": "Geçersiz Gemini API Anahtarı"}
+1005:         return {"success": False, "error": "Gemini API ile bağlantı kurulamadı"}
+1022:             return {"error": "Lütfen aranacak bir kelime veya konsept girin."}
+1024:             return {"error": "yt-dlp yüklü değil, arama yapılamıyor."}
+1039:                     return {"error": f"'{keyword}' için arama sonucu bulunamadı."}
+1065:             return {"error": f"YouTube araması sırasında hata: {str(e)[:100]}"}
+1068:             return {"error": "Arama sonucunda hiç video bulunamadı."}
+1093:                 "tr": f"""Kullanıcı '{keyword}' konseptinde YouTube videoları çekiyor.
+1094: Şu an algoritmayı domine eden patlamış video başlıkları:
+1097: 3 YEPYENİ VİDEO FİKRİ üret. Her fikir için:
+1098: 1. "title": Merak uyandıran başlık
+1099: 2. "hook": İlk 5 saniyede söylenecek kanca cümle
+1100: 3. "thumbnail": Thumbnail tasarım önerisi
+1102: SADECE JSON Array döndür, Türkçe yaz:
+1168:         return {"error": "İçerik bulucu çalıştırılırken sunucu hatası oluştu."}
+1230:             raise HTTPException(status_code=400, detail="Yüklenen video dosyası seçilmedi.")
+1232:         # --- NON-BLOCKING: Dosya kopyalama (ağır I/O) ---
+1251:         # --- NON-BLOCKING: Ağır CPU/IO analiz işlemleri ---
+1257:         # --- NON-BLOCKING: Sahne değişimi ve hareket analizi (Aşama 3) ---
+1282:                 ret_keywords = ['retention', 'izlenme', 'görüntüleme', 'elde tutma']
+1313:         hook_words = ['nasıl', 'neden', 'en iyi', '2024', 'şok', 'sır', '!', '?', 'sonunda', 'efsane', 'bittirdik']
+1325:         # ── Görsel Zeka Özeti (Aşama 3) ──
+1401:             "critical_warning": f"Giriş {retention['score']}/10 | Tempo {tech['tech_score']}/10 | Patlama {tech['peaks']} adet",
+1410:         # ── Otomatik E-posta Rapor Gönderimi ──
+1426:                 # PDF oluştur ve gönder (thread pool'da)
+1430:                 # Non-blocking: Frontend'e SMTP ayarlarının hazır olduğunu bildir
+1431:                 # Gerçek e-posta, kullanıcı PDF export ettiğinde /api/send_report üzerinden tetiklenir
+1432:                 email_sent = True  # SMTP yapılandırması mevcut, gönderim tetiklenebilir
+1433:                 app_logger.info(f"SMTP hazır, analiz raporu e-postaya gönderilebilir: user={user_email}")
+1466:         return {"error": "FFmpeg sistemde bulunamadı."}
+1485:             return {"error": "Video dosyası bulunamadı. Lütfen videoyu tekrar analiz edin."}
+1487:         # GPU codec'e göre parametreleri ayarla
+1524:             print(f"FFmpeg Hatası Detayı: {process.stderr}")
+1525:             return {"error": f"Kesme işlemi başarısız: {process.stderr[:100]}"}
+1535:         return {"error": f"Sistem Hatası: {str(e)}"}
+1540:     # Geçersiz dil kodu gelirse Türkçe'ye düş
+1578:     # video_description ve video_tags DB'den al (yoksa competitor_data içinden çıkar)
+1590:     # competitor_data'dan da açıklama ve etiket almayı dene
+1612:     # ── APA Stil Tanımları ──
+1616:     # Kapak başlığı (ortalı, büyük)
+1621:     # Üst başlık — TAMAMEN BÜYÜK HARF
+1628:     # Alt başlık — İlk Harf Büyük
+1643:     # Bölüm sayacı
+1649:         # İlk harfleri büyük yap
+1662:     # ince ayırıcı çizgi
+1680:     # ── 2. Sektör Standartları ──
+1700:     # ── SEO / Thumbnail Denge Uyarısı ──
+1705:     # ── 3. SEO / Thumbnail Denge Uyarısı ──
+1706:     # Durum 1: SEO güçlü ama Thumbnail zayıf → arama çıkar, tıklanmaz
+1722:     # ── 4. İçerik Tutarlılık Kontrolü ──
+1806:                 return str(s).replace('İ', 'i').replace('I', 'ı').lower()
+1808:             broad_keywords = ['oyun', 'oyunlar', 'video', 'videolar', 'game', 'gaming', 'türkiye', 'tr',
+1809:                               'eğlence', 'komik', 'trend', 'viral', 'youtube', 'youtuber', 'abone', 'izle',
+1810:                               'yeni', 'ilk', 'türkçe', 'turkiye']
+1917:                 'şarkı', 'müzik klip', 'film', 'dizi',
+1920:                 'canlı yayın', 'stream', 'twitch',
+1974:             # AI Başlık Üretici
+1990:                 t1 = f"BUNU KİMSE BEKLEMİYORDU! {clean_user}"
+1991:                 t2 = f"{clean_user} (Oyunun Sonu Çok Garip) 😱"
+1992:                 t3 = f"İMKANSIZ DENİLDİ! {clean_user} 🔥"
+2016:     #   PDF 2.0 — GELİŞMİŞ TABLOLAR
+2018:     # Çeviri fallback'leri (translations.xlsx binary olduğundan inline)
+2020:         "emotion_title": "THUMBNAIL DUYGU ANALİZİ",
+2021:         "emotion": "Duygu", "score": "Skor (%)", "dominant": "Baskın",
+2022:         "no_face": "Thumbnail'de yüz tespit edilemedi.",
+2023:         "visual_title": "GÖRSEL KALİTE METRİKLERİ",
+2024:         "metric": "Metrik", "value": "Değer", "status": "Durum",
+2025:         "contrast": "Kontrast (Michelson)", "vibrant": "Canlı Renk Uyumu",
+2026:         "text_space": "Metin Alanı Skoru", "brightness": "Parlaklık",
+2027:         "excellent": "Mükemmel", "good": "İyi", "low": "Düşük", "medium": "Orta",
+2028:         "excitement_title": "HEYECAN KATSAYISI ÖZETİ (Excitement Score)",
+2029:         "segment": "Segment", "time_range": "Zaman Aralığı",
+2030:         "excitement": "Heyecan", "audio": "Ses Yoğ.", "cut": "Kesim Yoğ.",
+2031:         "motion": "Hareket Yoğ.", "no_segments": "Viral segment tespit edilemedi.",
+2063:     # competitor_data JSON'ından ek verileri çıkar
+2100:         gaze_txt = "👀 Kameraya bakıyor ✅" if lang == "tr" else "👀 Looking at camera ✅" if lang == "en" else "👀 Mirando a cámara ✅"
+2102:             gaze_txt = "👀 Kameraya bakmıyor" if lang == "tr" else "👀 Not looking at camera" if lang == "en" else "👀 No mira a cámara"
+2109:     # ── TABLO 2: Görsel Kalite Metrikleri ──
+2144:     # ── TABLO 3: Heyecan Katsayısı Özeti ──
+2178:     # ── 6. Kıyaslama Tablosu ──
+2240:         positives.append(f"SEO optimizasyonu çok başarılı (Skor: {seo:.1f}/10)")
+2244:         positives.append(f"Thumbnail kontrastı mükemmel ({cr:.2f}), dikkat çekici")
+2263:     # ── Süre dipnotu ──
+2306:         raise HTTPException(status_code=404, detail="Kanal bulunamadı")
+2420:     if key.strip() == "(kayıtlı)":
+2450:             return {"success": False, "error": "Email ve şifre boş olamaz."}
+2460:         return {"success": False, "error": "Kayıt hatası."}
+2530:         # Oturumun bu kullanıcıya ait olduğunu doğrula
+2600:         return {"error": "NO_KEY", "details": "API anahtarı bulunamadı. Lütfen Groq API anahtarını gir."}
+2623:                     file_context = f"Kullanıcının yüklediği dosya ({file_name}):\n{decoded[:3000]}"
+2627:         #print(f"FILE_CONTEXT SONUÇ: {len(file_context)} karakter")
+2638:     title_keywords = ["başlık", "title", "isim", "name", "ne yazayım", "nasıl adlandır", "başlık öner", "başlık yaz"]
+2681:     # --- HAFIZA SİSTEMİ: Memory block oluştur ---
+2684:         memory_block += f"\\n\\n🔒 SABİT KANAL KURALLARI (Bu kurallara MUTLAKA uy, asla çiğneme):\\n{channel_rules_text}"
+2686:         memory_block += f"\\n\\n📚 GEÇMİŞ ANALİZ NOTLARI (Son 5 analiz koç yorumu, eskiden yeniye):\\n{past_feedbacks_text}"
+2701: 4. MANDATORY HOOKS (ANTI-GENERIC): If addressing viewer drop-offs (retention), you MUST provide a specific Hook Formula: 1. Spoken Script, 2. Psychological Trigger, 3. On-Screen Visual Action. NEVER say "surprise them in the first 10 seconds" or "ilk 10 saniyede şaşırt". You must answer HOW exactly with a concrete scenario.
+2705: 8. TAG PROTECTION: Never dismiss user tags as irrelevant unless they truly violate YouTube terms. Recognize specific niche tags (like "left 4 dead 2 türkçe" or "komik oyun videoları") as positive targeted keywords.
+2706: 9. ⚠️ KANAL KURALLARI: Eğer yukarıda 'SABİT KANAL KURALLARI' bölümü varsa, bu kurallar mutlak önceliğe sahiptir. Bu kurallara KESİNLİKLE uy ve hiçbir öneri bu kurallara aykırı olmasın.
+2708: 10. THUMBNAIL ANALİZ VE HALÜSİNASYON YASAĞI:
+2709:     - Mevcut thumbnail'de bir yüz olduğunu VARSAYMAK KESİNLİKLE YASAKTIR.
+2710:     - Eğer thumbnail'de gerçekten bir insan yüzü olduğunu kanıtlayan somut bir veri yoksa (veya kanal BabaClutch ise), 'mutlu yüz', 'kameraya bakıyor', 'şaşırmış surat' gibi jenerik ve sahte ifadeleri ASLA kullanma.
+2711:     - BabaClutch bir gaming kanalıdır. Bu kanalda 'şaşırmış insan yüzü' yerine her zaman: Yüksek kontrastlı oyun içi aksiyon sahneleri, parlayan epik karakterler veya araçlar, dramatik alev/patlama efektleri, büyük ve keskin tipografi önerilmelidir.
+2712:     - Gördüğün ekran görüntüsünde (SS) yüz yoksa, 'yüz var' demek yerine dürüstçe görsel tempoyu ve kontrastı analiz et.
+2714: 11. RAKİP ANALİZİ VE ÖNERİSİ:
+2715:     - ASLA "BabaClutch" kanalını bir rakip olarak önerme. Kullanıcı zaten BabaClutch kanalıdır. Rakip analizleri her zaman harici kanallar üzerinden yapılmalıdır.
+2751:                 return {"error": "INVALID_KEY", "details": "API anahtarın geçersiz."}
+2753:                 return {"error": "QUOTA", "details": "Sınır aşıldı. Lütfen biraz bekleyin."}
+2754:             return {"error": "API_ERROR", "details": f"Groq hatası: {err}"}
+2760:         return {"error": "TIMEOUT", "details": "Sunucu yanıt vermedi. Tekrar dene."}
+2762:         return {"error": "NETWORK_ERROR", "details": f"Bağlantı hatası: {str(e)}"}
+2766:     """Manuel rapor gönderimi — Sonuç ekranından 'Raporu Tekrar Gönder' butonu."""
+2783:             return {"success": False, "error": "Kullanıcı e-postası bulunamadı."}
+2785:         # Önce PDF'i oluştur (export_pdf endpoint'ini simüle et)
+2788:             # PDF yoksa yerel URL'den çek
+2802:             return {"success": True, "message": "Rapor e-postanıza gönderildi!"}
+2804:             return {"success": False, "error": "SMTP ayarları eksik veya gönderim başarısız."}
+2811:     # Arama sırası: BUNDLE_DIR → APP_DIR → BASE_DIR (PyInstaller ve dev modu uyumlu)
+2827:             f"[translations] translations.xlsx bulunamadı! "
+2831:             'error': f"translations.xlsx bulunamadı. Aranan yollar: {tried}",
+2836:         app_logger.info(f"[translations] Yükleniyor: {xlsx_path}")
+2847:             f"[translations] ✅ Yüklendi: {len(result.get('tr', {}))} anahtar "
+2854:             f"Dosya: {xlsx_path} | Hata türü: {type(e).__name__} | Detay: {e}",
+2858:             'error': f"Çeviri dosyası okunamadı: {type(e).__name__}: {e}",
+2896: #   VİRAL KLONLAMA MOTORU — Chrome Eklentisi Entegrasyonu
+2900:     # 1. Aşama: YouTubeTranscriptApi ile tüm altyazıları çek (İlk tercih)
+2901:     last_api_error = "YouTubeTranscriptApi kullanılabilir değil"  # NameError koruyası
+2919:     # 2. Aşama: youtube-transcript-api hata verirse (örn: XML Parse Error), yt-dlp ile ZORLA ÇEK
+2939:                 # yt-dlp de altyazı bulamadıysa, ilk kütüphanenin hatasını dön
+2942:             # Öncelikle istediğimiz dilleri ara
+2964:             # YouTube genellikle JSON3 formatında subtitle döner
+2979:             # VTT formatı ise temizle
+2985:                 # VTT içindeki <c>, <00:00:00.000> gibi tagları regex ile sil
+2996:         # Son çare olarak hataları döndür
+2997:         raise ValueError(f"Altyazı çekilemedi. API Hatası: {last_api_error} | Yedek Motor Hatası: {e}")
+3000: # ── Thumbnail Kuralı: İçerik tipine göre dinamik oluştur ─────────────────────
+3001: # BUG FIX: Oyun/gaming kanalları için insan yüzü YASAK direktifi.
+3002: # Ana AI (chat) promptu bu kuralı içeriyordu ama _call_groq_clone içine
+3003: # cascade etmiyordu — bu yüzden halüsinasyon üretiliyordu. Artık düzeltildi.
+3005:     """content_type'a göre thumbnail direktifi döndürür."""
+3014:             "NEVER write phrases like 'mutlu bir yüz', 'yüze bakıyor', 'insan yüzü', 'shocked face', or any face/emotion reference. "
+3024:             "Example: \"Arka planda patlayan bir araba, önde şaşkın bir ifade ve büyük sarı harflerle 'BUNU BEKLEMİYORDUK!' yazısı.\""
+3036:     Groq Llama-3 ile viral klonlama konsepti üretir.
+3037:     Senkron requests çağrısını run_in_threadpool ile sarmalar.
+3041:     prompt = f"""Sen üst düzey bir YouTube Algoritma Uzmanı ve Viral İçerik Stratejistisin. 
+3043: KULLANICI PROFİLİ: 
+3044: Bu analizi isteyen kullanıcının kanalı 'BabaClutch'. Konsepti: Oyun (Minecraft, Rocket League vb.), Kaos, Rage, Arkadaş Kavgası ve Yüksek Enerji.
+3046: GÖREVİN: 
+3047: Sana verilen orijinal video başlığı ve altyazı (transcript) verilerini analiz ederek, bu videonun başarısını klonlayacak 3 yeni, özgün ve yüksek potansiyelli video fikri üretmek.
+3049: 📌 Orijinal Başlık: {title}
+3052: {transcript[:2000] if transcript else "Altyazı bulunamadı. Sadece başlığa göre analiz yap."}
+3055: 1. VİRAL ANATOMİ: Videonun neden viral olduğunu (psikolojik tetikleyici ve kanca) analiz et.
+3056: 2. FİKİR ÜRETİMİ: Orijinal videonun ruhunu kopyalayan 3 farklı video fikri sun.
+3058: 3. NİŞ UYARISI: Analiz ettiğin video, kullanıcının "Oyun/Kaos" konseptiyle uyuşmuyorsa bir uyarı metni yaz. Uyuşuyorsa boş bırak.
+3059: 4. KESİN FORMAT KURALI: Çıktın KESİNLİKLE bir dizi (array) [...] OLAMAZ. Çıktın KESİNLİKLE bir obje (object) {{...}} olmak zorundadır. Objenin içinde "viral_anatomi", "nis_uyarisi" ve "fikirler" anahtarları ZORUNLUDUR. SADECE AŞAĞIDAKİ JSON FORMATINDA ÇIKTI VER (Başka hiçbir düz metin yazma):
+3061:   "viral_anatomi": "Videonun neden patladığını anlatan 2-3 cümlelik psikolojik analiz.",
+3062:   "nis_uyarisi": "Oyun/kaos dışındaysa uyarı metni, yoksa boş string",
+3086:                 "messages": [{"role": "system", "content": "Sen elit bir YouTube İçerik Stratejistisin. YALNIZCA geçerli bir JSON döndürürsün, başka hiçbir şey yazmazsın."}, 
+3100:         raise ValueError("Groq API anahtarı geçersiz. Ayarlar panelinden kontrol edin.")
+3102:         raise ValueError("Groq API kotası doldu. Lütfen bir süre bekleyin.")
+3104:         raise ValueError(f"Groq API hatası: HTTP {resp.status_code}")
+3111:     Predictive Intelligence bağlamı oluşturur.
+3112:     Tier, zaman penceresi, hız, penetrasyon ve yorum sinyallerini AI'ya açıklar.
+3113:     Anti-hallüsinasyon: yorum sinyali yoksa AI'ya açıkça bildirilir.
+3159:     # 1. Rage Yoğunluğu (0-10)
+3160:     rage_words = ['lan', 'ya', 'abi', 'noldu', 'niye', 'nasıl', 'imkansız', 'yok artık', 'git', 'olmaz', 'berbat', 'şok', 'çıldırdım', 'delirdim']
+3166:     rage_count += transcript_lower.count("yok artık")
+3173:     # 2. Tempo Varyansı (0-10)
+3179:     if len(lengths) > 1: # Fail-Fast: ZeroDivisionError / ValueError koruması
+3183:     # 3. Başlık Agresifliği (0-10)
+3199:     # BabaClutch Hükmü
+3202:         verdict = f"Rakipte yeterince kaos yok. Kendi tarzınızı eklerseniz tahminen %{potential} daha fazla izlenme potansiyeli var.\n<br><span style='font-size:11px; color:#94a3b8; font-style:italic;'>(Not: Bu oran; rakibinizin başlıklarındaki agresifliği, videodaki konuşma hızını ve duygu yüklü kelime sayısını analiz eden matematiksel algoritmamız tarafından hesaplanmıştır.)</span>"
+3204:         verdict = "Rakip de sizin kadar agresif bir tarzda! Avantajınız niş uzmanlığında."
+3229:         # STRES TESTİ FIX #6: yt-dlp rate-limit ve IP ban koruması
+3230:         # Socketleri çok çabuk açmak 429'u tetikler; küçük bir sleep eklenebilir.
+3231:         'sleep_interval': 1,        # istekler arası minimum 1sn bekle
+3236:     # Exponential Backoff: 429 veya geçici ağ hatasında 3 kez dene (1s → 3s → 9s)
+3242:             break  # Başarılı → döngüden çık
+3252:                     f"[Kanal Savaşları] yt-dlp hata (deneme {attempt+1}/3): {e} | "
+3257:                 # Kalıcı hata veya 3. deneme: fırlat
+3260:                         "YouTube rate-limit uyguladı (HTTP 429). "
+3261:                         "Kanal Savaşları birkaç dakika içinde tekrar denenebilir. "
+3262:                         "Çok sık tarama yapmak IP ban riskini artırır."
+3264:                 raise ValueError(f"Kanal verileri çekilemedi: {e}")
+3266:         # Tüm denemeler başarısız
+3267:         raise ValueError(f"Kanal verileri 3 denemede de çekilemedi: {last_error}")
+3271:         raise ValueError("Kanal videoları bulunamadı.")
+3286:     # Eğer extract_flat view_count'ları getirmediyse (None geldiyse),
+3287:     # İlk 3 videonun meta verisini tekil olarak çekiyoruz (Daha hızlı ve stabil)
+3310:     # Transcript Çekimi ve Kaos Metriği
+3337: Sen acımasız, elit ve şeytani zekaya sahip bir YouTube Strateji Uzmanısın. Jenerik kurumsal dilden ("SEO'yu artır", "Kaliteyi yükselt") nefret edersin.
+3339: [KULLANICININ VERİLERİ]
+3340: - Kanalın Kalite Puanı: {my_data.get('avg_score', 0)} / 10
+3342: [RAKİP KANAL: {rival_data.get('channel_name', 'Bilinmiyor')}]
+3343: - Ortalama İzlenme: {rival_data.get('avg_views', 0)}
+3344: - Son Yüklediği Videolar: {', '.join(rival_data.get('recent_titles', []))}
+3346: [GÖREVİN]
+3347: Bana "Savaş Raporu" formatında kısa, vurucu ve acımasız bir analiz yaz. Kurumsal ChatGPT ağzını ASLA kullanma.
+3348: Aşağıdaki formatın DIŞINA ÇIKMA:
+3350: ⚔️ RAKİP ANALİZİ:
+3351: (Rakibin son videolarına bakarak ne tarz bir kitleyi elinde tuttuğunu 1-2 cümleyle, net ve sivri bir dille özetle. Örn: "Rakip sürekli teknoloji incelemeleriyle kolaya kaçıyor.")
+3353: 🔥 GERİLLA TAKTİKLERİ:
+3354: (Kullanıcının kalite puanı {my_data.get('avg_score', 0)}. Rakibin 'Son Yüklediği Videolar' listesinden bir videoyu hedef alarak, kullanıcının o konunun TAM TERSİ BİR AÇIYLA (Zıtlık, Eleştiri, Kışkırtma veya Merak Boşluğu) rakibin izleyicisini nasıl çalabileceğine dair 2 spesifik video fikri/kancası ver. Kesinlikle "kaliteyi artır", "sosyal medya kullan" gibi genel geçer şeyler yazma! Doğrudan "Şu videonun başlığını şöyle çevir" de.)
+3363:             {"role": "system", "content": "Sen acımasız bir YouTube stratejistisin."},
+3377:         raise ValueError(f"Groq API hatası: HTTP {resp.status_code}")
+3382:     # extra='ignore': eklentiden gelen bilinmeyen alanlar (örn. 'error') 422 tetiklemez
+3387:     title:     str = Field(default="Başlık Yok", description="Video başlığı")
+3388:     channel:   str = Field(default="Bilinmeyen Kanal", description="Kanal adı")
+3399:     user_id:   int = Field(default=0, description="Kullanıcı ID")
+3409:         return {"error": "Groq API anahtarı ayarlanmamış."}
+3414:         return {"error": f"Kanal verileri okunamadı: {str(e)}"}
+3432:         return {"error": f"Savaş raporu oluşturulamadı: {str(e)}"}
+3446:             raise HTTPException(status_code=401, detail="Geçersiz kullanıcı adı veya şifre.")
+3449:             raise HTTPException(status_code=401, detail="Geçersiz kullanıcı adı veya şifre.")
+3494:             raise ValueError("Bu nişte video bulunamadı.")
+3526:             raise ValueError("Geçerli veri bulunamadı.")
+3538:     prompt = f"Kullanıcının kanalı konsepti: {content_type} (Amaç: {purpose}). Bulunan bu trend video (Başlık: {title}, Kanal: {channel}) kullanıcının konseptine uygun mu? Eğer uyumsuzsa (Örn: Espor turnuvası, resmi duyuru veya ciddi bir rehber videosu vs.) 'Uyumsuz' de ve nedenini açıkla. Eğer konseptle örtüşüyorsa 'Uyumlu' de. Çıktın maksimum 2 kısa cümle olsun."
+3550:     return "Analiz yapılamadı."
+3557:             return {"error": "Bu nişte aykırı bir trend bulunamadı."}
+3561:             content_type = "Genel İçerik"
+3562:             purpose = "İzleyici Eğlendirmek"
+3580:         app_logger.error(f"Rabbit Hole Hatası: {e}", exc_info=True)
+3581:         return {"error": "Bu nişte aykırı bir trend bulunamadı veya ağ hatası oluştu."}
+3585: #   PROPHET'S PICK — Otomatik Viral Öneri Sistemi
+3586: #   BabaClutch nişine (Oyun/Kaos) uygun, şu an patlamakta olan
+3587: #   3 adet "Aykırı" videoyu otomatik olarak tespit eder.
+3588: #   Mevcut extract_rabbit_hole_sync modülünü kullanır (KISS).
+3589: #   3 sorgu asyncio ile PARALEL çalışır → maks ~2sn yükleme.
+3598:     prompt = f"""Kullanıcının kanalı konsepti: {content_type} (Amaç: {purpose}).
+3599: Bu kanalın ana nişiyle BİREBİR alakalı, şu an YouTube'da trend olabilecek 3 spesifik "YouTube arama sorgusu" (search query) üret.
+3601: 1. Asla genel kelimeler (örn: "komedi", "eğlence", "oyun", "kaos") kullanma. Doğrudan içeriğin ana konusunu/oyununu barındıran çok spesifik sorgular üret (Örn: "Rocket League rage", "Rocket League funny moments", "Rocket League challenge").
+3602: 2. Alakasız TV şovları, genel vloglar veya farklı oyunlar çıksın İSTEMİYORUZ. Yalnızca kanalın hedef nişine (oyunsa o oyuna, teknoloiyse o teknolojiye) odaklan!
+3603: 3. YALNIZCA geçerli bir JSON dizisi döndür, başka HİÇBİR ŞEY yazma.
+3604: Örnek Format: ["spesifik_sorgu_1", "spesifik_sorgu_2", "spesifik_sorgu_3"]"""
+3628:     Kullanıcının kendi nişine uygun, şu an YouTube'da patlamakta olan 3 adet
+3629:     'Aykırı' videoyu tespit eder.
+3630:     - Kullanıcının kanal konseptine göre 3 farklı niş sorgusu (Groq ile) üretilir.
+3631:     - 3 sorgu PARALEL çalıştırılır (asyncio.gather).
+3632:     - Son 48 saatte yüklenmiş videolar önceliklendirilir.
+3633:     - Kendi kanalı videoları (dinamik öz-karşılaştırma) atlanır.
+3634:     - En yüksek velocity'ye sahip 3 video seçilir.
+3638:         content_type = "Genel İçerik"
+3639:         purpose = "İzleyici Eğlendirmek"
+3658:             queries = [f"{content_type} trend", f"{content_type} yeni", f"{content_type} popüler"]
+3660:         # 3 sorguyu PARALEL çalıştır (threadpool'da, async-safe)
+3665:             return_exceptions=True  # Bir sorgu hata verse diğerleri çalışmaya devam eder
+3671:         # Tüm sonuçları birleştir
+3680:                 # Dinamik Öz-karşılaştırma bug fix: Kullanıcının kendi videoları atlanır
+3689:                     app_logger.info(f"[Prophet Picks] Öz-filtreleme: {v.get('title')[:50]} atlandı.")
+3695:             return {"error": "Şu an trend olan video bulunamadı."}
+3697:         # Tekrar eden URL'leri kaldır (birden fazla sorguda aynı video çıkabilir)
+3706:         # Velocity'ye göre sırala (en yüksek önce)
+3709:         # En hızlı yükselen ilk 10 videoyu al
+3712:         # ── Groq ile Yapay Zeka Uyumluluk Filtresi (Sadece En Hızlılara) ──
+3714:             if not api_key: return v, True # API key yoksa mecburen geçir
+3721:                 return v, True # Hata olursa yine de geçir
+3723:         # 10 videoyu paralel analiz et (Çok hızlıdır, Groq <1sn'de döner)
+3735:         # Eğer yapay zeka 3 tane bile uyumlu bulamadıysa, eldekileri doldur (Fallback)
+3743:         app_logger.info(f"[Prophet Picks] {len(top_picks)} adet öneri seçildi.")
+3748:         return {"error": "Prophet Picks yüklenemedi."}
+3754:     Chrome eklentisinden gelen video verilerini karşılar.
+3755:     1. Transcript çeker (youtube-transcript-api, thread-pool içinde)
+3756:     2. Groq ile viral konsept üretir
+3757:     3. Sonucu JSON olarak döner
+3767:     title    = payload.title.strip() or "Başlık Yok"
+3775:         raise HTTPException(status_code=400, detail="Video ID bulunamadı. Geçerli bir YouTube URL'si gönderin.")
+3783:         app_logger.warning(f"[clone_video] Transcript çağrısında hata (Fallback kullanılacak): {e}")
+3787:         app_logger.warning(f"[clone_video] Transcript alınamadı (Fallback kullanılacak): {transcript}")
+3790:     # ── 2. Groq API anahtarı ─────────────────────────────────
+3795:             detail="Groq API anahtarı ayarlanmamış. Uygulamanın Ayarlar panelinden ekleyin."
+3798:     # ── 3. AI Konsept Üretimi ────────────────────────────────
+3800:     content_type = "Genel İçerik"
+3801:     purpose = "İzleyici Eğlendirmek"
+3821:         app_logger.warning(f"[clone_video] Groq hatası: {e}")
+3824:         app_logger.error(f"[clone_video] AI hatası: {e}", exc_info=True)
+3825:         raise HTTPException(status_code=500, detail=f"AI konsept üretimi başarısız: {e}")
+3827:     app_logger.info(f"[clone_video] ✅ Konsept üretildi: video_id={video_id}")
+3840: #   A/B TEST SİMÜLATÖRÜ — Multi-Agent Debate Motoru
+3841: #   Persona A: Acımasız Eleştirmen (temperature=0.3)
+3842: #   Persona B: Viral Büyücü       (temperature=0.95)
+3843: #   Hakem AI : Kazananı seçer / harmanlayıp tek fikir üretir
+3861:     İki persona paralel çalışır (asyncio.gather), ardından Hakem AI karar verir.
+3862:     Çıktı kesinlikle ayrıştırılabilir JSON dict olmalı — aksi hâlde HTTPException(500).
+3871:     # Oyun kanalları için insan yüzü yasağı her iki ajana da enjekte edilir
+3874:     transcript_excerpt = transcript[:2000] if transcript else "(Altyazı mevcut değil)"
+3876:     # ── Persona A: Acımasız Eleştirmen ────────────────────────────────────────
+3877:     prompt_a = f"""Sen acımasız, veriye dayalı, CTR (Tıklanma Oranı) odaklı bir YouTube stratejistisin.
+3878: Sentimental düşünmez, sadece sayı ve psikoloji konuşursun.
+3879: Kullanıcının kanalı: {content_type}. Amaç: {purpose}.
+3881: 📌 Orijinal Başlık: {title}
+3883: 📝 Altyazı (ilk 2000 karakter): {transcript_excerpt}
+3886: 1. Mantık, kısıtlama ve merak boşluğu kullan — duygusal clickbait değil.
+3888: 3. YALNIZCA şu JSON formatında 1 fikir döndür (başka hiçbir şey yazma):
+3891:     # ── Persona B: Viral Büyücü ───────────────────────────────────────────────
+3892:     prompt_b = f"""Sen uçuk kaçık, kaotik ve clickbait konusunda şeytani bir viral içerik büyücüsüsün.
+3893: Mantığı umursamaz, algoritmayı hissedersin. Aşırı duygusal ve dramatik başlıklar üretirsin.
+3894: Kullanıcının kanalı: {content_type}. Amaç: {purpose}.
+3896: 📌 Orijinal Başlık: {title}
+3898: 📝 Altyazı (ilk 2000 karakter): {transcript_excerpt}
+3901: 1. Merak, şok, korku ve aşırı dramatizm kullan. Sınırı zorla.
+3903: 3. YALNIZCA şu JSON formatında 1 fikir döndür (başka hiçbir şey yazma):
+3906:     system_json = "Sen bir YouTube stratejisti asistanısın. YALNIZCA geçerli JSON döndürürsün, başka hiçbir şey yazmazsın."
+3919:                 "temperature": 0.3,  # Persona A: soğuk ve mantıklı
+3935:                 "temperature": 0.95,  # Persona B: kaotik yaratıcı
+3940:     # ── Paralel çalıştır ──────────────────────────────────────────────────────
+3946:     # Fail-Fast: HTTP hatalarında direkt HTTPException fırlat
+3947:     for label, resp in [("Persona A (Eleştirmen)", resp_a), ("Persona B (Büyücü)", resp_b)]:
+3949:             raise HTTPException(status_code=502, detail="Groq API anahtarı geçersiz.")
+3951:             raise HTTPException(status_code=429, detail="Groq API kotası doldu. Lütfen bekleyin.")
+3955:                 detail=f"{label} Groq hatası: HTTP {resp.status_code}"
+3963:         """JSON bloğunu çıkar ve parse et. Hata varsa HTTPException(500) fırlat."""
+3965:         # Markdown kod bloklarını temizle
+3967:         # İlk { ... } bloğunu bul
+3970:             app_logger.error(f"[clone_debate] {label} JSON parse hatası — ham yanıt: {raw[:300]}")
+3973:                 detail=f"{label} geçerli bir JSON döndürmedi. Ham yanıt: {raw[:200]}"
+3978:             app_logger.error(f"[clone_debate] {label} JSON decode hatası: {exc} | Ham: {raw[:300]}")
+3981:                 detail=f"{label} JSON ayrıştırılamadı: {exc}"
+3984:     idea_a = _parse_persona_json(raw_a, "Persona A (Eleştirmen)")
+3985:     idea_b = _parse_persona_json(raw_b, "Persona B (Büyücü)")
+3987:     # ── Hakem AI: Kazananı Seç veya Harmanlayıp Tek Fikir Üret ──────────────
+3988:     # NOT: _debate_pi, prompt_judge tanımlandıktan SONRA enjekte edilir (aşağıda)
+3990:     prompt_judge = f"""Sen acımasız ve vizyoner bir YouTube İçerik Hakemi ve Algoritma Uzmanısın.
+3992: KULLANICI PROFİLİ: 
+3993: Kullanıcının kanalı 'BabaClutch'. Konsepti: Oyun (Minecraft, Rocket League vb.), Kaos, Rage, Arkadaş Kavgası ve Yüksek Enerji.
+3995: GÖREVİN:
+3996: Sana verilen orijinal video verilerini ve diğer yapay zekaların ürettiği fikirleri analiz edip, en viral olmaya yatkın sonucu sentezlemek.
+3999: 🎯 Kanal Nişi: {content_type}
+4000: 📝 Altyazı: {transcript_excerpt}
+4002: --- AJAN A (Eleştirmen) ---
+4003: Başlık  : {idea_a.get('title', '')}
+4007: --- AJAN B (Büyücü) ---
+4008: Başlık  : {idea_b.get('title', '')}
+4012: KURAL 1 (ZORUNLU BAŞLANGIÇ): 
+4013: Bu videonun başarısının altındaki psikolojik tetikleyiciyi "viral_anatomi" alanında açıkla.
+4016: Ajanların fikirlerini "eleştirmen_fikri" ve "buyucu_fikri" alanlarında özetle.
+4017: Sonra bu fikirleri harmanlayıp EN GÜÇLÜ TEK BİR VİDEO FİKRİ sun (kazanan_baslik, kazanan_kanca, kazanan_thumbnail).
+4020: KURAL 3 (KESİN NİŞ UYARISI): 
+4021: Analiz ettiğin orijinal videonun kategorisi kullanıcının "Oyun/Kaos" konseptiyle uyuşmuyorsa, "nis_uyarisi" alanına KESİNLİKLE şu uyarıyı ekle: "⚠️ NİŞ UYARISI: Bu kanalın konsepti senin kanalının (Oyun/Kaos) konseptiyle uyuşmuyor. Klonlama yaparken konsepti kendi nişine uyarlamaya dikkat et!" (Uyuşuyorsa boş bırak).
+4023: KURAL 4 (KESİN FORMAT KURALI): 
+4024: Çıktın KESİNLİKLE bir dizi (array) [...] OLAMAZ. Çıktın KESİNLİKLE bir obje (object) {{...}} olmak zorundadır. Objenin içinde "viral_anatomi", "eleştirmen_fikri", "buyucu_fikri", "kazanan_baslik", "kazanan_kanca", "kazanan_thumbnail" ve "nis_uyarisi" anahtarları ZORUNLUDUR. 
+4026: YALNIZCA şu JSON formatında döndür (başka hiçbir şey yazma):
+4029:   "eleştirmen_fikri": "...",
+4037:     # Predictive Intelligence bağlamını hakem promptuna enjekte et (anti-hallüsinasyon)
+4062:             detail=f"Hakem AI Groq hatası: HTTP {resp_judge.status_code}"
+4072:         app_logger.error(f"[clone_debate] Hakem JSON parse hatası — ham: {raw_judge[:300]}")
+4075:             detail=f"Hakem AI geçerli bir JSON döndürmedi. Ham yanıt: {raw_judge[:200]}"
+4080:         app_logger.error(f"[clone_debate] Hakem JSON decode hatası: {exc} | Ham: {raw_judge[:300]}")
+4083:             detail=f"Hakem AI JSON ayrıştırılamadı: {exc}"
+4086:     # Zorunlu anahtarları doğrula
+4087:     required_keys = {"eleştirmen_fikri", "buyucu_fikri", "kazanan_baslik", "kazanan_kanca", "kazanan_thumbnail"}
+4093:             detail=f"Hakem AI çıktısında eksik anahtar(lar): {missing}"
+4102:     A/B Test Simülatörü — Multi-Agent Debate Endpoint.
+4103:     Persona A (Eleştirmen) + Persona B (Büyücü) paralel çalışır.
+4104:     Hakem AI en iyi fikri seçer/harmanlayarak JSON döner.
+4107:     Çıktı: { "success": true, "debate": { eleştirmen_fikri, buyucu_fikri, kazanan_baslik, kazanan_kanca, kazanan_thumbnail } }
+4109:     app_logger.info(f"[clone_debate] ⚔️ Tartışma başlatıldı: {payload.model_dump()}")
+4113:     title    = payload.title.strip() or "Başlık Yok"
+4121:         raise HTTPException(status_code=400, detail="Video ID bulunamadı. Geçerli bir YouTube URL'si gönderin.")
+4127:         app_logger.warning(f"[clone_debate] Transcript hatası (Fallback): {e}")
+4138:             detail="Groq API anahtarı ayarlanmamış. Uygulamanın Ayarlar panelinden ekleyin."
+4142:     content_type = "Genel İçerik"
+4143:     purpose      = "İzleyici Eğlendirmek"
+4167:     app_logger.info(f"[clone_debate] ✅ Tartışma tamamlandı: video_id={video_id}")
+4201:     # EĞER eski verilerini (misafir) yeni hesabına (ID: 2) taşımak istersen
+4202:     # aşağıdaki satırın başındaki '#' işaretini bir kez kaldırıp çalıştır:

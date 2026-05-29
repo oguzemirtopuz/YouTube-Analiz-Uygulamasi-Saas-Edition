@@ -25,7 +25,7 @@ from app.services.security import CryptoManager, CryptoDecryptionError
 _logger = logging.getLogger("yt_analiz.email")
 
 
-# ─── Ortak yardımcı: SMTP kimlik bilgilerini DB'den çek ──────────────────────
+# ─── Common helper: Pull SMTP credentials from DB ──────────────────────
 
 async def _fetch_smtp_credentials() -> dict:
     db = await get_async_db()
@@ -38,7 +38,7 @@ async def _fetch_smtp_credentials() -> dict:
         await db.close()
 
 
-# ─── send_verification_email ─────────────────────────────────────────────────
+# ─── send_verification_email ──────────────────────── ─────────────────────────
 
 def send_verification_email(to_email: str, code: str, lang: str = "tr") -> bool:
     """Senkron SMTP gönderimi — SMTP bilgisi parametre olarak alınır veya cache'ten okunur."""
@@ -106,7 +106,7 @@ Si no solicitaste esto, ignora este correo.
         return False
 
 
-# ─── send_report_email ───────────────────────────────────────────────────────
+# ─── send_report_email ─────────────────────────── ────────────────────────────
 
 def send_report_email(to_email: str, pdf_path: str, video_name: str, lang: str = "tr") -> bool:
     """Analiz raporu PDF'ini kullanıcının e-postasına gönderir."""
@@ -174,7 +174,7 @@ Puntos clave del informe:
         msg['Subject'] = subjects.get(lang, subjects["tr"])
         msg.attach(MIMEText(bodies.get(lang, bodies["tr"]), 'plain', 'utf-8'))
 
-        # PDF ek
+        # PDF attachment
         if os.path.exists(pdf_path):
             with open(pdf_path, 'rb') as f:
                 part = MIMEBase('application', 'pdf')

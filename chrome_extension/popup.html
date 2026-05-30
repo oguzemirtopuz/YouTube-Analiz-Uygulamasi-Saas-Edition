@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="tr">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -14,12 +14,26 @@
       <span class="logo-icon">🚀</span>
       <div>
         <div class="logo-title">YT Analyzer Pro</div>
-        <div class="logo-sub">Viral Cloning Engine</div>
+        <div class="logo-sub" data-i18n="logo_sub">Viral Klonlama Motoru</div>
       </div>
     </div>
-    <div style="display:flex; align-items:center; gap:10px;">
-      <button id="btn-info" type="button" title="How It Works?" style="background:transparent; border:none; color:#38bdf8; font-size:18px; cursor:pointer; transition: color 0.2s;">ℹ️</button>
-      <button id="btn-fullscreen" type="button" title="Open Fullscreen" style="background:transparent; border:none; color:#a855f7; font-size:18px; cursor:pointer; transition: color 0.2s;">⛶</button>
+    <div style="display:flex; align-items:center; gap:8px;">
+      <!-- Language Toggle Button -->
+      <button id="btn-lang-toggle" type="button" title="Switch to English" style="
+        background: linear-gradient(135deg, rgba(56,189,248,0.15), rgba(168,85,247,0.15));
+        border: 1px solid rgba(56,189,248,0.4);
+        color: #38bdf8;
+        font-size: 11px;
+        font-weight: 800;
+        letter-spacing: 0.05em;
+        cursor: pointer;
+        border-radius: 6px;
+        padding: 3px 8px;
+        transition: all 0.2s;
+        line-height: 1.5;
+      ">EN</button>
+      <button id="btn-info" type="button" data-i18n-title="btn_info_title" title="Nasıl Çalışır?" style="background:transparent; border:none; color:#38bdf8; font-size:18px; cursor:pointer; transition: color 0.2s;">ℹ️</button>
+      <button id="btn-fullscreen" type="button" data-i18n-title="btn_fullscreen_title" title="Open Fullscreen" style="background:transparent; border:none; color:#a855f7; font-size:18px; cursor:pointer; transition: color 0.2s;">⛶</button>
       <div id="status-dot" class="dot dot--checking" title="Checking server status..."></div>
     </div>
   </header>
@@ -30,38 +44,38 @@
     <!-- Login state -->
     <section id="view-login" class="view active">
       <div class="hero-icon">🔐</div>
-      <p class="hint-text">Ekosisteme bağlanmak için giriş yapın.</p>
+      <p class="hint-text" data-i18n="login_hint">Ekosisteme bağlanmak için giriş yapın.</p>
       <div class="form-group">
-        <input type="text" id="login-username" class="input-field" placeholder="Kullanıcı Adı" autocomplete="username" />
+        <input type="text" id="login-username" class="input-field" data-i18n="login_username_ph" placeholder="Kullanıcı Adı" autocomplete="username" />
       </div>
       <div class="form-group" style="margin-top:8px;">
-        <input type="password" id="login-password" class="input-field" placeholder="Password" autocomplete="current-password" />
+        <input type="password" id="login-password" class="input-field" data-i18n="login_password_ph" placeholder="Şifre" autocomplete="current-password" />
       </div>
       <p id="login-error" class="error-msg" style="display:none; font-size:12px; margin-top:8px;"></p>
       <button id="btn-login" class="btn btn--primary" type="button" style="margin-top:12px;">
-        Login
+        <span data-i18n="btn_login">Giriş Yap</span>
       </button>
     </section>
 
     <!-- Dashboard (Idle) state -->
     <section id="view-idle" class="view">
       <div class="dashboard-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; border-bottom:1px solid #333; padding-bottom:10px;">
-        <div class="welcome-text" style="font-size:14px; color:#fff;">Hoş geldin, <span id="dash-username" style="font-weight:bold; color:#00f2fe;">...</span></div>
-        <button id="btn-logout" class="btn-logout" type="button" title="Logout Yap" style="background:transparent; border:none; cursor:pointer; font-size:16px;">🚪</button>
+        <div class="welcome-text" style="font-size:14px; color:#fff;"><span data-i18n="welcome_text">Hoş geldin,</span> <span id="dash-username" style="font-weight:bold; color:#00f2fe;">...</span></div>
+        <button id="btn-logout" class="btn-logout" type="button" data-i18n-title="btn_logout_title" title="Çıkış Yap" style="background:transparent; border:none; cursor:pointer; font-size:16px;">🚪</button>
       </div>
       
       <div class="recent-analyses" style="margin-bottom:15px; text-align:left;">
-        <h3 class="recent-title" style="font-size:12px; color:#aaa; margin-bottom:8px; text-transform:uppercase;">Son Analizlerim</h3>
+        <h3 class="recent-title" style="font-size:12px; color:#aaa; margin-bottom:8px; text-transform:uppercase;" data-i18n="recent_title">Son Analizlerim</h3>
         <ul id="recent-list" class="recent-list" style="list-style:none; padding:0; margin:0; max-height:120px; overflow-y:auto; font-size:13px;">
-          <li class="recent-loading" style="color:#666; font-style:italic;">Yükleniyor...</li>
+          <li class="recent-loading" style="color:#666; font-style:italic;" data-i18n="recent_loading">Yükleniyor...</li>
         </ul>
       </div>
 
       <div class="rabbit-hole-section" style="margin-bottom:15px; text-align:left; background: rgba(20, 10, 30, 0.6); padding: 10px; border-radius: 8px; border: 1px solid #9c27b0;">
-        <h3 class="recent-title" style="font-size:12px; color:#e0b0ff; margin-bottom:8px; text-transform:uppercase;">🐇 Tavşan Deliği (Niş Bulucu)</h3>
+        <h3 class="recent-title" style="font-size:12px; color:#e0b0ff; margin-bottom:8px; text-transform:uppercase;" data-i18n="rabbit_title">🐇 Tavşan Deliği (Niş Bulucu)</h3>
         <div style="display:flex; gap:8px;">
-          <input type="text" id="rabbit-query" class="input-field" placeholder="Örn: Kripto Para" style="flex:1; margin:0; padding:6px 10px;" />
-          <button id="btn-rabbit" type="button" style="background:#9c27b0; color:#fff; border:none; border-radius:4px; padding:0 10px; cursor:pointer; font-weight:bold; transition: background 0.2s;">Bul</button>
+          <input type="text" id="rabbit-query" class="input-field" data-i18n="rabbit_placeholder" placeholder="Örn: Kripto Para" style="flex:1; margin:0; padding:6px 10px;" />
+          <button id="btn-rabbit" type="button" style="background:#9c27b0; color:#fff; border:none; border-radius:4px; padding:0 10px; cursor:pointer; font-weight:bold; transition: background 0.2s;" data-i18n="btn_rabbit">Bul</button>
         </div>
       </div>
 
@@ -69,22 +83,22 @@
       <div id="clone-btn-group" style="display:flex; gap:8px; width:100%; flex-wrap:wrap;">
         <button id="btn-clone" class="btn btn--primary" type="button" style="flex:1; min-width:80px;">
           <span class="btn-icon">⚡</span>
-          🚀 Klonla
+          <span data-i18n="btn_clone">🚀 Klonla</span>
         </button>
-        <button id="btn-debate" class="btn btn--debate" type="button" style="flex:1; min-width:70px;">
+        <button id="btn-debate" class="btn btn--debate" type="button" style="flex:1; min-width:70px;" data-i18n="btn_debate">
           ⚔️ Tartış
         </button>
-        <button id="btn-dna" class="btn btn--dna" type="button" style="flex:1; min-width:70px;">
+        <button id="btn-dna" class="btn btn--dna" type="button" style="flex:1; min-width:70px;" data-i18n="btn_dna">
           🧬 DNA
         </button>
       </div>
 
       <!-- Gerilla Stratejisi + Başarı Formülü -->
       <div id="channel-btn-group" style="display:none; gap:8px; width:100%; flex-direction:row; flex-wrap:wrap;">
-        <button id="btn-analyze" style="flex:1; padding: 14px 8px; background: linear-gradient(90deg, #ef4444, #f59e0b); border: none; border-radius: 10px; color: white; font-weight: 800; font-size: 0.95rem; cursor: pointer; box-shadow: 0 6px 20px rgba(239, 68, 68, 0.35);">
+        <button id="btn-analyze" style="flex:1; padding: 14px 8px; background: linear-gradient(90deg, #ef4444, #f59e0b); border: none; border-radius: 10px; color: white; font-weight: 800; font-size: 0.95rem; cursor: pointer; box-shadow: 0 6px 20px rgba(239, 68, 68, 0.35);" data-i18n="btn_analyze">
             ⚔️ Gerilla Stratejisi
         </button>
-        <button id="btn-channel-dna" style="flex:1; padding: 14px 8px; background: linear-gradient(90deg, #06b6d4, #a855f7); border: none; border-radius: 10px; color: white; font-weight: 800; font-size: 0.95rem; cursor: pointer; box-shadow: 0 6px 20px rgba(168,85,247,0.3);">
+        <button id="btn-channel-dna" style="flex:1; padding: 14px 8px; background: linear-gradient(90deg, #06b6d4, #a855f7); border: none; border-radius: 10px; color: white; font-weight: 800; font-size: 0.95rem; cursor: pointer; box-shadow: 0 6px 20px rgba(168,85,247,0.3);" data-i18n="btn_channel_dna">
             📊 Başarı Formülü
         </button>
       </div>
@@ -93,47 +107,47 @@
     <!-- Loading state -->
     <section id="view-loading" class="view">
       <div class="spinner"></div>
-      <p class="loading-text">AI senaryoyu analiz ediyor<span class="dots-anim"></span></p>
-      <p class="loading-sub" id="loading-sub-text">Transcript çekiliyor...</p>
+      <p class="loading-text" data-i18n="loading_main">AI senaryoyu analiz ediyor<span class="dots-anim"></span></p>
+      <p class="loading-sub" id="loading-sub-text" data-i18n="loading_sub_default">Transcript çekiliyor...</p>
     </section>
 
     <!-- Result state -->
     <section id="view-result" class="view">
-      <div class="result-badge">✅ Konsept Hazır!</div>
+      <div class="result-badge" data-i18n="result_badge">✅ Konsept Hazır!</div>
       <div id="video-thumb-wrap" class="thumb-wrap" style="display:none">
         <img id="video-thumb" class="thumb-img" src="" alt="thumbnail" />
         <div id="video-meta" class="thumb-meta"></div>
       </div>
       <div id="result-content" class="result-content"></div>
-      <button id="btn-reset" class="btn btn--ghost" type="button">
+      <button id="btn-reset" class="btn btn--ghost" type="button" data-i18n="btn_reset">
         ↩ Yeni Video
       </button>
     </section>
 
     <!-- Debate Result state -->
     <section id="view-debate" class="view">
-      <div class="result-badge" style="background:linear-gradient(135deg,rgba(234,179,8,.18),rgba(249,115,22,.18));border-color:rgba(234,179,8,.5);color:#fbbf24;">⚔️ Tartışma Tamamlandı!</div>
+      <div class="result-badge" style="background:linear-gradient(135deg,rgba(234,179,8,.18),rgba(249,115,22,.18));border-color:rgba(234,179,8,.5);color:#fbbf24;" data-i18n="debate_badge">⚔️ Tartışma Tamamlandı!</div>
 
       <!-- Brawl Cards: Critic vs Mage -->
       <div style="width:100%; display:flex; gap:8px; margin-top:4px;">
         <!-- Persona A -->
         <div class="debate-persona-card debate-card--critic">
-          <div class="debate-persona-label">🔬 Eleştirmen</div>
+          <div class="debate-persona-label" data-i18n="debate_critic_label">🔬 Eleştirmen</div>
           <p id="debate-critic-summary" class="debate-persona-text"></p>
         </div>
         <!-- Persona B -->
         <div class="debate-persona-card debate-card--wizard">
-          <div class="debate-persona-label">🪄 Büyücü</div>
+          <div class="debate-persona-label" data-i18n="debate_wizard_label">🪄 Büyücü</div>
           <p id="debate-wizard-summary" class="debate-persona-text"></p>
         </div>
       </div>
 
       <!-- Winning Idea -->
       <div class="debate-winner-card">
-        <div class="debate-winner-label">🏆 KAZANAN FİKİR</div>
+        <div class="debate-winner-label" data-i18n="debate_winner_label">🏆 KAZANAN FİKİR</div>
         <div class="debate-winner-title" id="debate-winner-title"></div>
         <div class="debate-winner-section">
-          <span class="debate-winner-tag">KANCA</span>
+          <span class="debate-winner-tag" data-i18n="debate_hook_tag">KANCA</span>
           <p id="debate-winner-hook" class="debate-winner-body"></p>
         </div>
         <div class="debate-winner-section">
@@ -142,38 +156,38 @@
         </div>
       </div>
 
-      <button id="btn-debate-reset" class="btn btn--ghost" type="button">
+      <button id="btn-debate-reset" class="btn btn--ghost" type="button" data-i18n="btn_debate_reset">
         ↩ Yeni Video
       </button>
     </section>
 
     <!-- DNA Analysis Result state -->
     <section id="view-dna" class="view">
-      <div class="result-badge" style="background:linear-gradient(135deg,rgba(6,182,212,.18),rgba(168,85,247,.18));border-color:rgba(6,182,212,.5);color:#67e8f9;">🧬 DNA Analizi Tamamlandı!</div>
+      <div class="result-badge" style="background:linear-gradient(135deg,rgba(6,182,212,.18),rgba(168,85,247,.18));border-color:rgba(6,182,212,.5);color:#67e8f9;" data-i18n="dna_badge">🧬 DNA Analizi Tamamlandı!</div>
 
       <!-- 4'lü Puan Tablosu -->
       <div class="dna-score-grid" id="dna-score-grid">
         <div class="dna-score-card" id="dna-card-hook">
           <div class="dna-score-icon">🪝</div>
-          <div class="dna-score-label">KANCA</div>
+          <div class="dna-score-label" data-i18n="dna_hook_label">KANCA</div>
           <div class="dna-score-value" id="dna-val-hook">—</div>
           <div class="dna-score-bar-wrap"><div class="dna-score-bar" id="dna-bar-hook" style="background:linear-gradient(90deg,#f43f5e,#f97316);"></div></div>
         </div>
         <div class="dna-score-card" id="dna-card-retention">
           <div class="dna-score-icon">⏱️</div>
-          <div class="dna-score-label">TEMPO</div>
+          <div class="dna-score-label" data-i18n="dna_tempo_label">TEMPO</div>
           <div class="dna-score-value" id="dna-val-retention">—</div>
           <div class="dna-score-bar-wrap"><div class="dna-score-bar" id="dna-bar-retention" style="background:linear-gradient(90deg,#06b6d4,#22d3ee);"></div></div>
         </div>
         <div class="dna-score-card" id="dna-card-cta">
           <div class="dna-score-icon">📣</div>
-          <div class="dna-score-label">CTA</div>
+          <div class="dna-score-label" data-i18n="dna_cta_label">CTA</div>
           <div class="dna-score-value" id="dna-val-cta">—</div>
           <div class="dna-score-bar-wrap"><div class="dna-score-bar" id="dna-bar-cta" style="background:linear-gradient(90deg,#22c55e,#86efac);"></div></div>
         </div>
         <div class="dna-score-card" id="dna-card-emotion">
           <div class="dna-score-icon">💥</div>
-          <div class="dna-score-label">DUYGU</div>
+          <div class="dna-score-label" data-i18n="dna_emotion_label">DUYGU</div>
           <div class="dna-score-value" id="dna-val-emotion">—</div>
           <div class="dna-score-bar-wrap"><div class="dna-score-bar" id="dna-bar-emotion" style="background:linear-gradient(90deg,#a855f7,#d8b4fe);"></div></div>
         </div>
@@ -187,7 +201,7 @@
           border-radius:8px; padding:7px 11px; cursor:pointer; color:#67e8f9;
           font-size:11.5px; font-weight:600; letter-spacing:0.02em;
         ">
-          <span>ℹ️ Puan nasıl hesaplanır?</span>
+          <span data-i18n="dna_howto_btn">ℹ️ Puan nasıl hesaplanır?</span>
           <span id="dna-howto-arrow" style="transition:transform 0.25s;">▾</span>
         </button>
         <div id="dna-howto-body" style="display:none; margin-top:4px; padding:10px 12px;
@@ -195,7 +209,7 @@
           border-radius:8px; font-size:11.5px; color:#cbd5e1; line-height:1.65;">
 
           <div style="margin-bottom:8px;">
-            <span style="color:#f43f5e; font-weight:700;">🪝 Kanca ×0.40</span> — Girişin ilk %20'sindeki soru, ünlem ve “power word” yoğunluğunu ölçer.<br>
+            <span style="color:#f43f5e; font-weight:700;">🪝 Kanca ×0.40</span> — Girişin ilk %20'sindeki soru, ünlem ve "power word" yoğunluğunu ölçer.<br>
             <span style="color:#06b6d4; font-weight:700;">⏱️ Tempo ×0.40</span> — Cümle uzunluğu varyansı ve geçiş hızını analiz eder.<br>
             <span style="color:#a855f7; font-weight:700;">💥 Duygu ×0.10</span> — Duygusal kelime yoğunluğunu tarar.<br>
             <span style="color:#22c55e; font-weight:700;">📣 CTA ×0.10</span> — Harekete geçirici cümle güçünü ölçer.</div>
@@ -203,7 +217,7 @@
           <div style="padding:7px 9px; background:rgba(249,115,22,0.1); border-left:3px solid #f97316;
             border-radius:4px; margin-bottom:8px; color:#fed7aa;">
             <strong style="color:#fb923c;">🔥 Viral Canavar Bonusu:</strong>
-            Kanca >75 VE Tempo >75 ise “Synergy Bonus” olarak <strong>+20 puan</strong> eklenir.
+            Kanca &gt;75 VE Tempo &gt;75 ise "Synergy Bonus" olarak <strong>+20 puan</strong> eklenir.
             Bu, gerçek viral içeriklerin iki ana motorunu ödüllendirir.</div>
 
           <div style="padding:7px 9px; background:rgba(168,85,247,0.1); border-left:3px solid #a855f7;
@@ -213,26 +227,26 @@
             Güçlü çekirdek içerikler, eksik CTA nedeniyle haksız ceza almaz.</div>
 
           <div style="font-size:11px; color:#64748b;">
-            👑 90+ Efsanevi  |  🔥 75–89 Viral  |  ✅ 50–74 Güçlü  |  ⚠️ 0–49 Geliştir</div>
+            👑 90+ Efsanevi  |  🔥 75–89 Viral  |  ✅ 50–74 Güçlü  |  ⚠️ 0–49 Geliştir</div>
         </div>
       </div>
 
       <!-- Viral Anatomi / DNA açıklaması -->
       <div id="dna-anatomy-section" class="dna-anatomy-box" style="display:none;">
-        <div class="dna-section-label">🔬 VİRAL ANATOMİ (DNA Özeti)</div>
+        <div class="dna-section-label" data-i18n="dna_anatomy_label">🔬 VİRAL ANATOMİ (DNA Özeti)</div>
         <div id="dna-anatomy-text" class="dna-anatomy-text"></div>
       </div>
 
       <!-- Master Prompt -->
       <div id="dna-prompt-section" class="dna-prompt-box" style="display:none;">
-        <div class="dna-section-label">🔑 DNA MASTER PROMPT</div>
+        <div class="dna-section-label" data-i18n="dna_prompt_label">🔑 DNA MASTER PROMPT</div>
         <div id="dna-prompt-text" class="dna-prompt-text"></div>
-        <button id="btn-copy-dna-prompt" class="btn-copy-dna">
+        <button id="btn-copy-dna-prompt" class="btn-copy-dna" data-i18n="btn_copy_dna">
           📋 DNA PROMPT'U KOPYALA
         </button>
       </div>
 
-      <button id="btn-dna-reset" class="btn btn--ghost" type="button" style="margin-top:12px;">
+      <button id="btn-dna-reset" class="btn btn--ghost" type="button" style="margin-top:12px;" data-i18n="btn_dna_reset">
         ↩ Yeni Video
       </button>
     </section>
@@ -240,10 +254,10 @@
     <!-- Error state -->
     <section id="view-error" class="view">
       <div class="error-icon">⚠️</div>
-      <p id="error-title" class="error-title">Bir hata oluştu</p>
+      <p id="error-title" class="error-title" data-i18n="error_default_title">Bir hata oluştu</p>
       <p id="error-msg" class="error-msg"></p>
-      <button id="btn-retry" class="btn btn--ghost" type="button">
-        ↩ Try Again
+      <button id="btn-retry" class="btn btn--ghost" type="button" data-i18n="btn_retry">
+        ↩ Tekrar Dene
       </button>
     </section>
 
@@ -251,12 +265,12 @@
     <section id="view-info" class="view">
       <div style="text-align:left; color:#e2e8f0; font-size:13px; max-height:420px; overflow-y:auto; padding-right:4px;">
 
-        <h2 style="color:#00f2fe; margin-bottom:12px; font-size:15px; display:flex; align-items:center; gap:6px;">
+        <h2 style="color:#00f2fe; margin-bottom:12px; font-size:15px; display:flex; align-items:center; gap:6px;" data-i18n="info_title">
           ℹ️ YT Analiz Pro — Buton Rehberi
         </h2>
 
         <!-- VIDEO SAYFASI BUTONLARI -->
-        <div style="font-size:11px; color:#64748b; text-transform:uppercase; letter-spacing:0.08em; margin-bottom:6px;">
+        <div style="font-size:11px; color:#64748b; text-transform:uppercase; letter-spacing:0.08em; margin-bottom:6px;" data-i18n="info_video_btns">
           🎥 Video sayfasında görünen butonlar
         </div>
 
@@ -277,8 +291,8 @@
           <div style="color:#cbd5e1; font-size:12px; line-height:1.55;">
             İki farklı AI kişiliğini birbirine karşı koyar:
             <strong style="color:#f87171;">🔬 Acımasız Eleştirmen</strong> (neyin işe yaramayacağını söyler) ve
-            <strong style="color:#a78bfa;">🪄 Viral Büyüçü</strong> (yüksek potansiyelli öneriyi sunar).
-            En güçlü tek fikir 🏆 “Kazanan Fikir” olarak sentezlenir.
+            <strong style="color:#a78bfa;">🪄 Viral Büyücü</strong> (yüksek potansiyelli öneriyi sunar).
+            En güçlü tek fikir 🏆 "Kazanan Fikir" olarak sentezlenir.
           </div>
         </div>
 
@@ -291,14 +305,14 @@
             <span style="color:#06b6d4;">⏱️ Tempo</span> (ritim),
             <span style="color:#22c55e;">📣 CTA</span> (aksiyon çağrısı),
             <span style="color:#a855f7;">💥 Duygu</span>.
-            Ardından bu yapıyı başka bir AI’ya vererek aynı kalitede içerik üretmenizi sağlayan
+            Ardından bu yapıyı başka bir AI'ya vererek aynı kalitede içerik üretmenizi sağlayan
             <strong>Master Prompt</strong> oluşturulur.
             Altyazı yoksa başlık ve açıklamadan <strong>tahmini analiz</strong> yapılır (sarı uyarı gösterilir).
           </div>
         </div>
 
         <!-- KANAL SAYFASI BUTONLARI -->
-        <div style="font-size:11px; color:#64748b; text-transform:uppercase; letter-spacing:0.08em; margin:10px 0 6px 0;">
+        <div style="font-size:11px; color:#64748b; text-transform:uppercase; letter-spacing:0.08em; margin:10px 0 6px 0;" data-i18n="info_channel_btns">
           📺 Kanal sayfasında görünen butonlar
         </div>
 
@@ -307,7 +321,7 @@
           <div style="font-weight:800; color:#f87171; margin-bottom:4px; font-size:13px;">⚔️ Gerilla Stratejisi</div>
           <div style="color:#cbd5e1; font-size:12px; line-height:1.55;">
             Bir rakip kanalın sayfasındayken çalışır. Bu kanalda en hızlı ivmelenen videoları tespit eder
-            ve size “<strong>Rakibin neyi doğru yapıyor?</strong>” sorusunun yanıtını verir.
+            ve size "<strong>Rakibin neyi doğru yapıyor?</strong>" sorusunun yanıtını verir.
             Kanallar arası içerik boşluklarını görmek için idealdir.
           </div>
         </div>
@@ -319,12 +333,12 @@
             Kanalın son 5 videosunu otomatik olarak analiz eder.
             Her videonun DNA puanını hesaplar ve kanalın ortalama
             <strong>Kanca, Tempo, CTA ve Duygu</strong> skorlarını çıkarır.
-            Groq AI, bu verilerden kanalın “Başarı Formülü”’nü üç-dört cümleyle özetler.
+            Groq AI, bu verilerden kanalın "Başarı Formülü"'nü üç-dört cümleyle özetler.
           </div>
         </div>
 
         <!-- Diğer Araçlar -->
-        <div style="font-size:11px; color:#64748b; text-transform:uppercase; letter-spacing:0.08em; margin:10px 0 6px 0;">
+        <div style="font-size:11px; color:#64748b; text-transform:uppercase; letter-spacing:0.08em; margin:10px 0 6px 0;" data-i18n="info_always_btns">
           🛠️ Her zaman görünen araçlar
         </div>
 
@@ -332,7 +346,7 @@
         <div style="background:rgba(156,39,176,0.1); border:1px solid rgba(156,39,176,0.35); border-radius:10px; padding:10px 12px; margin-bottom:8px;">
           <div style="font-weight:800; color:#d946ef; margin-bottom:4px; font-size:13px;">🐇 Tavşan Deliği (Niş Bulucu)</div>
           <div style="color:#cbd5e1; font-size:12px; line-height:1.55;">
-            Arama kutusu: bir anahtar kelime yazın (örn: “Kripto Para”).
+            Arama kutusu: bir anahtar kelime yazın (örn: "Kripto Para").
             Sistem, o nişdeki en hızlı ivmelenen (<strong>Outlier</strong>) videoyu tespit eder
             ve size klonlanabilir içerik fikirleri sunar.
             Trend bir konuya girmeden önce görme aracı olarak kullanın.
@@ -351,19 +365,19 @@
         </div>
 
         <!-- DNA Puan Metodolojisi -->
-        <div style="font-size:11px; color:#64748b; text-transform:uppercase; letter-spacing:0.08em; margin:4px 0 6px 0;">
+        <div style="font-size:11px; color:#64748b; text-transform:uppercase; letter-spacing:0.08em; margin:4px 0 6px 0;" data-i18n="info_dna_method">
           🧬 DNA Puan Metodolojisi
         </div>
         <div style="background:rgba(99,102,241,0.07); border:1px solid rgba(99,102,241,0.22); border-radius:10px; padding:10px 12px; margin-bottom:8px; font-size:12px; color:#cbd5e1; line-height:1.6;">
-          Genel DNA Skoru basit ortalama değildir. Viral başarı bilimíne göre ağırlıklandırılmıştır:<br><br>
+          Genel DNA Skoru basit ortalama değildir. Viral başarı bilimine göre ağırlıklandırılmıştır:<br><br>
           <span style="color:#f43f5e;">Kanca ×0.40</span> + <span style="color:#06b6d4;">Tempo ×0.40</span> + <span style="color:#a855f7;">Duygu ×0.10</span> + <span style="color:#22c55e;">CTA ×0.10</span><br><br>
-          🔥 <strong>Viral Canavar Bonusu:</strong> Kanca ve Tempo ikisi birden >75 ise +20 puan.<br>
+          🔥 <strong>Viral Canavar Bonusu:</strong> Kanca ve Tempo ikisi birden &gt;75 ise +20 puan.<br>
           🛡️ <strong>Elite Koruma:</strong> İkisi birden ≥80 ise CTA/Duygu minimum 50 kredi alır.<br>
-          👑 90+ Efsanevi  🔥 75-89 Viral  ✅ 50-74 Güçlü  ⚠️ 0-49 Geliştir
+          👑 90+ Efsanevi  🔥 75-89 Viral  ✅ 50-74 Güçlü  ⚠️ 0-49 Geliştir
         </div>
 
       </div>
-      <button id="btn-info-close" class="btn btn--ghost" type="button" style="margin-top:12px;">
+      <button id="btn-info-close" class="btn btn--ghost" type="button" style="margin-top:12px;" data-i18n="btn_info_close">
         ↩ Geri Dön
       </button>
     </section>
@@ -373,11 +387,12 @@
 
   <!-- ── Footer ── -->
   <footer class="footer">
-    <span>Sunucu: <code>127.0.0.1:8000</code></span>
-    <span id="server-status-label" class="server-status">Kontrol ediliyor...</span>
+    <span><span data-i18n="footer_server">Sunucu:</span> <code>127.0.0.1:8000</code></span>
+    <span id="server-status-label" class="server-status" data-i18n="server_checking">Kontrol ediliyor...</span>
   </footer>
 </div>
 
+  <script src="translations.js"></script>
   <script src="popup.js"></script>
 </body>
 </html>

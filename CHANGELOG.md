@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+## [v6.0.0] - Smart Pick & UI Update (i18n & UX Overhaul)
+
+### ✨ Internationalization & UI Overhaul
+- **Full i18n Support:** Added comprehensive Multi-Language support (EN/TR) to the Chrome Extension with dynamic toggling and localized tooltips.
+- **Icon & Branding Update:** Refreshed desktop shortcut and UI icons for a seamless neon aesthetic. Overrode aggressive Windows icon caches.
+- **Syntax & Bug Squashing:** Completely resolved the string interpolation and quote escaping issues (`tier_mega_viral` syntax error) that froze the extension UI.
+
+### 🔮 Smart Suggestion Engine (Prophet's Pick Evolved)
+- **Smart Pick Popup:** "Prophet's Pick" has been upgraded to a non-intrusive "Smart Pick" toast/popup with dynamically translated CTA buttons (Clone, Debate, DNA).
+- **Clickable Cards:** Made the entire Smart Pick card area clickable, opening the YouTube video in a new background tab without interfering with the action buttons.
+
 ## [v2.0.0] - Enterprise Architecture & 1-Click Install
 
 ### 🏗️ Refactored (The Great Refactor)

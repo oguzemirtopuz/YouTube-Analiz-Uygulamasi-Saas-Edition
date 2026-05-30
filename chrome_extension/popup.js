@@ -13,6 +13,12 @@
 
 const SERVER = 'http://127.0.0.1:8000';
 
+// ── i18n Helper (translations.js'den gelir) ────────────────────────────────
+// getCurrentLang() → 'tr' | 'en'  (translations.js'de tanımlı)
+// t('key')         → çevrilmiş metin
+// setLang('en')    → dili değiştirir + storage'a kaydeder
+// applyTranslations() → [data-i18n] elementlerini günceller
+
 // ── DOM References ───────────────────────────── ─────────────────────────────
 const $ = id => document.getElementById(id);
 
@@ -74,19 +80,19 @@ function setServerStatus(state) {
   elDot.className = `dot dot--${state}`;
   const elBtnDna = $('btn-dna');
   if (state === 'online') {
-    elStatusLabel.textContent = '● Çevrimiçi';
+    elStatusLabel.textContent = t('server_online');
     elStatusLabel.className   = 'server-status online';
     elBtnClone.disabled  = false;
     if (elBtnDebate) elBtnDebate.disabled = false;
     if (elBtnDna) elBtnDna.disabled = false;
   } else if (state === 'offline') {
-    elStatusLabel.textContent = '● Çevrimdışı';
+    elStatusLabel.textContent = t('server_offline');
     elStatusLabel.className   = 'server-status offline';
     elBtnClone.disabled  = true;
     if (elBtnDebate) elBtnDebate.disabled = true;
     if (elBtnDna) elBtnDna.disabled = true;
   } else {
-    elStatusLabel.textContent = 'Kontrol ediliyor...';
+    elStatusLabel.textContent = t('server_checking');
     elStatusLabel.className   = 'server-status';
   }
 }
@@ -112,10 +118,10 @@ async function loadRecentAnalyses(userId) {
         elRecentList.appendChild(li);
       });
     } else {
-      elRecentList.innerHTML = '<li style="color:#666; font-style:italic;">Henüz analiz yok.</li>';
+      elRecentList.innerHTML = `<li style="color:#666; font-style:italic;">${t('recent_empty')}</li>`;
     }
   } catch (err) {
-    elRecentList.innerHTML = '<li style="color:var(--error);">Veriler çekilemedi.</li>';
+    elRecentList.innerHTML = `<li style="color:var(--error);">${t('recent_error')}</li>`;
   }
 }
 
@@ -124,19 +130,19 @@ async function handleLogin() {
   const password = elLoginPass.value.trim();
   
   if (!username || !password) {
-    elLoginError.textContent = 'Kullanıcı adı ve şifre zorunludur.';
+    elLoginError.textContent = t('login_error_empty');
     elLoginError.style.display = 'block';
     return;
   }
   
   const serverUp = await checkServer();
   if (!serverUp) {
-    elLoginError.textContent = 'Sunucuya bağlanılamadı.';
+    elLoginError.textContent = t('login_error_server');
     elLoginError.style.display = 'block';
     return;
   }
 
-  elBtnLogin.textContent = 'Giriş yapılıyor...';
+  elBtnLogin.textContent = t('login_loading');
   elBtnLogin.disabled = true;
   elLoginError.style.display = 'none';
   
@@ -144,12 +150,12 @@ async function handleLogin() {
     const resp = await fetch(`${SERVER}/api/extension/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username, password })
+      body: JSON.stringify({ username, password, lang: getCurrentLang() })
     });
     
     const data = await resp.json();
     if (!resp.ok) {
-      throw new Error(data.detail || 'Giriş başarısız.');
+      throw new Error(data.detail || t('login_error_fail'));
     }
     
     await chrome.storage.local.set({ user_id: data.user_id, username: data.username });
@@ -159,7 +165,7 @@ async function handleLogin() {
     elLoginError.textContent = err.message;
     elLoginError.style.display = 'block';
   } finally {
-    elBtnLogin.textContent = 'Giriş Yap';
+    elBtnLogin.textContent = t('btn_login');
     elBtnLogin.disabled = false;
   }
 }
@@ -248,13 +254,13 @@ async function analyzeChannel() {
   }
   
   showView('loading');
-  elLoadingSub.textContent = 'Rakip verileri sömürülüyor... Savaş Raporu hazırlanıyor!';
+  elLoadingSub.textContent = t('loading_sub_channel');
   
   try {
     const resp = await fetch(`${SERVER}/api/extension/analyze_channel`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ channel_url: tab.url, user_id })
+      body: JSON.stringify({ channel_url: tab.url, user_id, lang: getCurrentLang() })
     });
     
     const data = await resp.json();
@@ -268,7 +274,7 @@ async function analyzeChannel() {
     if (data.chaos_metrics) {
         const chaosHtml = `
         <div class="chaos-card">
-            <h3 class="chaos-title">🌪️ KAOS METRİĞİ</h3>
+            <h3 class="chaos-title">🌪️ ${t('chaos_metric')}</h3>
             <div class="chaos-score">${data.chaos_metrics.score} <span style="font-size:14px; color:#aaa;">/ 10</span></div>
             <div class="chaos-verdict">${data.chaos_metrics.verdict}</div>
         </div>`;
@@ -296,7 +302,7 @@ async function findRabbitHole() {
   }
   
   showView('loading');
-  elLoadingSub.textContent = "YouTube'un derinliklerine iniliyor... (Bu işlem 15-30 sn sürebilir)";
+  elLoadingSub.textContent = t('loading_sub_rabbit');
   
   const { user_id } = await chrome.storage.local.get(['user_id']);
   
@@ -306,7 +312,8 @@ async function findRabbitHole() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ 
         query: query, 
-        user_id: user_id || localStorage.getItem('user_id') || "default_user" 
+        user_id: user_id || localStorage.getItem('user_id') || "default_user",
+        lang: getCurrentLang()
       })
     });
     
@@ -326,7 +333,7 @@ async function findRabbitHole() {
         const icon = isUyumlu ? '✅' : '⚠️';
         uyumlulukHtml = `
         <div style="margin-top: 10px; padding: 8px; background: rgba(0,0,0,0.4); border-left: 3px solid ${color}; border-radius: 4px; font-size: 0.8rem; color: #e2e8f0; line-height: 1.4;">
-            <strong>${icon} Uyumluluk Analizi:</strong> ${v.uyumluluk}
+            <strong>${icon} ${t('compat_analysis')}:</strong> ${v.uyumluluk}
         </div>`;
       }
 
@@ -334,13 +341,13 @@ async function findRabbitHole() {
 <div class="rabbit-card" style="background: rgba(10,20,30,0.8); border: 1px solid #06b6d4; border-radius: 12px; padding: 15px; margin-bottom: 15px;">
     <h4 style="color: white; margin-bottom: 8px; font-size: 1.05rem; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">${v.title}</h4>
     <div style="margin-bottom: 8px; font-size: 0.85rem; color: #94a3b8;">
-        Kanal: <span style="color: #cbd5e1;">${v.channel}</span>
+        ${t('channel')}: <span style="color: #cbd5e1;">${v.channel}</span>
     </div>
     <div style="display:flex; justify-content:space-between; align-items:center;">
         <span style="background: linear-gradient(90deg, #f43f5e, #f97316); color: white; padding: 4px 8px; border-radius: 6px; font-size: 0.75rem; font-weight: bold; box-shadow: 0 0 10px rgba(244,63,94,0.5);">
-            🔥 Hız: ${v.velocity} izlenme/gün
+            🔥 ${t('velocity')}: ${v.velocity} ${t('views_per_day')}
         </span>
-        <a href="${v.url}" target="_blank" style="color: #38bdf8; text-decoration: none; font-size: 0.8rem; font-weight: bold;">İzle ↗</a>
+        <a href="${v.url}" target="_blank" style="color: #38bdf8; text-decoration: none; font-size: 0.8rem; font-weight: bold;">${t('watch')} ↗</a>
     </div>
     ${uyumlulukHtml}
 </div>`;
@@ -381,7 +388,7 @@ async function debateVideo(eventOrData = null) {
 
   // 3. Show Battle loading screen (with 3s progress bar animation)
   showView('loading');
-  elLoadingSub.textContent = 'Persona A vs B savaşıyor...';
+  elLoadingSub.textContent = t('loading_sub_debate');
 
   // Inject progress bar (only in debate mode)
   const existingBar = document.getElementById('battle-bar-wrap');
@@ -390,7 +397,7 @@ async function debateVideo(eventOrData = null) {
     barWrap.id = 'battle-bar-wrap';
     barWrap.className = 'battle-progress-wrap';
     barWrap.innerHTML = `
-      <div class="battle-progress-label">⚔️ Ajanlar Kapışıyor... Hakem Karar Veriyor...</div>
+      <div class="battle-progress-label">${t('loading_sub_battle')}</div>
       <div class="battle-progress-bar"><div class="battle-progress-fill"></div></div>
     `;
     // add at the end of loading view
@@ -437,7 +444,7 @@ async function debateVideo(eventOrData = null) {
     const resp = await fetch(`${SERVER}/api/extension/clone_debate`, {
       method:  'POST',
       headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-      body:    JSON.stringify(requestBody),
+      body:    JSON.stringify({ ...requestBody, lang: getCurrentLang() }),
     });
 
     const data = await resp.json();
@@ -477,22 +484,22 @@ async function debateVideo(eventOrData = null) {
           potential:  { emoji: '🟡', label: 'POTANSİYEL VAR', color: '#f59e0b', bg: 'rgba(245,158,11,0.12)', sub: 'Bir hamle eksik — öneriler aşağıda.' },
           rising:     { emoji: '🚀', label: 'YÜKSELIYOR!',   color: '#f97316', bg: 'rgba(249,115,22,0.15)',   sub: 'Momentum yakalandı — şimdi harekete geç.' },
           viral:      { emoji: '🟢', label: 'VİRAL',         color: '#22c55e', bg: 'rgba(34,197,94,0.12)',    sub: 'Başarının anatomisi aşağıda.' },
-          mega_viral: { emoji: '🔵', label: 'MEGA VİRAL',    color: '#38bdf8', bg: 'rgba(56,189,248,0.12)',   sub: 'Algoritma kırıcı — sistemi çıkart, kazayı kopyalama.' },
+          mega_viral: { emoji: '🔵', label: t('tier_mega_viral'),    color: '#38bdf8', bg: 'rgba(56,189,248,0.12)',   sub: 'Algoritma kırıcı — sistemi çıkart, kazayı kopyalama.' },
         };
         const dtc = TIER_CONFIG[debateTier] || TIER_CONFIG['potential'];
-        const dViewsStr = debateViews > 0 ? debateViews.toLocaleString('tr-TR') + ' izlenme' : 'İzlenme verisi alınamadı';
+        const dViewsStr = debateViews > 0 ? debateViews.toLocaleString('tr-TR') + ' ' + t('views') : 'İzlenme verisi alınamadı';
 
         let dChips = '';
         if (debateVelocity !== null && debateVelocity !== undefined) {
-          dChips += `<span class="pi-chip">📈 ~${debateVelocity.toLocaleString('tr-TR')} izlenme/gün</span>`;
+          dChips += `<span class="pi-chip">📈 ~${debateVelocity.toLocaleString('tr-TR')} ${t('views_per_day')}</span>`;
         }
         if (debateWindow) {
-          const wLabels = { fresh: '⏱ Yeni yayınlandı', burst: '⚡ Patlama penceresi', established: '📅 Algoritma yayılımı', evergreen: '🌿 Evergreen içerik' };
+          const wLabels = { fresh: '⏱ Yeni yayınlandı', burst: '⚡ Patlama penceresi', established: '📅 ' + t('algo_spread'), evergreen: '🌿 Evergreen içerik' };
           dChips += `<span class="pi-chip">${wLabels[debateWindow] || debateWindow}</span>`;
         }
         if (debatePenetr !== null && debatePenetr !== undefined) {
           const pLabel = debatePenetr >= 1 ? 'Yüksek' : debatePenetr >= 0.1 ? 'Orta' : 'Düşük';
-          dChips += `<span class="pi-chip">👥 Abone oranı: ${debatePenetr.toFixed(1)}x (${pLabel})</span>`;
+          dChips += `<span class="pi-chip">👥 ${t('sub_ratio')}: ${debatePenetr.toFixed(1)}x (${pLabel})</span>`;
         }
 
         extraHtml += `<div class="tier-banner" style="border-color:${dtc.color}; background:${dtc.bg}; margin-bottom:12px;">
@@ -507,7 +514,7 @@ async function debateVideo(eventOrData = null) {
 
         if (d.viral_anatomi) {
           const isViralTier = debateTier === 'viral' || debateTier === 'mega_viral';
-          const anatomyLabel = isViralTier ? '[VİRAL ANATOMİ: Bu Video Neden Patladı?]'
+          const anatomyLabel = isViralTier ? '[' + t('viral_anatomy_hit') + ']'
             : debateTier === 'rising' ? '[MOMENTUM ANALİZİ: Bu Video Neden Yükseliyor?]'
             : '[VİDEO ANALİZİ: Bu Video Neden Kitle Bulamıyor?]';
           const anatomyColor = isViralTier ? '#fbbf24' : debateTier === 'rising' ? '#f97316' : '#f87171';
@@ -569,7 +576,7 @@ async function cloneVideo(eventOrData = null) {
 
   // 3. Show loading
   showView('loading');
-  elLoadingSub.textContent = 'Sayfa verisi okunuyor...';
+  elLoadingSub.textContent = t('loading_sub_page');
 
   // 4. Inject content.js and pull metadata
   let videoData;
@@ -610,7 +617,7 @@ async function cloneVideo(eventOrData = null) {
     elThumbWrap.style.display = 'block';
   }
 
-  elLoadingSub.textContent = 'AI konsept üretiyor...';
+  elLoadingSub.textContent = t('loading_sub_ai');
 
   const { user_id } = await chrome.storage.local.get(['user_id']);
 
@@ -621,7 +628,7 @@ async function cloneVideo(eventOrData = null) {
     const resp = await fetch(`${SERVER}/api/extension/clone_video`, {
       method:  'POST',
       headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-      body:    JSON.stringify(requestBody),
+      body:    JSON.stringify({ ...requestBody, lang: getCurrentLang() }),
     });
 
     const data = await resp.json();
@@ -654,23 +661,23 @@ async function cloneVideo(eventOrData = null) {
         potential:  { emoji: '🟡', label: 'POTANSİYEL VAR', color: '#f59e0b', bg: 'rgba(245,158,11,0.12)',    sub: 'Bir hamle eksik — öneriler aşağıda.' },
         rising:     { emoji: '🚀', label: 'YÜKSELIYOR!',  color: '#f97316', bg: 'rgba(249,115,22,0.15)',      sub: 'Momentum yakalandı — şimdi harekete geç.' },
         viral:      { emoji: '🟢', label: 'VİRAL',        color: '#22c55e', bg: 'rgba(34,197,94,0.12)',       sub: 'Başarının anatomisi aşağıda.' },
-        mega_viral: { emoji: '🔵', label: 'MEGA VİRAL',   color: '#38bdf8', bg: 'rgba(56,189,248,0.12)',      sub: 'Algoritma kırıcı — sistemi çıkart, kazayı kopyalama.' },
+        mega_viral: { emoji: '🔵', label: t('tier_mega_viral'),   color: '#38bdf8', bg: 'rgba(56,189,248,0.12)',      sub: 'Algoritma kırıcı — sistemi çıkart, kazayı kopyalama.' },
       };
       const tc = TIER_CONFIG[videoTier] || TIER_CONFIG['potential'];
-      const viewsStr = videoViews > 0 ? videoViews.toLocaleString('tr-TR') + ' izlenme' : 'İzlenme verisi alınamadı';
+      const viewsStr = videoViews > 0 ? videoViews.toLocaleString('tr-TR') + ' ' + t('views') : 'İzlenme verisi alınamadı';
 
       // Chips (show if available)
       let chips = '';
       if (videoVelocity !== null && videoVelocity !== undefined) {
-        chips += `<span class="pi-chip">📈 ~${videoVelocity.toLocaleString('tr-TR')} izlenme/gün</span>`;
+        chips += `<span class="pi-chip">📈 ~${videoVelocity.toLocaleString('tr-TR')} ${t('views_per_day')}</span>`;
       }
       if (videoWindow) {
-        const windowLabels = { fresh: '⏱ Yeni yayınlandı', burst: '⚡ Patlama penceresi', established: '📅 Algoritma yayılımı', evergreen: '🌿 Evergreen içerik' };
+        const windowLabels = { fresh: '⏱ Yeni yayınlandı', burst: '⚡ Patlama penceresi', established: '📅 ' + t('algo_spread'), evergreen: '🌿 Evergreen içerik' };
         chips += `<span class="pi-chip">${windowLabels[videoWindow] || videoWindow}</span>`;
       }
       if (videoPenetr !== null && videoPenetr !== undefined) {
         const penetLabel = videoPenetr >= 1 ? 'Yüksek' : videoPenetr >= 0.1 ? 'Orta' : 'Düşük';
-        chips += `<span class="pi-chip">👥 Abone oranı: ${videoPenetr.toFixed(1)}x (${penetLabel})</span>`;
+        chips += `<span class="pi-chip">👥 ${t('sub_ratio')}: ${videoPenetr.toFixed(1)}x (${penetLabel})</span>`;
       }
 
       htmlCards += `<div class="tier-banner" style="border-color:${tc.color}; background:${tc.bg};">
@@ -687,7 +694,7 @@ async function cloneVideo(eventOrData = null) {
 
       if (!Array.isArray(parsed) && parsed.viral_anatomi) {
         const isViral = videoTier === 'viral' || videoTier === 'mega_viral';
-        const anatomyLabel = isViral ? '[VİRAL ANATOMİ: Bu Video Neden Patladı?]'
+        const anatomyLabel = isViral ? '[' + t('viral_anatomy_hit') + ']'
           : videoTier === 'rising' ? '[MOMENTUM ANALİZİ: Bu Video Neden Yükseliyor?]'
           : '[VİDEO ANALİZİ: Bu Video Neden Kitle Bulamıyor?]';
         const anatomyColor = isViral ? '#fbbf24' : videoTier === 'rising' ? '#f97316' : '#f87171';
@@ -847,10 +854,10 @@ function extractYouTubeData() {
  * backend'e gönderilmeye hazır requestBody döner.
  *
  * Hesaplanan alanlar:
- *   velocity_per_day  — günlük tahmini izlenme artışı
+ *   velocity_per_day  — günlük tahmini ${t('views')} artışı
  *   time_window       — fresh / burst / established / evergreen
  *   tier              — dead / potential / rising / viral / mega_viral
- *   penetration_ratio — izlenme / abone (abone yoksa null)
+ *   penetration_ratio — ${t('views')} / abone (abone yoksa null)
  */
 function enrichVideoData(videoData, userId) {
   const views          = videoData.views          || 0;
@@ -1068,7 +1075,7 @@ async function initSuggestion() {
       if (videoData && !videoData.error && videoData.videoId) {
         const { dismissed_video_id } = await chrome.storage.local.get(['dismissed_video_id']);
         if (dismissed_video_id !== videoData.videoId) {
-          showSuggestionCard(videoData, "Bu videoyu analiz etmeye hazır mısın?");
+          showSuggestionCard(videoData, t('sugg_video'));
         }
       }
     } catch (e) {}
@@ -1112,7 +1119,7 @@ async function initSuggestion() {
                };
                const { dismissed_video_id } = await chrome.storage.local.get(['dismissed_video_id']);
                if (dismissed_video_id !== videoId) {
-                   showSuggestionCard(videoData, "Kanalın en hızlı yükselen videosunu klonla!");
+                   showSuggestionCard(videoData, t('sugg_channel'));
                }
            }
         }
@@ -1270,6 +1277,7 @@ async function analyzeDNA(eventOrData) {
         description: videoData.description || '',
         tags:        videoData.tags        || '',
         user_id:     user_id || 0,
+        lang:        getCurrentLang(),
       }),
     });
 
@@ -1301,7 +1309,7 @@ function _renderDNAResult(data, videoData) {
       dnaBadge.style.borderColor = 'rgba(245,158,11,.5)';
       dnaBadge.style.color = '#fbbf24';
     } else {
-      dnaBadge.textContent = '🧬 DNA Analizi Tamamlandı!';
+      dnaBadge.textContent = '🧬 ' + t('dna_badge');
       dnaBadge.style.background = '';
       dnaBadge.style.borderColor = '';
       dnaBadge.style.color = '';
@@ -1366,7 +1374,7 @@ function _renderDNAResult(data, videoData) {
     tierBg     = 'rgba(245,158,11,0.15)';
     tierBorder = 'rgba(245,158,11,0.55)';
   } else if (overall >= 75) {
-    tierLabel  = '🔥 VİRAL POTANSİYEL (Yüksek izlenme garantisi)';
+    tierLabel  = '🔥 ' + t('tier_viral_pot') + ' (Yüksek ' + t('views') + ' garantisi)';
     tierColor  = '#f97316';
     tierBg     = 'rgba(249,115,22,0.13)';
     tierBorder = 'rgba(249,115,22,0.45)';
@@ -1376,7 +1384,7 @@ function _renderDNAResult(data, videoData) {
     tierBg     = 'rgba(34,197,94,0.12)';
     tierBorder = 'rgba(34,197,94,0.4)';
   } else {
-    tierLabel  = '⚠️ GELİŞTİRİLMELİ (Eksikleri giderilmeli)';
+    tierLabel  = '⚠️ ' + t('tier_improve_full');
     tierColor  = '#f59e0b';
     tierBg     = 'rgba(245,158,11,0.12)';
     tierBorder = 'rgba(245,158,11,0.4)';
@@ -1412,12 +1420,12 @@ function _renderDNAResult(data, videoData) {
   const summaryLines = [
     (isEstimated ? '📊 TAHMİNİ DNA ANALİZİ (Meta Veri Bazlı)' : '🧬 DNA Analizi'),
     'Video: ' + title.substring(0, 80) + (title.length > 80 ? '...' : ''),
-    'Genel DNA Skoru: ' + overall + '/100 — ' + tierLabel + estimatedNote,
+    t('overall_dna_score') + ': ' + overall + '/100 — ' + tierLabel + estimatedNote,
     '',
-    'Kanca Gücü: ' + scores.hook + '/100 [×0.40] - Giriş bölümündeki tetikleyici yoğunluğu',
-    'Tempo Ritmi: ' + scores.retention + '/100 [×0.40] - ' + (isEstimated ? 'Metadata kalitesine göre simülasyon' : 'Cümle varyansı ve geçiş akışkanlığı'),
-    'Duygu Yükü: ' + scores.emotion + '/100 [×0.10] - Duygusal kelime yoğunluğu',
-    'CTA Gücü: ' + scores.cta + '/100 [×0.10] - Sonuçtaki aksiyon çağrısı etkinliği',
+    t('hook_power') + ': ' + scores.hook + '/100 [×0.40] - ' + t('desc_hook'),
+    t('tempo_rhythm') + ': ' + scores.retention + '/100 [×0.40] - ' + (isEstimated ? 'Metadata kalitesine göre simülasyon' : t('desc_tempo')),
+    t('emotion_load') + ': ' + scores.emotion + '/100 [×0.10] - ' + t('desc_emotion'),
+    t('cta_power') + ': ' + scores.cta + '/100 [×0.10] - ' + t('desc_cta'),
   ];
   if (anatomySection && anatomyText) {
     anatomyText.textContent = summaryLines.join('\n');
@@ -1441,30 +1449,30 @@ async function analyzeChannelDNA() {
 
   const tab = await getActiveTab();
   if (!isYouTubeChannelTab(tab)) {
-    showError('Kanal Sayfasi Gerekli', 'Kanal DNA analizi yalnizca YouTube kanal sayfalarinda calisir.');
+    showError(t('error_not_ch'), t('error_not_ch_msg'));
     return;
   }
 
   const { user_id } = await chrome.storage.local.get(['user_id']);
   if (!user_id) {
-    showError('Giris Gerekli', 'Kanal DNA analizi icin giris yapmaniz gerekir.');
+    showError(t('error_login_req'), t('error_login_ch_msg'));
     return;
   }
 
   showView('loading');
-  elLoadingSub.textContent = 'Kanalin son 5 videosunun altyazilari cekiliyor ve DNA puanlari hesaplaniyor... (Bu islem 30-60 sn surebilir)';
+  elLoadingSub.textContent = t('loading_sub_channel_dna');
 
   try {
     const resp = await fetch(SERVER + '/api/extension/channel_dna', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-      body: JSON.stringify({ channel_url: tab.url, user_id: user_id }),
+      body: JSON.stringify({ channel_url: tab.url, user_id: user_id, lang: getCurrentLang() }),
     });
 
     const data = await resp.json();
 
     if (!data.success) {
-      showError('Kanal DNA Basarisiz', data.error || 'Kanal analizi yapilamadi.');
+      showError(t('error_op_fail'), data.error || t('error_op_fail'));
       return;
     }
 
@@ -1505,12 +1513,12 @@ function _renderChannelDNAResult(data) {
       '⚠️ Bu kanalın videolarında altyazı bulunamadı. Kanal DNA\'sı video başlıkları analiz edilerek <strong>tahmini</strong> olarak hesaplanmıştır.</div>';
   } else if (skipped > 0) {
     skipWarn = '<div style="margin-top:8px; font-size:11px; color:#f59e0b; background:rgba(245,158,11,0.1); border:1px solid rgba(245,158,11,0.25); border-radius:6px; padding:6px 8px;">' +
-      skipped + ' videoda altyazi bulunamadi; bu videolar baslik verisiyle tahmini olarak dahil edildi.</div>';
+      skipped + ' ' + t('no_sub_warning') + '</div>';
   }
 
   let formulaHtml = '';
   if (data.success_formula) {
-    formulaHtml = '<div class="dna-section-label" style="margin-top:12px;">BASARI FORMULU</div>' +
+    formulaHtml = '<div class="dna-section-label" style="margin-top:12px;">' + t('success_formula') + '</div>' +
       '<div class="channel-dna-formula">' + data.success_formula + '</div>';
   }
 
@@ -1520,17 +1528,17 @@ function _renderChannelDNAResult(data) {
   if (chanOverall >= 90) {
     chanTierLabel = '👑 EFSANEVİ KANAL';  chanTierColor = '#f59e0b';
   } else if (chanOverall >= 75) {
-    chanTierLabel = '🔥 VİRAL POTANSİYEL'; chanTierColor = '#f97316';
+    chanTierLabel = '🔥 ' + t('tier_viral_pot'); chanTierColor = '#f97316';
   } else if (chanOverall >= 50) {
-    chanTierLabel = '✅ GÜÇLÜ KANAL'; chanTierColor = '#22c55e';
+    chanTierLabel = '✅ ' + t('tier_strong'); chanTierColor = '#22c55e';
   } else {
-    chanTierLabel = '⚠️ GELİŞTİRİLMELİ'; chanTierColor = '#f59e0b';
+    chanTierLabel = '⚠️ ' + t('tier_improve'); chanTierColor = '#f59e0b';
   }
 
   elResultBox.innerHTML =
     '<div class="channel-dna-card">' +
       '<div class="channel-dna-title">KANAL DNA\'SI - ' + data.channel_name + '</div>' +
-      '<div style="font-size:11px; color:#64748b; text-align:center; margin-bottom:10px;">' + analyzed + ' video analiz edildi &middot; Ağırlıklı DNA Ortalaması</div>' +
+      '<div style="font-size:11px; color:#64748b; text-align:center; margin-bottom:10px;">' + analyzed + ' ' + t('vids_analyzed') + ' &middot; ' + t('weighted_dna_avg') + '</div>' +
       '<div class="channel-dna-scores">' + scoresHtml + '</div>' +
       '<div style="display:flex; align-items:center; justify-content:space-between; padding:10px 4px; border-top:1px solid rgba(255,255,255,0.08); margin-top:4px;">' +
         '<span style="font-size:11px; font-weight:700; color:' + chanTierColor + ';">' + chanTierLabel + '</span>' +
@@ -1590,7 +1598,7 @@ if (elBtnDnaReset) {
     // DNA badge'ini varsayılan haline döndür
     const dnaBadge = document.querySelector('#view-dna .result-badge');
     if (dnaBadge) {
-      dnaBadge.textContent = '🧬 DNA Analizi Tamamlandı!';
+      dnaBadge.textContent = '🧬 ' + t('dna_badge');
       dnaBadge.style.background = '';
       dnaBadge.style.borderColor = '';
       dnaBadge.style.color = '';
@@ -1617,7 +1625,7 @@ if (elBtnCopyDna) {
       document.execCommand('copy');
       document.body.removeChild(ta);
     }
-    elBtnCopyDna.textContent = 'Kopyalandi!';
+    elBtnCopyDna.textContent = t('copied');
     elBtnCopyDna.classList.add('copied');
     setTimeout(function() {
       elBtnCopyDna.textContent = 'DNA PROMPTU KOPYALA';
@@ -1635,29 +1643,29 @@ if (elBtnInfo) elBtnInfo.addEventListener('click', async () => {
   if (isYouTubeTab(tab)) {
     infoHtml = `
       <div style="background: rgba(16, 185, 129, 0.1); border-left: 4px solid #10b981; padding: 10px; margin-bottom: 15px; border-radius: 4px;">
-        <strong style="color: #34d399; font-size: 14px;">Şu an Strateji Modundasın.</strong>
+        <strong style="color: #34d399; font-size: 14px;">${t('info_strat_mode')}</strong>
         <p style="margin-top: 5px; color: #cbd5e1; font-size: 12px;">Video sayfasındasın. <strong>Akıllı Seçim</strong> devrededir. (Odaklanman için Prophet's Pick gizlendi).</p>
         <ul style="margin-top: 5px; padding-left: 15px; color: #94a3b8; font-size: 12px; list-style-type: disc;">
           <li><strong>Akıllı Seçim:</strong> Bu videoyu anında klonla veya tartıştır.</li>
-          <li><strong>Viral Anatomi:</strong> Videonun neden patladığını (veya neden çöktüğünü) anla.</li>
+          <li><strong>${t('info_strat_v_ana')}</li>
         </ul>
       </div>
     `;
   } else if (isYouTubeChannelTab(tab)) {
     infoHtml = `
       <div style="background: rgba(245, 158, 11, 0.1); border-left: 4px solid #f59e0b; padding: 10px; margin-bottom: 15px; border-radius: 4px;">
-        <strong style="color: #fbbf24; font-size: 14px;">Şu an İstihbarat Modundasın.</strong>
-        <p style="margin-top: 5px; color: #cbd5e1; font-size: 12px;">Kanal sayfasındasın.</p>
+        <strong style="color: #fbbf24; font-size: 14px;">${t('info_intel_mode')}</strong>
+        <p style="margin-top: 5px; color: #cbd5e1; font-size: 12px;">${t('info_intel_desc')}</p>
         <ul style="margin-top: 5px; padding-left: 15px; color: #94a3b8; font-size: 12px; list-style-type: disc;">
           <li><strong>Kanal Savaşları:</strong> Rakibini tarat, zayıf noktalarını bul.</li>
-          <li><strong>Kaos Metriği:</strong> Rakibin öfke ve tempo analizini gör.</li>
+          <li><strong>${t('info_intel_chaos')}</li>
         </ul>
       </div>
     `;
   } else {
     infoHtml = `
       <div style="background: rgba(168, 85, 247, 0.1); border-left: 4px solid #a855f7; padding: 10px; margin-bottom: 15px; border-radius: 4px;">
-        <strong style="color: #d8b4fe; font-size: 14px;">Şu an Keşif Modundasın.</strong>
+        <strong style="color: #d8b4fe; font-size: 14px;">${t('info_exp_mode')}</strong>
         <p style="margin-top: 5px; color: #cbd5e1; font-size: 12px;">YouTube Ana Sayfası veya Arama sonuçlarındasın.</p>
         <ul style="margin-top: 5px; padding-left: 15px; color: #94a3b8; font-size: 12px; list-style-type: disc;">
           <li><strong>Matrix Vision:</strong> Trend videolar neon yeşil parlar.</li>
@@ -1701,8 +1709,34 @@ elBtnReset.addEventListener('click', () => {
 
 elBtnRetry.addEventListener('click', () => showView('idle'));
 
+// ── Language Toggle Button ────────────────────────────────────────────────────
+const elBtnLangToggle = $('btn-lang-toggle');
+if (elBtnLangToggle) {
+  elBtnLangToggle.addEventListener('click', async () => {
+    const next = getCurrentLang() === 'tr' ? 'en' : 'tr';
+    await setLang(next);
+    // Re-apply dynamic stateful texts
+    checkServer();
+  });
+  // Hover glow effect
+  elBtnLangToggle.addEventListener('mouseenter', () => {
+    elBtnLangToggle.style.background = 'linear-gradient(135deg, rgba(56,189,248,0.3), rgba(168,85,247,0.3))';
+    elBtnLangToggle.style.borderColor = '#38bdf8';
+  });
+  elBtnLangToggle.addEventListener('mouseleave', () => {
+    elBtnLangToggle.style.background = 'linear-gradient(135deg, rgba(56,189,248,0.15), rgba(168,85,247,0.15))';
+    elBtnLangToggle.style.borderColor = 'rgba(56,189,248,0.4)';
+  });
+}
+
 // ── Init ─────────────────────────────────── ───────────────────────────────────
 (async () => {
+  // 1. Önce dili yükle (storage'dan)
+  await loadLang();
+  // 2. UI'yi seçili dile göre güncelle
+  applyTranslations();
+  updateLangToggle();
+
   elBtnClone.disabled = true; // disabled until server control is finished
   if (elBtnDebate) elBtnDebate.disabled = true;
   await checkServer();

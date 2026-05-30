@@ -3037,6 +3037,7 @@ async def _call_groq_clone(
     tier: str = None, time_window: str = None,
     velocity_per_day: float = None, penetration_ratio: float = None,
     comment_signals: str = None,
+    lang: str = "tr",
 ) -> str:
     """
     Generates a viral cloning concept using Groq Llama-3.
@@ -3083,14 +3084,29 @@ KURALLAR:
     if _pi_ctx:
         prompt = _pi_ctx + "\n\n" + prompt
 
+    # ── i18n Directive ── lang='en' ise İngilizce yanıt zorunlu kılınır
+    _lang_directive = (
+        "\n\nIMPORTANT: Provide ALL your analysis, titles, hooks, thumbnails, "
+        "viral_anatomi, nis_uyarisi, and every text field in the JSON output "
+        "in ENGLISH language. Do not use Turkish."
+        if lang == "en" else ""
+    )
+    prompt_final = prompt + _lang_directive
+
+    _system_msg = (
+        "You are an elite YouTube Content Strategist. Return ONLY valid JSON, nothing else."
+        if lang == "en" else
+        "Sen elit bir YouTube İçerik Stratejistisin. YALNIZCA geçerli bir JSON döndürürsün, başka hiçbir şey yazmazsın."
+    )
+
     def _post():
         resp = requests.post(
             "https://api.groq.com/openai/v1/chat/completions",
             headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
             json={
                 "model": "llama-3.3-70b-versatile",
-                "messages": [{"role": "system", "content": "Sen elit bir YouTube İçerik Stratejistisin. YALNIZCA geçerli bir JSON döndürürsün, başka hiçbir şey yazmazsın."}, 
-                             {"role": "user", "content": prompt}],
+                "messages": [{"role": "system", "content": _system_msg},
+                             {"role": "user", "content": prompt_final}],
                 "max_tokens": 1024,
                 "temperature": 0.7,
             },
@@ -3403,10 +3419,13 @@ class CloneVideoRequest(BaseModel):
     penetration_ratio: Optional[float] = Field(default=None)
     comment_signals:   Optional[str]   = Field(default=None)
     user_id:   int = Field(default=0, description="User ID")
+    # -- i18n --
+    lang:      str = Field(default="tr", description="UI language: 'tr' or 'en'")
 
 class AnalyzeChannelRequest(BaseModel):
     channel_url: str
     user_id: int
+    lang: str = "tr"
 
 @app.post("/api/extension/analyze_channel")
 async def extension_analyze_channel(payload: AnalyzeChannelRequest):
@@ -3538,10 +3557,15 @@ def extract_rabbit_hole_sync(query: str):
 class RabbitHoleRequest(BaseModel):
     query: str
     user_id: Optional[Union[int, str]] = 0
+    lang: str = "tr"
 
-async def analyze_rabbit_hole_compatibility(api_key: str, title: str, channel: str, content_type: str, purpose: str) -> str:
+async def analyze_rabbit_hole_compatibility(api_key: str, title: str, channel: str, content_type: str, purpose: str, lang: str = "tr") -> str:
     import requests
-    prompt = f"User's channel concept: {content_type} (Goal: {purpose}). Is this trending video (Title: {title}, Channel: {channel}) compatible with the user's concept? If not (e.g. Esports tournament, official announcement, or serious tutorial etc.) say 'Incompatible' and explain why. If it aligns with the concept, say 'Compatible'. Your output must be at most 2 short sentences."
+    _lang_rule = (
+        "Respond in ENGLISH."
+        if lang == "en" else "Türkçe cevap ver."
+    )
+    prompt = f"User's channel concept: {content_type} (Goal: {purpose}). Is this trending video (Title: {title}, Channel: {channel}) compatible with the user's concept? If not (e.g. Esports tournament, official announcement, or serious tutorial etc.) say 'Incompatible' and explain why. If it aligns with the concept, say 'Compatible'. Your output must be at most 2 short sentences. {_lang_rule}"
     
     headers = {"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"}
     payload = {
@@ -3578,7 +3602,7 @@ async def extension_rabbit_hole(payload: RabbitHoleRequest):
                     await db.close()
 
             for v in top_outliers:
-                analysis = await analyze_rabbit_hole_compatibility(api_key, v['title'], v['channel'], content_type, purpose)
+                analysis = await analyze_rabbit_hole_compatibility(api_key, v['title'], v['channel'], content_type, purpose, lang=payload.lang)
                 v['uyumluluk'] = analysis
                 
         return {"success": True, "outliers": top_outliers}
@@ -3822,6 +3846,7 @@ async def extension_clone_video(payload: CloneVideoRequest):
             velocity_per_day=payload.velocity_per_day,
             penetration_ratio=payload.penetration_ratio,
             comment_signals=payload.comment_signals,
+            lang=payload.lang,
         )
     except ValueError as e:
         app_logger.warning(f"[clone_video] Groq error: {e}")
@@ -3862,6 +3887,7 @@ async def _call_groq_debate(
     velocity_per_day: float = None,
     penetration_ratio: float = None,
     comment_signals: str = None,
+    lang: str = "tr",
 ) -> dict:
     """
     Two personas run in parallel (asyncio.gather), then the Judge AI makes the decision.
@@ -3909,7 +3935,20 @@ Kurallar:
 3. YALNIZCA şu JSON formatında 1 fikir döndür (başka hiçbir şey yazma):
 {{"title": "...", "hook": "...", "thumbnail": "..."}}"""
 
-    system_json = "Sen bir YouTube stratejisti asistanısın. YALNIZCA geçerli JSON döndürürsün, başka hiçbir şey yazmazsın."
+    # ── i18n: lang direktifine göre system mesajı ve prompt dil eki ─────────────────────────
+    _lang_suffix = (
+        "\n\nIMPORTANT: Provide ALL output fields (title, hook, thumbnail) "
+        "in ENGLISH language only. Do not use Turkish."
+        if lang == "en" else ""
+    )
+    prompt_a += _lang_suffix
+    prompt_b += _lang_suffix
+
+    system_json = (
+        "You are a YouTube strategist assistant. Return ONLY valid JSON, nothing else."
+        if lang == "en" else
+        "Sen bir YouTube stratejisti asistanısın. YALNIZCA geçerli JSON döndürürsün, başka hiçbir şey yazmazsın."
+    )
 
     def _post_persona_a():
         return requests.post(
@@ -4044,6 +4083,20 @@ YALNIZCA şu JSON formatında döndür (başka hiçbir şey yazma):
     if _debate_pi:
         prompt_judge = _debate_pi + "\n\n" + prompt_judge
 
+    # ── i18n: Judge prompt'a dil direktifi ekle
+    if lang == "en":
+        prompt_judge += (
+            "\n\nIMPORTANT: Write ALL text fields (viral_anatomi, eleştirmen_fikri, buyucu_fikri, "
+            "kazanan_baslik, kazanan_kanca, kazanan_thumbnail, nis_uyarisi) "
+            "in ENGLISH language only. Do not use Turkish."
+        )
+
+    _judge_system = (
+        "You are a YouTube content strategist judge. Return ONLY valid JSON, nothing else."
+        if lang == "en" else
+        "Sen bir YouTube algoritma hakemısın. YALNIZCA geçerli JSON döndürürsün, başka hiçbir şey yazmazsın."
+    )
+
     def _post_judge():
         return requests.post(
             "https://api.groq.com/openai/v1/chat/completions",
@@ -4051,7 +4104,7 @@ YALNIZCA şu JSON formatında döndür (başka hiçbir şey yazma):
             json={
                 "model": "llama-3.3-70b-versatile",
                 "messages": [
-                    {"role": "system", "content": system_json},
+                    {"role": "system", "content": _judge_system},
                     {"role": "user",   "content": prompt_judge},
                 ],
                 "max_tokens": 768,
@@ -4420,7 +4473,8 @@ def _dna_emotion_score(full_text: str) -> float:
 
 async def _call_groq_dna_prompt(
     api_key: str, title: str, channel: str, transcript: str,
-    scores: dict, is_estimated: bool = False
+    scores: dict, is_estimated: bool = False,
+    lang: str = "tr",
 ) -> str:
     """
     DNA puanlarını ve altyazıyı kullanarak 'Master Prompt' üretir.
@@ -4504,6 +4558,20 @@ Aşağıdaki 4 bileşeni net talimatlar olarak yaz:
 - Madde madde, doğrudan talimat dili kullan. ("Şunu yap", "Bunu söyle", "Bu anda kes")
 - Türkçe yaz. Başka açıklama veya giriş cümlesi ekleme. Sadece hazır kullanılabilir promptu ver."""
 
+    # ── i18n: lang='en' ise İngilizce direktif ekle
+    _dna_lang_suffix = (
+        "\n\nIMPORTANT: Write the ENTIRE Master Prompt (all 4 sections and all instructions) "
+        "in ENGLISH language only. Do not use Turkish anywhere."
+        if lang == "en" else ""
+    )
+    prompt += _dna_lang_suffix
+
+    _dna_system = (
+        "You are a viral YouTube DNA analyst. Produce only the requested output in English."
+        if lang == "en" else
+        "Sen viral YouTube içeriğinin genetik kodunu çözen bir DNA analistisin. Yalnızca istenilen çıktıyı üretirsin."
+    )
+
     def _post():
         return _req.post(
             "https://api.groq.com/openai/v1/chat/completions",
@@ -4511,7 +4579,7 @@ Aşağıdaki 4 bileşeni net talimatlar olarak yaz:
             json={
                 "model": "llama-3.3-70b-versatile",
                 "messages": [
-                    {"role": "system", "content": "Sen viral YouTube içeriğinin genetik kodunu çözen bir DNA analistisin. Yalnızca istenilen çıktıyı üretirsin."},
+                    {"role": "system", "content": _dna_system},
                     {"role": "user", "content": prompt}
                 ],
                 "max_tokens": 1200,
@@ -4539,6 +4607,7 @@ class DNAAnalysisRequest(BaseModel):
     description: str = Field(default="", description="Video açıklaması (Fallback için)")
     tags:        str = Field(default="", description="Virgülle ayrılmış etiketler (Fallback için)")
     user_id:     int = Field(default=0)
+    lang:        str = Field(default="tr", description="UI language: 'tr' or 'en'")
 
 
 @app.post("/api/extension/dna_analysis")
@@ -4640,7 +4709,7 @@ async def extension_dna_analysis(payload: DNAAnalysisRequest):
         try:
             dna_prompt = await _call_groq_dna_prompt(
                 api_key, payload.title, payload.channel, groq_text, scores,
-                is_estimated=is_estimated
+                is_estimated=is_estimated, lang=payload.lang
             )
         except Exception as e:
             app_logger.warning(f"[dna_analysis] Master Prompt üretilemedi: {e}")
@@ -4671,6 +4740,7 @@ class ChannelDNARequest(BaseModel):
     model_config = ConfigDict(extra="ignore")
     channel_url: str = Field(default="")
     user_id:     int = Field(default=0)
+    lang:        str = Field(default="tr", description="UI language: 'tr' or 'en'")
 
 
 @app.post("/api/extension/channel_dna")
@@ -4820,6 +4890,12 @@ async def extension_channel_dna(payload: ChannelDNARequest):
         try:
             import requests as _req2
             titles_str = ", ".join(f'"{t}"' for t in (channel_data.get("recent_titles") or [])[:5])
+            # i18n
+            _formula_lang_rule = (
+                "\n\nIMPORTANT: Write the ENTIRE Success Formula summary in ENGLISH language only. Do not use Turkish."
+                if payload.lang == "en" else "Türkçe, kısa ve vurucu yaz."
+            )
+            
             formula_prompt = f"""Sen viral YouTube içerik analistisin.
 
 [KANAL: {channel_name}]
@@ -4830,7 +4906,7 @@ Ortalama DNA Puanları:
 - CTA (Aksiyon Çağrısı): {avg_scores['cta']}/100
 - Emotion (Duygu Yoğunluğu): {avg_scores['emotion']}/100
 
-Bu kanalın "Başarı Formülü"nü 3-4 cümleyle özetle. Hangi DNS skoru en güçlü? En zayıf nokta ne? Bu kanala rakip olmak için ne yapılmalı? Türkçe, kısa ve vurucu yaz."""
+Bu kanalın "Başarı Formülü"nü 3-4 cümleyle özetle. Hangi DNS skoru en güçlü? En zayıf nokta ne? Bu kanala rakip olmak için ne yapılmalı? {_formula_lang_rule}"""
 
             def _fpost():
                 return _req2.post(

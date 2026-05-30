@@ -2,8 +2,30 @@
 
 All notable changes to **YouTube Analyse Pro SaaS Edition** will be documented in this file.
 
-The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
-and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+## [v6.0.0] - Smart Pick & UI Update (i18n & UX Overhaul)
+
+### ✨ Internationalization & UI Overhaul
+- **Full i18n Support:** Added comprehensive Multi-Language support (EN/TR) to the Chrome Extension with dynamic toggling and localized tooltips.
+- **Icon & Branding Update:** Refreshed desktop shortcut and UI icons for a seamless neon aesthetic. Overrode aggressive Windows icon caches.
+- **Syntax & Bug Squashing:** Completely resolved the string interpolation and quote escaping issues (`tier_mega_viral` syntax error) that froze the extension UI.
+
+### 🔮 Smart Suggestion Engine (Prophet's Pick Evolved)
+- **Smart Pick Popup:** "Prophet's Pick" has been upgraded to a non-intrusive "Smart Pick" toast/popup with dynamically translated CTA buttons (Clone, Debate, DNA).
+- **Clickable Cards:** Made the entire Smart Pick card area clickable, opening the YouTube video in a new background tab without interfering with the action buttons.
+
+## [v2.0.0] - Enterprise Architecture & 1-Click Install
+
+### 🏗️ Refactored (The Great Refactor)
+- **Modular Service Layer:** Surgically decomposed the monolithic `server.pyw` (4,100+ lines) into clean, standalone modules under the `app/` package, adhering to SOLID principles and single-responsibility guidelines.
+- **`app/database/db.py`:** Centralized async SQLite engine using Write-Ahead Logging (WAL) and automatic migration management.
+- **`app/services/security.py`:** Encapsulated AES-128 Fernet encryption for API keys and PBKDF2 cryptography for secure user sessions.
+- **`app/services/email_service.py`:** Extracted dynamic multilingual report and verification code email distribution logic.
+- **`app/services/ai_service.py`:** Decoupled external API orchestrations for Groq (Llama-3.3-70B) and Google Gemini 2.0 Flash models.
+- **`app/services/competitor.py`:** Modularized yt-dlp integrated competitor research and dynamic metrics computing algorithms.
+- **`app/services/analysis_engine.py`:** Separated the core multimedia engines combining OpenCV, librosa audio tracking, and DeepFace vision models.
+
+### 🚀 Added
+- **`install.bat` (1-Click Installer):** Formulated an advanced Windows setup script that handles Python diagnostics, establishes an isolated `venv`, installs dependencies from `requirements.txt`, automatically downloads and configures FFmpeg binaries, and spawns a desktop launching shortcut.
 
 ---
 

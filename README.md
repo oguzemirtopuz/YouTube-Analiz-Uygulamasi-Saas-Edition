@@ -27,6 +27,7 @@
 
 ---
 
+<<<<<<< HEAD
 ## 🎯 The Problem
 
 Content creators and digital marketers often struggle to understand *why* a video goes viral, relying on guesswork rather than data-driven insights. Traditional analytics tools provide basic surface-level metrics (views, likes, comments) but fail to dissect the core psychological triggers, audio pacing, and visual momentum that actually retain audience attention and trigger the YouTube algorithm.
@@ -55,6 +56,29 @@ Content creators and digital marketers often struggle to understand *why* a vide
 > * **DNA Export:** The DNA analysis now generates a direct, highly-professional "Master Prompt". Users can copy this prompt and paste it into any LLM (ChatGPT, Claude) to instantly generate a script that perfectly matches the structural DNA of the analyzed viral video.
 > * **UI/UX Overhaul:** The info modal ("Kahinin Rehberi") has been completely redesigned with a gorgeous glassmorphism UI, explaining the deep mathematics behind the DNA scores directly to the user.
 
+=======
+## ✨ Latest Release — v6.0.0 SMART PICK & UI UPDATE
+
+> [!IMPORTANT]
+> **v6.0.0 - Smart Pick & UI Update (i18n & UX Overhaul) 🔮**
+>
+> **A. Internationalization & UI Overhaul:**
+> * **Full i18n Support:** Added comprehensive Multi-Language support (EN/TR) to the Chrome Extension with dynamic toggling and localized tooltips.
+> * **Icon & Branding Update:** Refreshed desktop shortcut and UI icons for a seamless neon aesthetic. Overrode aggressive Windows icon caches.
+> * **Syntax & Bug Squashing:** Completely resolved the string interpolation and quote escaping issues (`tier_mega_viral` syntax error) that froze the extension UI.
+>
+> **B. Smart Suggestion Engine (Prophet's Pick Evolved):**
+> * **Smart Pick Popup:** "Prophet's Pick" has been upgraded to a non-intrusive "Smart Pick" toast/popup with dynamically translated CTA buttons (Clone, Debate, DNA).
+> * **Clickable Cards:** Made the entire Smart Pick card area clickable, opening the YouTube video in a new background tab without interfering with the action buttons.
+>
+> **C. Next-Gen DNA Scoring Engine (From v5.5.0):**
+> * **Weighted Success Formula:** DNA scoring respects the true science of virality: Hook (40%) and Tempo (40%) as core drivers, CTA (10%) and Emotion (10%) as support.
+> * **Synergy Bonus:** If a video scores >75 in both Hook and Tempo, the system grants a +20 Synergy Bonus.
+> * **Diminishing Returns (DR) Protection:** CTA and Emotion automatically receive a minimum of 50 credits to prevent unfair drag down on phenomenal hooks.
+> * **Dynamic Badges:** 4 new UI tiers for DNA scores: 👑 LEGENDARY, 🔥 VIRAL POTENTIAL, ✅ STRONG, ⚠️ NEEDS IMPROVEMENT.
+> * **Metadata Fallback:** Robust fallback mechanism to analyze Video Title, Tags, and Description if the transcript is missing, dynamically flagging the UI with an "Estimated Analysis".
+> * **Master Prompt Export:** Instantly generate a copy-pasteable "Master Prompt" matching the structural DNA of the analyzed viral video.
+>>>>>>> 30b8e28 (v6.0.0: Smart Pick & UI Update (i18n & UX Overhaul))
 ---
 
 ## 🌟 Ecosystem Architecture

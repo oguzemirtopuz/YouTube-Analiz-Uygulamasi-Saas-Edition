@@ -38,32 +38,14 @@ Content creators and digital marketers often struggle to understand *why* a vide
 
 ---
 
-## ✨🚀 Latest Release (v5.5.0 ELITE CALIBRATION UPDATE)
-> [!IMPORTANT]
-> **v5.5.0 - Elite Calibration Update (Synergy & DR Protection) 🧬**
-> 
-> **A. Next-Gen DNA Scoring Engine:**
-> * **Weighted Success Formula:** DNA scoring is no longer a simple average. The algorithm now respects the true science of virality: Hook (40%) and Tempo (40%) act as core drivers, while CTA (10%) and Emotion (10%) act as support structures.
-> * **Synergy Bonus:** If a video scores >75 in both Hook and Tempo, the system identifies it as a "Viral Monster" and grants a +20 Synergy Bonus, pushing legendary videos into the 90+ range.
-> * **Diminishing Returns (DR) Protection:** If a core idea is phenomenal (Hook & Tempo >= 80), a poor CTA or lack of emotional words will no longer unfairly drag the score down. CTA and Emotion automatically receive a minimum of 50 credits.
-> * **Dynamic Badges:** 4 new UI tiers for DNA scores: 👑 LEGENDARY (90+), 🔥 VIRAL POTENTIAL (75-89), ✅ STRONG (50-74), and ⚠️ NEEDS IMPROVEMENT (<50).
->
-> **B. Anti-Deception & Metadata Fallback:**
-> * **Transcript Fallback:** If a video lacks subtitles (e.g., Shorts or gaming videos), the system doesn't crash. It seamlessly falls back to parsing the Video Title, Description, and Tags.
-> * **Transparent Estimation:** When falling back to metadata, the UI dynamically shifts to an Amber warning state, clearly labeling the results as an "Estimated Analysis" to prevent AI hallucination and ensure absolute user trust.
->
-> **C. Professional Master Prompts:**
-> * **DNA Export:** The DNA analysis now generates a direct, highly-professional "Master Prompt". Users can copy this prompt and paste it into any LLM (ChatGPT, Claude) to instantly generate a script that perfectly matches the structural DNA of the analyzed viral video.
-> * **UI/UX Overhaul:** The info modal ("Kahinin Rehberi") has been completely redesigned with a gorgeous glassmorphism UI, explaining the deep mathematics behind the DNA scores directly to the user.
-
-=======
-## ✨ Latest Release — v6.0.0 SMART PICK & UI UPDATE
+## ✨ Latest Release — v6.0.1 SMART PICK & i18n UPDATE
 
 > [!IMPORTANT]
-> **v6.0.0 - Smart Pick & UI Update (i18n & UX Overhaul) 🔮**
+> **v6.0.1 - Smart Pick & i18n Update (UX Overhaul) 🔮**
 >
 > **A. Internationalization & UI Overhaul:**
 > * **Full i18n Support:** Added comprehensive Multi-Language support (EN/TR) to the Chrome Extension with dynamic toggling and localized tooltips.
+> * **Button Guide Localization:** The entire "Information Modal" (Button Guide) has been separated from static HTML and properly mapped to the i18n engine.
 > * **Icon & Branding Update:** Refreshed desktop shortcut and UI icons for a seamless neon aesthetic. Overrode aggressive Windows icon caches.
 > * **Syntax & Bug Squashing:** Completely resolved the string interpolation and quote escaping issues (`tier_mega_viral` syntax error) that froze the extension UI.
 >
@@ -78,7 +60,6 @@ Content creators and digital marketers often struggle to understand *why* a vide
 > * **Dynamic Badges:** 4 new UI tiers for DNA scores: 👑 LEGENDARY, 🔥 VIRAL POTENTIAL, ✅ STRONG, ⚠️ NEEDS IMPROVEMENT.
 > * **Metadata Fallback:** Robust fallback mechanism to analyze Video Title, Tags, and Description if the transcript is missing, dynamically flagging the UI with an "Estimated Analysis".
 > * **Master Prompt Export:** Instantly generate a copy-pasteable "Master Prompt" matching the structural DNA of the analyzed viral video.
->>>>>>> 30b8e28 (v6.0.0: Smart Pick & UI Update (i18n & UX Overhaul))
 ---
 
 ## 🌟 Ecosystem Architecture

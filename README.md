@@ -264,46 +264,7 @@ Once the app is running, open the **Settings** panel to configure:
 
 ---
 
-## 📜 Changelog
-
-### 🔮 v4.5.1 — Prophet's Pick Hotfix
-- **[Prophet's Pick] AI Validation Filter:** Added a concurrent Groq AI validation layer for the top 10 highest-velocity videos to filter out generic/irrelevant trending videos before rendering.
-- **[UI/UX] Clickable Cards:** Made the entire Prophet's Pick card area clickable, opening YouTube in a new background tab without interfering with Clone/Debate action buttons.
-- **[Prompt Engineering] Strict Niche Enforcement:** Updated the AI prompt generating search queries to explicitly ban generic terms and enforce content-specific targeting.
-
-### 🔮 v4.5.0 — Prophet's Pick Edition
-- **[Prophet's Pick] Dynamic AI Queries:** Generates search queries via Groq tailored to the user's registered `content_type` and `purpose`.
-- **[UI/UX] Matrix Glow Cards:** Injects a dynamic 3-card grid with neon Matrix glow when the user is not on a video tab.
-- **[Educational UX] Context-Aware Info Modal:** The `ℹ️` button now teaches users whether they are in "Discovery", "Strategy", or "Intelligence" mode.
-- **[Self-Filtering] Dynamic Channel Blacklist:** Automatically prevents the user's own videos from appearing in AI-generated trending suggestions.
-
-### 🧠 v4.4.0 — Prophet Edition (Predictive Intelligence)
-- **[AI] 5-Tier Spectrum:** 🔴 DEAD → 🔵 MEGA VIRAL analysis with dynamic AI persona.
-- **[Algorithm] Velocity & Penetration:** View velocity and subscriber penetration ratio metrics.
-- **[Features] Matrix Vision & Debate AI:** Neon outlier radar + multi-agent debate (Critic vs. Wizard vs. Referee).
-- **[NLP] Chaos Metric:** 100% local algorithm to measure competitor rage and tempo.
-- **[Fixes] Zero-Hallucination Armor:** Fixed "Happy Face" hallucination and Turkish/English 'B' suffix parsing bug.
-
-### 🎯 v4.3.0 — The Precision Update
-- **[Rabbit Hole] Dynamic Compatibility:** SQLite-integrated dynamic context fetching for niche compatibility.
-- **[Extension] Robust JSON Parser:** Strips markdown and renders UI cards securely.
-- **[Analytics] Chaos Metric UI:** Added human-readable explanation for the 10-point mathematical calculation.
-
-### 🌪️ v4.2.0 — The Chaos & Debate Update
-- **[AI Debate] A/B Test Simulator:** AI Persona debate engine with Referee evaluation.
-- **[DB] SQLite WAL Mode:** Write-Ahead Logging for concurrent read performance.
-- **[Crypto] Fail-Fast:** CryptoManager throws HTTP 500 on corrupted keys.
-- **[Scraping] yt-dlp Backoff:** Exponential backoff against HTTP 429 bans.
-
-### 🔒 v4.1.0 — Security & Logic Hardening
-- **[Security] Google OAuth XSS Shield:** Serialized OAuth callbacks with `json.dumps`.
-- **[Logic] Groq API Decryption Fix:** Added `CryptoManager.decrypt` to all AI endpoints.
-- **[Math] Shorts Scoring Fix:** Realigned Shorts scoring weights to sum correctly to `1.00`.
-- **[Stability] Transcript NameError Shield:** Pre-initialized `last_api_error` to prevent NameErrors.
-
-### 🌟 v4.0.0 — SaaS Edition
-- **SaaS Architecture:** Multi-user support, authentication, and secure localized credential storage.
-- **Advanced Computer Vision:** Multi-threaded scene transition mapping and OpenCV threshold computing.
+*(For a full list of past version notes, refer to the [Changelog](CHANGELOG.md) in the codebase.)*
 
 ---
 

@@ -229,7 +229,7 @@ install.bat
 
 ```batch
 # After installation, launch the app anytime with:
-BASLAT.bat
+START.bat
 ```
 
 ### Option B — Manual Setup

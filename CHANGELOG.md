@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+### 👑 v5.5.0 — Elite Calibration Update
+- **[Algorithm] Synergy & DR Protection:** Switched DNA scoring to a weighted model (40/40/10/10) with a +20 Synergy Bonus for high Hook/Tempo and a 50-credit minimum DR protection against weak CTAs.
+- **[UI/UX] Dynamic DNA Badges:** Introduced 4 new gradient-styled badge tiers (Legendary, Viral Potential, Strong, Needs Improvement) based on the calculated DNA score.
+- **[UI/UX] Info Guide Revamp:** Completely redesigned the Chrome Extension's Info panel with detailed explanations of the DNA scoring methodology, tier systems, and UI button mappings.
+- **[Feature] Metadata Fallback:** Added a robust fallback mechanism that analyzes Video Title, Tags, and Description if the transcript is missing, dynamically flagging the UI with an "Estimated Analysis" amber warning.
+- **[Prompt Engineering] Master Prompt Generator:** DNA results now automatically construct an advanced LLM script-writing prompt based on the exact anatomical triggers of the analyzed video.
+
+---
+
 ### 🔮 v4.5.1 — Prophet's Pick Hotfix
 - **[Prophet's Pick] AI Validation Filter:** Added a concurrent Groq AI validation layer for the top 10 highest-velocity videos to filter out generic/irrelevant trending videos before rendering.
 - **[UI/UX] Clickable Cards:** Made the entire Prophet's Pick card area clickable, opening YouTube in a new background tab without interfering with Clone/Debate action buttons.

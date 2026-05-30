@@ -64,8 +64,9 @@ def _get_dynamic_timeout(video_path: str, min_timeout: int = 120) -> Optional[in
             h, m, s = int(match.group(1)), int(match.group(2)), int(match.group(3))
             duration_sec = h * 3600 + m * 60 + s
             return max(min_timeout, duration_sec * 2)
-    except Exception:
-        pass
+    except Exception as e:
+        _logger.error(f"Kritik Analiz Hatası: {str(e)}", exc_info=True)
+        raise  # Hatanın yukarı sızmasına izin ver
     return None
 
 

@@ -11,6 +11,7 @@ Yapay Zeka servisi — server.pyw'dan ayrıştırıldı (FAZ 2.1 Refactor).
 
 import logging
 import requests
+import asyncio
 
 from app.database.db import get_async_db
 from app.services.security import CryptoManager, CryptoDecryptionError
@@ -114,7 +115,8 @@ async def generate_ai_game_feedback(c_type: str, c_aud: str, c_purp: str, tech_s
 
 
     try:
-        resp = requests.post(
+        loop = asyncio.get_running_loop()
+        resp = await loop.run_in_executor(None, lambda: requests.post(
             "https://api.groq.com/openai/v1/chat/completions",
             headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
             json={
@@ -124,7 +126,7 @@ async def generate_ai_game_feedback(c_type: str, c_aud: str, c_purp: str, tech_s
                 "temperature": 0.7
             },
             timeout=10
-        )
+        ))
         if resp.status_code == 200:
             return resp.json()["choices"][0]["message"]["content"].strip()
     except Exception as e:
@@ -172,11 +174,12 @@ async def analyze_image_with_gemini(image_base64: str, mime_type: str) -> str:
             }]
         }
         print(f"GEMINI ISTEK GÖNDERILIYOR...")
-        resp = requests.post(
+        loop = asyncio.get_running_loop()
+        resp = await loop.run_in_executor(None, lambda: requests.post(
             f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={gemini_key}",
             json=payload,
             timeout=20
-        )
+        ))
         print(f"GEMINI YANIT: status={resp.status_code}")
         if resp.status_code == 200:
             result = resp.json()

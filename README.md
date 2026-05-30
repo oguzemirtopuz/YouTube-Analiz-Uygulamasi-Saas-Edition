@@ -27,6 +27,7 @@
 
 ---
 
+<<<<<<< HEAD
 ## 🎯 The Problem
 
 Content creators and digital marketers often struggle to understand *why* a video goes viral, relying on guesswork rather than data-driven insights. Traditional analytics tools provide basic surface-level metrics (views, likes, comments) but fail to dissect the core psychological triggers, audio pacing, and visual momentum that actually retain audience attention and trigger the YouTube algorithm.
@@ -60,6 +61,81 @@ Content creators and digital marketers often struggle to understand *why* a vide
 > * **Regex "B" Revolution:** Resolved data-parsing confusion between Turkish "Bin" (Thousand) and English "Billion".
 > * **Dynamic Self-Filtering:** The engine now automatically fetches your channel names from the database and scrubs your own videos from all Rabbit Hole and Prophet's Pick recommendations.
 
+=======
+✨🚀 **Latest Release (v5.5.0 ELITE CALIBRATION UPDATE)**
+> [!IMPORTANT]
+> **v5.5.0 - Elite Calibration Update (Synergy & DR Protection) 🧬**
+> 
+> **A. Next-Gen DNA Scoring Engine:**
+> * **Weighted Success Formula:** DNA scoring is no longer a simple average. The algorithm now respects the true science of virality: Hook (40%) and Tempo (40%) act as core drivers, while CTA (10%) and Emotion (10%) act as support structures.
+> * **Synergy Bonus:** If a video scores >75 in both Hook and Tempo, the system identifies it as a "Viral Monster" and grants a +20 Synergy Bonus, pushing legendary videos into the 90+ range.
+> * **Diminishing Returns (DR) Protection:** If a core idea is phenomenal (Hook & Tempo >= 80), a poor CTA or lack of emotional words will no longer unfairly drag the score down. CTA and Emotion automatically receive a minimum of 50 credits.
+> * **Dynamic Badges:** 4 new UI tiers for DNA scores: 👑 LEGENDARY (90+), 🔥 VIRAL POTENTIAL (75-89), ✅ STRONG (50-74), and ⚠️ NEEDS IMPROVEMENT (<50).
+>
+> **B. Anti-Deception & Metadata Fallback:**
+> * **Transcript Fallback:** If a video lacks subtitles (e.g., Shorts or gaming videos), the system doesn't crash. It seamlessly falls back to parsing the Video Title, Description, and Tags.
+> * **Transparent Estimation:** When falling back to metadata, the UI dynamically shifts to an Amber warning state, clearly labeling the results as an "Estimated Analysis" to prevent AI hallucination and ensure absolute user trust.
+>
+> **C. Professional Master Prompts:**
+> * **DNA Export:** The DNA analysis now generates a direct, highly-professional "Master Prompt". Users can copy this prompt and paste it into any LLM (ChatGPT, Claude) to instantly generate a script that perfectly matches the structural DNA of the analyzed viral video.
+> * **UI/UX Overhaul:** The info modal ("Kahinin Rehberi") has been completely redesigned with a gorgeous glassmorphism UI, explaining the deep mathematics behind the DNA scores directly to the user.
+
+### 📜 Changelog
+#### 👑 v5.5.0 — Elite Calibration Update
+- **[Algorithm] Synergy & DR Protection:** Switched DNA scoring to a weighted model (40/40/10/10) with a +20 Synergy Bonus for high Hook/Tempo and a 50-credit minimum DR protection against weak CTAs.
+- **[UI/UX] Dynamic DNA Badges:** Introduced 4 new gradient-styled badge tiers (Legendary, Viral Potential, Strong, Needs Improvement) based on the calculated DNA score.
+- **[UI/UX] Info Guide Revamp:** Completely redesigned the Chrome Extension's Info panel with detailed explanations of the DNA scoring methodology, tier systems, and UI button mappings.
+- **[Feature] Metadata Fallback:** Added a robust fallback mechanism that analyzes Video Title, Tags, and Description if the transcript is missing, dynamically flagging the UI with an "Estimated Analysis" amber warning.
+- **[Prompt Engineering] Master Prompt Generator:** DNA results now automatically construct an advanced LLM script-writing prompt based on the exact anatomical triggers of the analyzed video.
+
+#### 🔮 v4.5.1 — Prophet's Pick Hotfix
+- **[Prophet's Pick] AI Validation Filter:** Added a concurrent Groq AI validation layer for the top 10 highest-velocity videos to actively filter out generic/irrelevant trending videos (e.g., MrBeast) before rendering them on the dashboard.
+- **[UI/UX] Clickable Cards:** Made the entire Prophet's Pick card area clickable, opening the YouTube video in a new background tab without interfering with the Clone/Debate action buttons.
+- **[Prompt Engineering] Strict Niche Enforcement:** Updated the AI prompt generating search queries to explicitly ban generic terms (like "comedy" or "gaming") and strictly enforce content-specific targeting.
+#### 🔮 v4.5.0 — Prophet's Pick Edition
+- **[Prophet's Pick] Dynamic AI Queries:** Generates search queries via Groq specifically tailored to the user's registered `content_type` and `purpose`.
+- **[UI/UX] Matrix Glow Cards:** Injects a dynamic 3-card grid with a neon Matrix glow when the user is not on a video tab.
+- **[Educational UX] Context-Aware Info Modal:** The `ℹ️` button now teaches users whether they are in "Discovery", "Strategy", or "Intelligence" mode based on their active YouTube tab.
+- **[Self-Filtering] Dynamic Channel Blacklist:** Automatically prevents the user's own videos from appearing in AI-generated trending suggestions.
+#### 🧠 v4.4.0 — Prophet Edition (Predictive Intelligence Update)
+- **[AI Model] 5-Tier Spectrum:** Analyzes videos in 🔴 DEAD, 🟡 POTENTIAL, 🚀 RISING, 🟢 VIRAL, and 🔵 MEGA VIRAL categories with dynamic personas.
+- **[Algorithm] Velocity & Penetration:** Calculates view velocity and subscriber penetration ratio to detect organic momentum.
+- **[Features] Matrix Vision & Debate AI:** Neon green outlier radar and multi-agent AI debate (Critic vs. Wizard vs. Referee).
+- **[NLP] Chaos Metric:** 100% local NLP algorithm to measure competitor rage and tempo.
+- **[Fixes] Zero-Hallucination Armor:** Fixed the "Happy Face" hallucination, resolved the Turkish/English 'B' suffix parsing bug, and added robust JSON/SPA routing protections.
+
+#### 🎯 v4.3.0 — The Precision Update
+- **[Rabbit Hole] Dynamic Compatibility:** SQLite integrated dynamic context fetching for niche compatibility.
+- **[Extension] Robust JSON Parser:** Strips markdown and renders UI cards securely.
+- **[Analytics] Chaos Metric UI:** Added human-readable explanation for the 10-point mathematical calculation.
+- **[AI Prompt] Strict Format & Creativity:** Re-tuned `_call_groq_clone` to preserve high-creativity ideas while enforcing `{...}` JSON format.
+
+#### 🌪️ v4.2.0 — The Chaos & Debate Update
+- **[AI Debate] A/B Test Simulator:** AI Persona debate engine with Referee evaluation.
+- **[Analytics] Chaos Metric:** Pure Python NLP algorithm to calculate transcript Rage/Tempo.
+- **[DB] SQLite WAL Mode:** Enabled Write-Ahead Logging.
+- **[Crypto] Fail-Fast:** CryptoManager throws HTTP 500 on corrupted keys.
+- **[Data Leak] URL Patch:** Blocked empty URL submissions in the extension.
+- **[Extension] SPA Fix:** 3-layered event listener for YouTube SPA routing.
+- **[Scraping] yt-dlp Backoff:** Exponential backoff against HTTP 429 bans.
+- **[AI Prompt] Face Ban:** Strict gaming thumbnail directive to prevent human face hallucination.
+
+#### 🔒 v4.1.0 — Security & Logic Hardening
+- **[Security] Google OAuth XSS Shield:** Serialized OAuth callbacks with `json.dumps` to prevent potential JavaScript injection.
+- **[Logic] Groq API Decryption Fix:** Added `CryptoManager.decrypt` to ensure Groq API keys are decrypted before calling AI endpoints.
+- **[Math] Shorts Puanlama Düzeltmesi:** Realigned Shorts scoring weights (`0.50` / `0.35` / `0.15`) to sum to `1.00`.
+- **[PDF] Cleaned Multiple Headers:** Removed duplicated warning headers in the exported PDF layout.
+- **[Async] E-Posta Gönderim Mantığı:** Standardized `email_sent` dynamically based on SMTP check.
+- **[Performance] Test Client Import Removed:** Cleaned unused test framework import from production API.
+- **[Stability] Transcript NameError Shield:** Pre-initialized `last_api_error` in altyazı motoru to prevent NameErrors on failure.
+- **[CV] Visual Tempo Map:** Changed threshold frame count for non-pro analysis to generate tempo data correctly.
+- **[Competitor] Own Channel Exclusion & Keyword Sync:** Upgraded competitor check using robust ID/Name matching and added a content consistency utility.
+
+#### 🌟 v4.0.0 — YouTube Analiz Pro SaaS Edition
+- **SaaS Architecture:** Introduced multi-user support, authentication, and secure localized credential storage.
+- **Advanced Computer Vision:** Multi-threaded scene transition mapping and OpenCV threshold computing.
+
+>>>>>>> c057b6d (feat: release v5.5.0 Elite Calibration update)
 ---
 
 ## 🌟 Ecosystem Architecture
@@ -100,6 +176,7 @@ A heavy-duty backend built with **Python 3.11, FastAPI, and PyWebView**, powered
 ### 🧩 2. The Weapon — Chrome Extension
 
 A sleek, neon-themed **Chrome Extension** that injects directly into the YouTube interface and syncs with the Desktop App.
+<<<<<<< HEAD
 
 | Feature | Description |
 |---|---|
@@ -110,6 +187,14 @@ A sleek, neon-themed **Chrome Extension** that injects directly into the YouTube
 | 🕳️ **Rabbit Hole** | Deep-dive search for hidden "Outlier" videos with abnormally high View Velocities in any niche |
 | 🔮 **Prophet's Pick** | Fully automated niche-aware viral video recommendations, refreshed dynamically on your dashboard |
 | 🎯 **Matrix Vision** | Passive radar overlay on YouTube homepage — highlights trending outliers with neon green glow |
+=======
+* **Viral Cloning Engine:** With one click (`Clone This Video`), the extension extracts a viral video's transcript, structure, and psychological triggers, generating 3 unique content hooks tailored to your own niche.
+* **DNA Extraction & Master Prompt:** Automatically breaks down a video's transcript into 4 core metrics (Hook, Tempo, CTA, Emotion) using a weighted algorithm. It awards "Synergy Bonuses" for elite pacing and instantly generates a copy-pasteable "Master Prompt" to feed into LLMs for script generation. 🧬
+* **A/B Test Simulator (AI Debate):** Two distinct AI Personas (The Critic vs. The Wizard) argue in real-time to find the ultimate viral hook for your next video, judged by a Master AI Referee. ⚔️
+* **BabaClutch Chaos Metric:** A 100% local, custom Python NLP algorithm that calculates the "Rage Density" and "Tempo Variance" of competitor transcripts to measure their psychological chaos level. 🌪️
+* **Channel Battles (Competitor Analysis):** Visit any competitor's channel page and click `Analyze Channel`. The extension bypasses YouTube's pagination, instantly pulls their real view counts using a hybrid `yt-dlp` engine, and pits their stats against your channel's Quality Score. The AI generates aggressive, guerrilla marketing tactics to steal their audience.
+* **Rabbit Hole (Niche Finder):** Stuck on what to film next? Search a broad keyword (e.g., "Crypto"), and the Rabbit Hole module will deep-dive into YouTube to find hidden "Outlier" videos with abnormally high View Velocities.
+>>>>>>> c057b6d (feat: release v5.5.0 Elite Calibration update)
 
 ---
 

@@ -22,6 +22,7 @@ const views = {
   loading: $('view-loading'),
   result:  $('view-result'),
   debate:  $('view-debate'),
+  dna:     $('view-dna'),
   error:   $('view-error'),
   info:    $('view-info'),
 };
@@ -71,16 +72,19 @@ async function checkServer() {
 
 function setServerStatus(state) {
   elDot.className = `dot dot--${state}`;
+  const elBtnDna = $('btn-dna');
   if (state === 'online') {
     elStatusLabel.textContent = '● Çevrimiçi';
     elStatusLabel.className   = 'server-status online';
     elBtnClone.disabled  = false;
     if (elBtnDebate) elBtnDebate.disabled = false;
+    if (elBtnDna) elBtnDna.disabled = false;
   } else if (state === 'offline') {
     elStatusLabel.textContent = '● Çevrimdışı';
     elStatusLabel.className   = 'server-status offline';
     elBtnClone.disabled  = true;
     if (elBtnDebate) elBtnDebate.disabled = true;
+    if (elBtnDna) elBtnDna.disabled = true;
   } else {
     elStatusLabel.textContent = 'Kontrol ediliyor...';
     elStatusLabel.className   = 'server-status';
@@ -814,7 +818,24 @@ function extractYouTubeData() {
       commentSignals = firstFive.map(el => el.textContent.trim()).filter(Boolean).join(' ||| ');
     }
 
-    return { url, videoId, title, channel, thumbnail, views, uploadDate, subscriberCount, commentSignals };
+    // ── Video Açıklaması (DNA Fallback için) ───────────────────────────────────
+    let description = '';
+    const descEl = document.querySelector('#description-inline-expander yt-attributed-string') ||
+                   document.querySelector('#description .content') ||
+                   document.querySelector('ytd-text-inline-expander #description-inline-expander') ||
+                   document.querySelector('#description ytd-expander #content');
+    if (descEl) {
+      description = descEl.textContent.trim().substring(0, 1500);
+    }
+
+    // ── Video Etiketleri (DNA Fallback için) ─────────────────────────────────
+    let tags = '';
+    const keywordsEl = document.querySelector('meta[name="keywords"]');
+    if (keywordsEl && keywordsEl.content) {
+      tags = keywordsEl.content.substring(0, 500);
+    }
+
+    return { url, videoId, title, channel, thumbnail, views, uploadDate, subscriberCount, commentSignals, description, tags };
   } catch (err) {
     return { error: `Veri çekme hatası: ${err.message}` };
   }
@@ -1113,9 +1134,9 @@ function showSuggestionCard(videoData, subtitle) {
 
   // --- CRITICAL ADD: Hide duplicate buttons at the bottom ---
   const cloneBtnGroup = document.getElementById('clone-btn-group');
-  const btnAnalyze = document.getElementById('btn-analyze');
+  const channelBtnGroup = document.getElementById('channel-btn-group');
   if (cloneBtnGroup) cloneBtnGroup.style.display = 'none';
-  if (btnAnalyze) btnAnalyze.style.display = 'none';
+  if (channelBtnGroup) channelBtnGroup.style.display = 'none';
   // --------------------------------------------------------
 
   const card = document.createElement('div');
@@ -1135,6 +1156,9 @@ function showSuggestionCard(videoData, subtitle) {
       <button id="btn-suggest-debate" class="btn btn--debate suggestion-btn-debate" style="flex:1;">
         ⚔️ Tartış
       </button>
+      <button id="btn-suggest-dna" class="btn btn--dna suggestion-btn-dna" style="flex:1;">
+        🧬 DNA
+      </button>
     </div>
   `;
 
@@ -1152,13 +1176,13 @@ function showSuggestionCard(videoData, subtitle) {
     // --- CRITICAL IMPROVEMENT: Bring back buttons at the bottom according to page type ---
     const tab = await getActiveTab();
     const cloneBtnGroup = document.getElementById('clone-btn-group');
-    const btnAnalyze = document.getElementById('btn-analyze');
+    const channelBtnGroup = document.getElementById('channel-btn-group');
     if (isYouTubeChannelTab(tab)) {
       if (cloneBtnGroup) cloneBtnGroup.style.display = 'none';
-      if (btnAnalyze) btnAnalyze.style.display = 'block';
+      if (channelBtnGroup) channelBtnGroup.style.display = 'flex';
     } else {
       if (cloneBtnGroup) cloneBtnGroup.style.display = 'flex';
-      if (btnAnalyze) btnAnalyze.style.display = 'none';
+      if (channelBtnGroup) channelBtnGroup.style.display = 'none';
     }
   });
 
@@ -1171,6 +1195,353 @@ function showSuggestionCard(videoData, subtitle) {
         debateVideo(videoData);
       });
   }
+  const btnSuggestDna = document.getElementById('btn-suggest-dna');
+  if (btnSuggestDna) {
+      btnSuggestDna.addEventListener('click', () => {
+        analyzeDNA(videoData);
+      });
+  }
+}
+
+// ── DNA Analizi Ana Akisi ──────────────────────────────────────────────────────
+async function analyzeDNA(eventOrData) {
+  const isAuto = eventOrData && !(eventOrData instanceof Event);
+  const autoData = isAuto ? eventOrData : null;
+
+  const serverUp = await checkServer();
+  if (!serverUp) {
+    showError('Sunucu Cevrimdisi', 'YT Analiz Pro masaustu uygulamasi calismiyor.');
+    return;
+  }
+
+  let tab = null;
+  if (!autoData) {
+    tab = await getActiveTab();
+    if (!tab) {
+      showError('Sekme Bulunamadi', 'Analiz edilecek YouTube video sekmesi bulunamadi.');
+      return;
+    }
+    if (!isYouTubeTab(tab)) {
+      showError('YouTube Sayfasi Gerekli', 'DNA Analizi yalnizca YouTube video sayfalarinda calisir.');
+      return;
+    }
+  }
+
+  showView('loading');
+  elLoadingSub.textContent = 'DNA analizi baslatildi... Altyazi cekiliyor ve NLP puanlari hesaplaniyor...';
+
+  let videoData;
+  if (autoData) {
+    videoData = autoData;
+  } else {
+    try {
+      const [result] = await chrome.scripting.executeScript({
+        target: { tabId: tab.id },
+        func: extractYouTubeData,
+      });
+      const extracted = result && result.result;
+      if (!extracted || extracted.error) {
+        showError('Veri Cekme Hatasi', (extracted && extracted.error) || 'Sayfa verisi okunamadi.');
+        return;
+      }
+      videoData = extracted;
+      if (!videoData.videoId) {
+        showError('Video Verisi Bulunamadi', 'Video sayfasini yenileyin.');
+        return;
+      }
+    } catch (err) {
+      showError('Script Hatasi', 'Icerik scripti calismadi: ' + err.message);
+      return;
+    }
+  }
+
+  const { user_id } = await chrome.storage.local.get(['user_id']);
+
+  elLoadingSub.textContent = 'NLP puanlari hesaplaniyor... Groq DNA Master Prompt uretiliyor...';
+
+  try {
+    const resp = await fetch(SERVER + '/api/extension/dna_analysis', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+      body: JSON.stringify({
+        videoId:     videoData.videoId     || '',
+        title:       videoData.title       || 'Baslik Yok',
+        channel:     videoData.channel     || 'Bilinmeyen Kanal',
+        description: videoData.description || '',
+        tags:        videoData.tags        || '',
+        user_id:     user_id || 0,
+      }),
+    });
+
+    const data = await resp.json();
+
+    if (!data.success) {
+      showError('Puan Hesaplanamadi', data.error || 'DNA analizi basarisiz. Altyazisiz videolarda analiz yapilamaz.');
+      return;
+    }
+
+    _renderDNAResult(data, videoData);
+    showView('dna');
+
+  } catch (fetchErr) {
+    showError('Baglanti Hatasi', 'Sunucuya ulasilamadi: ' + fetchErr.message);
+  }
+}
+
+function _renderDNAResult(data, videoData) {
+  const scores = data.scores;
+  const isEstimated = !!data.is_estimated;
+
+  // ── Dinamik Başlık (view-dna paneli) ────────────────────────────────
+  const dnaBadge = document.querySelector('#view-dna .result-badge');
+  if (dnaBadge) {
+    if (isEstimated) {
+      dnaBadge.textContent = '📊 Tahmini DNA Analizi (Meta Veri Bazlı)';
+      dnaBadge.style.background = 'linear-gradient(135deg,rgba(245,158,11,.18),rgba(234,179,8,.18))';
+      dnaBadge.style.borderColor = 'rgba(245,158,11,.5)';
+      dnaBadge.style.color = '#fbbf24';
+    } else {
+      dnaBadge.textContent = '🧬 DNA Analizi Tamamlandı!';
+      dnaBadge.style.background = '';
+      dnaBadge.style.borderColor = '';
+      dnaBadge.style.color = '';
+    }
+  }
+
+  // ── Tahmini Analiz Uyarı Notu ───────────────────────────────────────
+  // Önceki uyarıyı temizle
+  const oldWarning = document.getElementById('dna-estimated-warning');
+  if (oldWarning) oldWarning.remove();
+
+  if (isEstimated) {
+    const dnaView = document.getElementById('view-dna');
+    const scoreGrid = document.getElementById('dna-score-grid');
+    if (dnaView && scoreGrid) {
+      const warningEl = document.createElement('div');
+      warningEl.id = 'dna-estimated-warning';
+      warningEl.style.cssText = [
+        'margin: 8px 0 10px 0',
+        'padding: 9px 12px',
+        'background: rgba(245,158,11,0.12)',
+        'border: 1px solid rgba(245,158,11,0.4)',
+        'border-radius: 8px',
+        'font-size: 11.5px',
+        'color: #fbbf24',
+        'line-height: 1.5',
+        'display: flex',
+        'align-items: flex-start',
+        'gap: 7px',
+      ].join('; ');
+      warningEl.innerHTML = '⚠️ <span>Bu video için altyazı bulunamadı. Analiz video <strong>başlık ve açıklamasına</strong> göre yapılmıştır. Tempo puanı simüle edilmiştir.</span>';
+      dnaView.insertBefore(warningEl, scoreGrid);
+    }
+  }
+
+  const scoreMap = [
+    { key: 'hook',      elVal: 'dna-val-hook',      elBar: 'dna-bar-hook'      },
+    { key: 'retention', elVal: 'dna-val-retention',  elBar: 'dna-bar-retention' },
+    { key: 'cta',       elVal: 'dna-val-cta',        elBar: 'dna-bar-cta'       },
+    { key: 'emotion',   elVal: 'dna-val-emotion',    elBar: 'dna-bar-emotion'   },
+  ];
+
+  scoreMap.forEach(function(item) {
+    const val = scores[item.key] || 0;
+    const elV = $(item.elVal);
+    const elB = $(item.elBar);
+    if (elV) elV.textContent = Math.round(val);
+    if (elB) {
+      setTimeout(function() { elB.style.width = Math.min(100, val) + '%'; }, 80);
+    }
+  });
+
+  // ── Dinamik Overall Skor Badge'i ─────────────────────────────────────────
+  const overall = scores.overall || 0;
+  const oldOverallBadge = document.getElementById('dna-overall-badge');
+  if (oldOverallBadge) oldOverallBadge.remove();
+
+  let tierLabel, tierColor, tierBg, tierBorder;
+  if (overall >= 90) {
+    tierLabel  = '👑 EFSANEVİ (Kanalı uçuracak içerik!)';
+    tierColor  = '#f59e0b';
+    tierBg     = 'rgba(245,158,11,0.15)';
+    tierBorder = 'rgba(245,158,11,0.55)';
+  } else if (overall >= 75) {
+    tierLabel  = '🔥 VİRAL POTANSİYEL (Yüksek izlenme garantisi)';
+    tierColor  = '#f97316';
+    tierBg     = 'rgba(249,115,22,0.13)';
+    tierBorder = 'rgba(249,115,22,0.45)';
+  } else if (overall >= 50) {
+    tierLabel  = '✅ GÜÇLÜ (Standart üstü performans)';
+    tierColor  = '#22c55e';
+    tierBg     = 'rgba(34,197,94,0.12)';
+    tierBorder = 'rgba(34,197,94,0.4)';
+  } else {
+    tierLabel  = '⚠️ GELİŞTİRİLMELİ (Eksikleri giderilmeli)';
+    tierColor  = '#f59e0b';
+    tierBg     = 'rgba(245,158,11,0.12)';
+    tierBorder = 'rgba(245,158,11,0.4)';
+  }
+
+  const dnaViewEl = document.getElementById('view-dna');
+  const anatomySectionRef = document.getElementById('dna-anatomy-section');
+  if (dnaViewEl && anatomySectionRef) {
+    const overallBadge = document.createElement('div');
+    overallBadge.id = 'dna-overall-badge';
+    overallBadge.style.cssText = [
+      'display: flex',
+      'align-items: center',
+      'justify-content: space-between',
+      'margin: 10px 0 6px 0',
+      'padding: 10px 14px',
+      'background: ' + tierBg,
+      'border: 1px solid ' + tierBorder,
+      'border-radius: 10px',
+    ].join('; ');
+    overallBadge.innerHTML =
+      '<span style="font-size:12px; font-weight:800; color:' + tierColor + '; letter-spacing:0.05em;">' + tierLabel + '</span>' +
+      '<span style="font-size:22px; font-weight:900; color:' + tierColor + '; font-variant-numeric:tabular-nums;">' +
+        overall + '<span style="font-size:12px; color:rgba(255,255,255,0.35); font-weight:400;">/100</span>' +
+      '</span>';
+    dnaViewEl.insertBefore(overallBadge, anatomySectionRef);
+  }
+
+  const anatomySection = $('dna-anatomy-section');
+  const anatomyText    = $('dna-anatomy-text');
+  const title = (videoData && videoData.title) || '';
+  const estimatedNote = isEstimated ? '\n[TAHMİNİ ANALİZ — Altyazı Yok]' : '';
+  const summaryLines = [
+    (isEstimated ? '📊 TAHMİNİ DNA ANALİZİ (Meta Veri Bazlı)' : '🧬 DNA Analizi'),
+    'Video: ' + title.substring(0, 80) + (title.length > 80 ? '...' : ''),
+    'Genel DNA Skoru: ' + overall + '/100 — ' + tierLabel + estimatedNote,
+    '',
+    'Kanca Gücü: ' + scores.hook + '/100 [×0.40] - Giriş bölümündeki tetikleyici yoğunluğu',
+    'Tempo Ritmi: ' + scores.retention + '/100 [×0.40] - ' + (isEstimated ? 'Metadata kalitesine göre simülasyon' : 'Cümle varyansı ve geçiş akışkanlığı'),
+    'Duygu Yükü: ' + scores.emotion + '/100 [×0.10] - Duygusal kelime yoğunluğu',
+    'CTA Gücü: ' + scores.cta + '/100 [×0.10] - Sonuçtaki aksiyon çağrısı etkinliği',
+  ];
+  if (anatomySection && anatomyText) {
+    anatomyText.textContent = summaryLines.join('\n');
+    anatomySection.style.display = 'block';
+  }
+
+  const promptSection = $('dna-prompt-section');
+  const promptText    = $('dna-prompt-text');
+  if (data.dna_prompt && promptSection && promptText) {
+    promptText.textContent = data.dna_prompt;
+    promptSection.style.display = 'block';
+  }
+}
+
+async function analyzeChannelDNA() {
+  const serverUp = await checkServer();
+  if (!serverUp) {
+    showError('Sunucu Cevrimdisi', 'YT Analiz Pro masaustu uygulamasi calismiyor.');
+    return;
+  }
+
+  const tab = await getActiveTab();
+  if (!isYouTubeChannelTab(tab)) {
+    showError('Kanal Sayfasi Gerekli', 'Kanal DNA analizi yalnizca YouTube kanal sayfalarinda calisir.');
+    return;
+  }
+
+  const { user_id } = await chrome.storage.local.get(['user_id']);
+  if (!user_id) {
+    showError('Giris Gerekli', 'Kanal DNA analizi icin giris yapmaniz gerekir.');
+    return;
+  }
+
+  showView('loading');
+  elLoadingSub.textContent = 'Kanalin son 5 videosunun altyazilari cekiliyor ve DNA puanlari hesaplaniyor... (Bu islem 30-60 sn surebilir)';
+
+  try {
+    const resp = await fetch(SERVER + '/api/extension/channel_dna', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+      body: JSON.stringify({ channel_url: tab.url, user_id: user_id }),
+    });
+
+    const data = await resp.json();
+
+    if (!data.success) {
+      showError('Kanal DNA Basarisiz', data.error || 'Kanal analizi yapilamadi.');
+      return;
+    }
+
+    _renderChannelDNAResult(data);
+    showView('result');
+
+  } catch (fetchErr) {
+    showError('Baglanti Hatasi', 'Sunucuya ulasilamadi: ' + fetchErr.message);
+  }
+}
+
+function _renderChannelDNAResult(data) {
+  const avg = data.avg_scores;
+  const analyzed = data.analyzed_count;
+  const skipped  = data.skipped_count;
+
+  const scoreRows = [
+    { label: 'Kanca',   val: avg.hook,      color: '#f43f5e' },
+    { label: 'Tempo',   val: avg.retention, color: '#06b6d4' },
+    { label: 'CTA',     val: avg.cta,       color: '#22c55e' },
+    { label: 'Duygu',   val: avg.emotion,   color: '#a855f7' },
+  ];
+
+  let scoresHtml = scoreRows.map(function(r) {
+    return '<div class="channel-dna-score-row">' +
+      '<span class="channel-dna-score-label">' + r.label + '</span>' +
+      '<div style="flex:1; background:rgba(255,255,255,0.07); border-radius:4px; height:4px; margin:0 6px;">' +
+        '<div style="width:' + Math.min(100,r.val) + '%; height:100%; background:' + r.color + '; border-radius:4px; transition: width 0.9s cubic-bezier(.4,0,.2,1);"></div>' +
+      '</div>' +
+      '<span class="channel-dna-score-val" style="color:' + r.color + ';">' + r.val + '</span>' +
+    '</div>';
+  }).join('');
+
+  let skipWarn = '';
+  if (data.is_estimated) {
+    // Tüm kanal tahminiyse daha belirgin uyarı
+    skipWarn = '<div style="margin-top:8px; font-size:11px; color:#f59e0b; background:rgba(245,158,11,0.12); border:1px solid rgba(245,158,11,0.35); border-radius:6px; padding:8px 10px;">' +
+      '⚠️ Bu kanalın videolarında altyazı bulunamadı. Kanal DNA\'sı video başlıkları analiz edilerek <strong>tahmini</strong> olarak hesaplanmıştır.</div>';
+  } else if (skipped > 0) {
+    skipWarn = '<div style="margin-top:8px; font-size:11px; color:#f59e0b; background:rgba(245,158,11,0.1); border:1px solid rgba(245,158,11,0.25); border-radius:6px; padding:6px 8px;">' +
+      skipped + ' videoda altyazi bulunamadi; bu videolar baslik verisiyle tahmini olarak dahil edildi.</div>';
+  }
+
+  let formulaHtml = '';
+  if (data.success_formula) {
+    formulaHtml = '<div class="dna-section-label" style="margin-top:12px;">BASARI FORMULU</div>' +
+      '<div class="channel-dna-formula">' + data.success_formula + '</div>';
+  }
+
+  // ── Dinamik Overall Badge (Kanal DNA) ──────────────────────────────
+  const chanOverall = avg.overall || 0;
+  let chanTierLabel, chanTierColor;
+  if (chanOverall >= 90) {
+    chanTierLabel = '👑 EFSANEVİ KANAL';  chanTierColor = '#f59e0b';
+  } else if (chanOverall >= 75) {
+    chanTierLabel = '🔥 VİRAL POTANSİYEL'; chanTierColor = '#f97316';
+  } else if (chanOverall >= 50) {
+    chanTierLabel = '✅ GÜÇLÜ KANAL'; chanTierColor = '#22c55e';
+  } else {
+    chanTierLabel = '⚠️ GELİŞTİRİLMELİ'; chanTierColor = '#f59e0b';
+  }
+
+  elResultBox.innerHTML =
+    '<div class="channel-dna-card">' +
+      '<div class="channel-dna-title">KANAL DNA\'SI - ' + data.channel_name + '</div>' +
+      '<div style="font-size:11px; color:#64748b; text-align:center; margin-bottom:10px;">' + analyzed + ' video analiz edildi &middot; Ağırlıklı DNA Ortalaması</div>' +
+      '<div class="channel-dna-scores">' + scoresHtml + '</div>' +
+      '<div style="display:flex; align-items:center; justify-content:space-between; padding:10px 4px; border-top:1px solid rgba(255,255,255,0.08); margin-top:4px;">' +
+        '<span style="font-size:11px; font-weight:700; color:' + chanTierColor + ';">' + chanTierLabel + '</span>' +
+        '<span>' +
+          '<strong style="font-size:20px; color:' + chanTierColor + ';">' + chanOverall + '</strong>' +
+          '<span style="font-size:11px; color:#64748b;">/100</span>' +
+        '</span>' +
+      '</div>' +
+      skipWarn +
+    '</div>' +
+    formulaHtml;
 }
 
 // ── Event Listeners ───────────────────────────── ──────────────────────────────
@@ -1178,8 +1549,82 @@ elBtnLogin.addEventListener('click', handleLogin);
 elBtnLogout.addEventListener('click', handleLogout);
 elBtnClone.addEventListener('click', cloneVideo);
 if (elBtnDebate) elBtnDebate.addEventListener('click', debateVideo);
+if ($('btn-dna')) $('btn-dna').addEventListener('click', analyzeDNA);
 elBtnAnalyze.addEventListener('click', analyzeChannel);
+if ($('btn-channel-dna')) $('btn-channel-dna').addEventListener('click', analyzeChannelDNA);
 elBtnRabbit.addEventListener('click', findRabbitHole);
+
+// DNA How-To Accordion (Nasıl Hesaplanır?)
+const btnDnaHowto = $('btn-dna-howto');
+const dnaHowtoBody = $('dna-howto-body');
+const dnaHowtoArrow = $('dna-howto-arrow');
+if (btnDnaHowto && dnaHowtoBody && dnaHowtoArrow) {
+  btnDnaHowto.addEventListener('click', () => {
+    if (dnaHowtoBody.style.display === 'none') {
+      dnaHowtoBody.style.display = 'block';
+      dnaHowtoArrow.style.transform = 'rotate(180deg)';
+      btnDnaHowto.style.background = 'rgba(6,182,212,0.12)';
+    } else {
+      dnaHowtoBody.style.display = 'none';
+      dnaHowtoArrow.style.transform = 'rotate(0deg)';
+      btnDnaHowto.style.background = 'rgba(6,182,212,0.07)';
+    }
+  });
+}
+
+
+// DNA paneli sifirlama butonu
+const elBtnDnaReset = $('btn-dna-reset');
+if (elBtnDnaReset) {
+  elBtnDnaReset.addEventListener('click', function() {
+    ['dna-bar-hook','dna-bar-retention','dna-bar-cta','dna-bar-emotion'].forEach(function(id) {
+      const el = $(id);
+      if (el) el.style.width = '0%';
+    });
+    // Tahmini analiz uyarısını temizle
+    const warning = document.getElementById('dna-estimated-warning');
+    if (warning) warning.remove();
+    // Overall badge'i temizle
+    const overallBadge = document.getElementById('dna-overall-badge');
+    if (overallBadge) overallBadge.remove();
+    // DNA badge'ini varsayılan haline döndür
+    const dnaBadge = document.querySelector('#view-dna .result-badge');
+    if (dnaBadge) {
+      dnaBadge.textContent = '🧬 DNA Analizi Tamamlandı!';
+      dnaBadge.style.background = '';
+      dnaBadge.style.borderColor = '';
+      dnaBadge.style.color = '';
+    }
+    showView('idle');
+  });
+}
+
+// DNA Master Prompt Kopyala butonu
+const elBtnCopyDna = $('btn-copy-dna-prompt');
+if (elBtnCopyDna) {
+  elBtnCopyDna.addEventListener('click', async function() {
+    const promptEl = $('dna-prompt-text');
+    if (!promptEl) return;
+    const text = promptEl.textContent.trim();
+    if (!text) return;
+    try {
+      await navigator.clipboard.writeText(text);
+    } catch (e) {
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+    }
+    elBtnCopyDna.textContent = 'Kopyalandi!';
+    elBtnCopyDna.classList.add('copied');
+    setTimeout(function() {
+      elBtnCopyDna.textContent = 'DNA PROMPTU KOPYALA';
+      elBtnCopyDna.classList.remove('copied');
+    }, 2000);
+  });
+}
 
 const elBtnInfo = $('btn-info');
 const elBtnInfoClose = $('btn-info-close');
@@ -1266,14 +1711,14 @@ elBtnRetry.addEventListener('click', () => showView('idle'));
   const btnClone   = document.getElementById('btn-clone');
   const btnDebate  = document.getElementById('btn-debate');
   const btnGroup   = document.getElementById('clone-btn-group');
-  const btnAnalyze = document.getElementById('btn-analyze');
+  const channelBtnGroup = document.getElementById('channel-btn-group');
   
   if (isYouTubeChannelTab(tab)) {
       if (btnGroup)   btnGroup.style.display   = 'none';
-      if (btnAnalyze) btnAnalyze.style.display = 'block';
+      if (channelBtnGroup) channelBtnGroup.style.display = 'flex';
   } else {
       if (btnGroup)   btnGroup.style.display   = 'flex';
-      if (btnAnalyze) btnAnalyze.style.display = 'none';
+      if (channelBtnGroup) channelBtnGroup.style.display = 'none';
   }
   
   chrome.storage.local.get(['user_id', 'username'], (res) => {
@@ -1316,8 +1761,9 @@ chrome.runtime.onMessage.addListener((msg) => {
 
     // Show Clone + Discuss group for new video
     const btnGroup   = document.getElementById('clone-btn-group');
-    const btnAnalyze = document.getElementById('btn-analyze');
+    const channelBtnGroup = document.getElementById('channel-btn-group');
     if (btnGroup)   btnGroup.style.display   = 'flex';
-    if (btnAnalyze) btnAnalyze.style.display = 'none';
+    if (channelBtnGroup) channelBtnGroup.style.display = 'none';
   }
 });
+

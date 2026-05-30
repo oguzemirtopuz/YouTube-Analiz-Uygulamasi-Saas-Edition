@@ -2901,7 +2901,12 @@ def _fetch_transcript_sync(video_id: str) -> str:
     last_api_error = "YouTubeTranscriptApi not available"  # NameError guard
     try:
         from youtube_transcript_api import YouTubeTranscriptApi
-        transcript_list = YouTubeTranscriptApi.list_transcripts(video_id)
+        if hasattr(YouTubeTranscriptApi, 'list_transcripts'):
+            transcript_list = YouTubeTranscriptApi.list_transcripts(video_id)
+        else:
+            api_instance = YouTubeTranscriptApi()
+            transcript_list = api_instance.list(video_id)
+            
         transcript = None
         for lang in ['tr', 'en', 'es', 'de', 'fr']:
             try:
@@ -2928,6 +2933,7 @@ def _fetch_transcript_sync(video_id: str) -> str:
             'writesubtitles': True,
             'writeautomaticsub': True,
             'subtitleslangs': ['tr', 'en', 'es', 'de', 'fr', '.*'],
+            'subtitlesformat': 'json3/vtt/srt',
             'quiet': True,
             'no_warnings': True
         }
@@ -4173,6 +4179,690 @@ async def extension_clone_debate(payload: CloneVideoRequest):
         "title":    title,
         "channel":  channel,
         "debate":   debate_result,
+    }
+
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+#  🧬 DNA ANALİZ MOTORU  —  v5.5.0 "Elite Calibration"
+#
+#  Saf Python NLP tabanlı puanlama sistemi.
+#  Altyazı → 4 bölüm → 4 puan → Elite Overall Algoritması → Groq Master Prompt
+#
+#  Overall Algoritması (v5.5.0):
+#    1. DR Koruması : Hook≥80 VE Tempo≥80 → CTA/Duygu en az 50 ile değerlendirilir
+#    2. Base        : (H×0.40) + (T×0.40) + (D_eff×0.10) + (C_eff×0.10)
+#    3. Synergy     : Hook>75 VE Tempo>75 → +20 ("Viral Canavar" bonusu)
+#    4. Ceiling     : min(skor, 100)
+# ═══════════════════════════════════════════════════════════════════════════════
+
+def _dna_elite_overall(hook: float, retention: float, cta: float, emotion: float) -> float:
+    """
+    v5.5.0 Elite Calibration Algoritması.
+
+    Mantık:
+      - Diminishing Returns (DR) Koruması:
+        Hook≥80 VE Tempo≥80 olan videolarda CTA ve Duygu zorunlu olarak
+        en az 50 kredi alır. Gerçek bir viral video, güçlü core’u sayesinde
+        izleyiciyi otomatik motive eder — eksik CTA bunu silmez.
+      - Synergy Bonusu:
+        Hook>75 VE Tempo>75 ise "Viral Canavar" olarak etiketlenir, +20 puan.
+      - Ceiling: 100 tavanı.
+
+    Örnek (MrBeast): H=81, T=83, D=15, C=18
+      DR   : D_eff=50, C_eff=50
+      Base : 32.4 + 33.2 + 5.0 + 5.0 = 75.6
+      Synergy: +20 → 95.6  (👑 EFSANEVİ)
+    """
+    # Step 1 — DR Koruması: Elite core = min. 50 kredi
+    if hook >= 80.0 and retention >= 80.0:
+        eff_cta     = max(cta,     50.0)
+        eff_emotion = max(emotion, 50.0)
+    else:
+        eff_cta     = cta
+        eff_emotion = emotion
+
+    # Step 2 — Ağırlıklı Base
+    base = (
+        (hook      * 0.40) +
+        (retention * 0.40) +
+        (eff_emotion * 0.10) +
+        (eff_cta   * 0.10)
+    )
+
+    # Step 3 — Synergy Bonusu (Viral Canavar)
+    if hook > 75.0 and retention > 75.0:
+        base += 20.0
+
+    # Step 4 — Ceiling
+    return round(min(base, 100.0), 1)
+
+def _dna_split_transcript(transcript: str) -> dict:
+    """
+    Altyazıyı 4 anlamlı bölüme ayırır: Giriş (%20), Gelişme-A (%30),
+    Gelişme-B (%30), Sonuç+CTA (%20).
+    Kısa metinlerde bölüm sınırları örtüşür ama sıfır olmaz.
+    """
+    text = (transcript or "").strip()
+    if not text:
+        return {"intro": "", "dev_a": "", "dev_b": "", "outro": ""}
+    words = text.split()
+    n = len(words)
+    i1 = max(1, int(n * 0.20))
+    i2 = max(i1 + 1, int(n * 0.50))
+    i3 = max(i2 + 1, int(n * 0.80))
+    return {
+        "intro": " ".join(words[:i1]),
+        "dev_a": " ".join(words[i1:i2]),
+        "dev_b": " ".join(words[i2:i3]),
+        "outro": " ".join(words[i3:]),
+    }
+
+
+def _dna_hook_score(intro: str) -> float:
+    """
+    Giriş bölümündeki soru/ünlem ve tetikleyici kelime yoğunluğunu puanlar.
+    Power Words (I, Challenge, Million vb.) daha yüksek ağırlık alır.
+    Maksimum: 100.
+    """
+    import re
+    if not intro:
+        return 0.0
+
+    # Soru, ünlem ve dolar işaretleri (güçlü tetikleyici sinyal)
+    punct_count = intro.count("?") + intro.count("!") + intro.count("$")
+    
+    # Tetikleyici kelimeler ve Power Words
+    power_words = [
+        "i", "challenge", "million", "secret", "100", "50", "win", "lose",
+        "nasıl", "neden", "niye", "ne zaman", "kim", "hangi", "kaç",
+        "inanılmaz", "şok", "sır", "hata", "büyük", "en iyi", "en kötü",
+        "tehlike", "dikkat", "uyarı", "keşfet", "gizli", "gerçek",
+        "how", "why", "what", "shocking", "best", "worst",
+        "never", "always", "banned", "exposed", "truth", "revealed",
+        "unbelievable", "insane", "crazy", "first", "last", "only",
+    ]
+    words = re.findall(r'\b\w+\b', intro.lower())
+    total_words = max(len(words), 1)
+    
+    trigger_count = sum(1 for w in words if w in power_words)
+
+    punct_score   = min(45.0, punct_count * 10.0)
+    # Power word yoğunluğu çok yüksekse (MrBeast stili kısa vurucu giriş) daha yüksek puan
+    trigger_score = min(70.0, (trigger_count / total_words) * 800.0)
+    raw = punct_score + trigger_score
+    return round(min(100.0, raw * 1.15), 1)
+
+
+def _dna_retention_score(dev_a: str, dev_b: str) -> float:
+    """
+    Gelişme bölümlerinin cümle uzunluğu varyansını (Tempo) ve
+    geçiş kelimelerini ölçer. MrBeast tarzı kısa, seri cümleler 
+    yüksek tempo olarak ödüllendirilir.
+    Maksimum: 100.
+    """
+    import re, statistics
+    text = (dev_a + " " + dev_b).strip()
+    if not text:
+        return 0.0
+
+    sentences = re.split(r'[.?!…;]', text)
+    sentences = [s.strip() for s in sentences if s.strip()]
+    if len(sentences) < 2:
+        return 30.0  # Tek cümle, nötr puan
+
+    lengths = [len(s.split()) for s in sentences]
+    avg_wps = sum(lengths) / len(lengths)
+    
+    # Tempo puanı: Kısa seri cümleler (MrBeast style) çok yüksek puan alır
+    tempo_score = 0.0
+    if avg_wps <= 6:
+        tempo_score = 60.0
+    elif avg_wps <= 10:
+        tempo_score = 50.0
+    elif avg_wps <= 15:
+        tempo_score = 40.0
+    elif avg_wps <= 20:
+        tempo_score = 25.0
+    else:
+        tempo_score = 10.0
+
+    try:
+        variance_score = min(20.0, statistics.stdev(lengths) * 2.0)
+    except Exception:
+        variance_score = 0.0
+
+    # Geçiş kelimeler (akışkanlık sinyali)
+    transition_words = [
+        "ama", "fakat", "ancak", "oysa", "bununla birlikte", "üstelik",
+        "ayrıca", "dahası", "bunun yanı sıra", "çünkü", "zira", "yani",
+        "özetle", "sonuç olarak", "ek olarak", "bir yandan", "öte yandan",
+        "but", "however", "also", "moreover", "furthermore", "because",
+        "therefore", "although", "despite", "yet", "meanwhile", "then",
+        "next", "finally", "additionally",
+    ]
+    words = re.findall(r'\b\w+\b', text.lower())
+    total_words = max(len(words), 1)
+    trans_count = sum(1 for w in words if w in transition_words)
+    transition_score = min(20.0, (trans_count / total_words) * 800.0)
+
+    raw = tempo_score + variance_score + transition_score
+    return round(min(100.0, raw * 1.15), 1)
+
+
+def _dna_cta_score(outro: str) -> float:
+    """
+    Sonuç bölümündeki aksiyon kelimelerinin varlığını ve yoğunluğunu puanlar.
+    Çok çeşitli varyasyonlar desteklenir.
+    Maksimum: 100.
+    """
+    import re
+    if not outro:
+        return 0.0
+
+    cta_words = [
+        # Türkçe
+        "abone", "beğen", "yorum", "paylaş", "bildirim", "zil", "tıkla",
+        "izle", "takip", "destek", "katıl", "oy ver", "link", "altında",
+        "satın al", "açıklama", "ürün", "sponsor",
+        # İngilizce
+        "subscribe", "like", "comment", "share", "notification", "bell",
+        "click", "watch", "follow", "support", "join", "vote", "link",
+        "below", "check", "hit", "smash", "buy", "merch", "patreon",
+        "sponsor", "description",
+    ]
+    words = re.findall(r'\b\w+\b', outro.lower())
+    total_words = max(len(words), 1)
+    cta_count = sum(1 for w in words if w in cta_words)
+
+    raw = min(100.0, (cta_count / total_words) * 2000.0) # Frekans ağırlığı artırıldı
+    # Bonus: En az 3 farklı CTA varsa puan artırım
+    unique_cta = len(set(w for w in words if w in cta_words))
+    bonus = min(30.0, unique_cta * 8.0)
+    return round(min(100.0, (raw + bonus) * 1.15), 1)
+
+
+def _dna_emotion_score(full_text: str) -> float:
+    """
+    Metindeki duygusal kelime frekansını ölçer.
+    Pozitif + negatif + yoğunlaştırıcılar dahil.
+    Maksimum: 100.
+    """
+    import re
+    if not full_text:
+        return 0.0
+
+    emotion_words = [
+        # Pozitif (Türkçe)
+        "harika", "muhteşem", "inanılmaz", "mükemmel", "süper", "efsane",
+        "seviyorum", "bayıldım", "gurur", "mutlu", "başarı", "kazandı",
+        # Negatif (Türkçe)
+        "berbat", "rezalet", "korkunç", "nefret", "sinir", "öfke",
+        "şok", "dehşet", "trajedi", "mahvetti", "yıkıldı", "çöktü",
+        # Yoğunlaştırıcılar (Türkçe)
+        "çok", "aşırı", "tam", "kesinlikle", "hiç", "asla", "sadece",
+        # Pozitif (İngilizce)
+        "amazing", "incredible", "awesome", "perfect", "love", "great",
+        "brilliant", "fantastic", "wonderful", "excellent", "best",
+        # Negatif (İngilizce)
+        "terrible", "awful", "hate", "worst", "horrible", "disgusting",
+        "shocking", "tragic", "devastating", "failed", "disaster",
+        # Yoğunlaştırıcılar (İngilizce)
+        "absolutely", "totally", "completely", "never", "always", "only",
+    ]
+    words = re.findall(r'\b\w+\b', full_text.lower())
+    total_words = max(len(words), 1)
+    emotion_count = sum(1 for w in words if w in emotion_words)
+
+    raw = min(100.0, (emotion_count / total_words) * 800.0)
+    return round(raw, 1)
+
+
+async def _call_groq_dna_prompt(
+    api_key: str, title: str, channel: str, transcript: str,
+    scores: dict, is_estimated: bool = False
+) -> str:
+    """
+    DNA puanlarını ve altyazıyı kullanarak 'Master Prompt' üretir.
+    is_estimated=True ise altyazı yerine metadata (başlık/açıklama) kullanıldığını
+    Groq'a bildirir; çıktıda 'Tahmini Analiz' notu yer alır.
+    """
+    import requests as _req
+
+    transcript_preview = (transcript or "")[:3000]
+    scores_str = (
+        f"Hook Skoru: {scores['hook']}/100 | "
+        f"Retention Skoru: {scores['retention']}/100 | "
+        f"CTA Skoru: {scores['cta']}/100 | "
+        f"Emotion Skoru: {scores['emotion']}/100"
+    )
+
+    # Fallback modda Groq'a farklı talimat ver
+    if is_estimated:
+        analysis_mode_note = (
+            "⚠️ ÖNEMLİ: Bu video için altyazı (transcript) bulunamadı. "
+            "Analiz video başlığı ve açıklamasına dayanmaktadır. "
+            "Bu bir 'TAHMİNİ ANALİZ'dir. "
+            "Master Prompt'un başına mutlaka şu notu ekle: "
+            "\"📊 [TAHMİNİ ANALİZ — Altyazı Yok]: Bu Master Prompt, videonun başlık ve açıklaması analiz edilerek tahminî olarak oluşturulmuştur. Gerçek altyazı verisi mevcut değildir.\"\n\n"
+        )
+        data_label = "[VİDEO METAVERİSİ (Başlık + Açıklama) - Altyazı Yok]"
+        task_note = (
+            "Altyazı olmadığı için tam bir tempo/retention analizi yapılamaz. "
+            "Bunun yerine başlık ve açıklamadan çıkarılabilecek tarz, ton ve potansiyel kanca stratejisini tahmin et."
+        )
+    else:
+        analysis_mode_note = ""
+        data_label = "[VİDEO ALTYAZISI - İlk 3000 karakter]"
+        task_note = "Bu videonun viral başarısını oluşturan unsurları derinlemesine analiz et ve aşağıdaki Master Prompt'u oluştur."
+
+    # Skor seviyesi (Master Prompt tonunu belirler)
+    overall = scores.get('overall', 0)
+    if overall >= 80:
+        tier_context = "Bu video EFSANEVİ düzeyde viral potansiyele sahip. Formülü birebir taklit et."
+    elif overall >= 60:
+        tier_context = "Bu video GÜÇLÜ bir içerik. Temel yapısını koru, zayıf noktaları güçlendir."
+    else:
+        tier_context = "Bu video GELİŞTİRİLEBİLİR potansiyelde. Hook ve Tempo'yu kökten yeniden tasarla."
+
+    prompt = f"""Sen bir viral video uzmanısın. Aşağıdaki DNA yapısını kullanarak yeni bir senaryo yaz:
+
+{analysis_mode_note}━━━ ANALİZ EDİLEN VİDEO ━━━
+Başlık : {title}
+Kanal  : {channel}
+DNA Skorları: {scores_str}
+Seviye : {tier_context}
+
+━━━ {data_label} ━━━
+{transcript_preview if transcript_preview else "Veri mevcut değil. Yalnızca başlık ve puanlara göre tahmini analiz yap."}
+
+━━━ GÖREVİN ━━━
+{task_note}
+
+Aşağıdaki 4 bileşeni net talimatlar olarak yaz:
+
+1. 🪝 KANCA TALİMATI (İlk 30 Saniye)
+   — İzleyiciyi anında yakalayacak açılış cümlesini/sahnesini belirle.
+   — Merak, şok veya vaat unsurlarından hangisini kullanacağını açıkça söyle.
+   — Örnek kanca cümlesi ver.
+
+2. ⏱️ TEMPO TALİMATI (Ritim Haritası)
+   — Videonun hangi bölümünde hızlanma, hangisinde nefes alması gerektiğini belirt.
+   — Cümle uzunluğu ve kesim sıklığına dair somut kural yaz. (örn: "Aksiyonlarda maks. 5 saniyelik plan")
+
+3. 💥 DUYGU TALİMATI (Yoğunluk Haritası)
+   — İzleyicide hangi duyguyu ne zaman tetikleyeceğini sırala.
+   — En güçlü duygusal anı ("climax") ve nasıl kurulacağını açıkla.
+
+4. 📣 CTA TALİMATI (Aksiyon Çağrısı)
+   — Abone/beğeni çağrısının videoya nasıl doğal entegre edileceğini yaz.
+   — Zorla değil, izleyicinin kendiliğinden tıklamak isteyeceği bir an yarat.
+
+ÇIKTI FORMATI KURALI:
+- Promptun ilk satırı mutlaka şu şablonla başlasın:
+  "Sen bir viral video uzmanısın. Aşağıdaki DNA yapısını kullanarak yeni bir senaryo yaz:"
+- Madde madde, doğrudan talimat dili kullan. ("Şunu yap", "Bunu söyle", "Bu anda kes")
+- Türkçe yaz. Başka açıklama veya giriş cümlesi ekleme. Sadece hazır kullanılabilir promptu ver."""
+
+    def _post():
+        return _req.post(
+            "https://api.groq.com/openai/v1/chat/completions",
+            headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
+            json={
+                "model": "llama-3.3-70b-versatile",
+                "messages": [
+                    {"role": "system", "content": "Sen viral YouTube içeriğinin genetik kodunu çözen bir DNA analistisin. Yalnızca istenilen çıktıyı üretirsin."},
+                    {"role": "user", "content": prompt}
+                ],
+                "max_tokens": 1200,
+                "temperature": 0.65,
+            },
+            timeout=35,
+        )
+
+    resp = await run_in_threadpool(_post)
+    if resp.status_code == 200:
+        return resp.json()["choices"][0]["message"]["content"].strip()
+    elif resp.status_code == 401:
+        raise ValueError("Groq API anahtarı geçersiz.")
+    elif resp.status_code == 429:
+        raise ValueError("Groq API kotası doldu. Lütfen bekleyin.")
+    else:
+        raise ValueError(f"Groq API hatası: HTTP {resp.status_code}")
+
+
+class DNAAnalysisRequest(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    videoId:     str = Field(default="", description="YouTube video ID")
+    title:       str = Field(default="Başlık Yok")
+    channel:     str = Field(default="Bilinmeyen Kanal")
+    description: str = Field(default="", description="Video açıklaması (Fallback için)")
+    tags:        str = Field(default="", description="Virgülle ayrılmış etiketler (Fallback için)")
+    user_id:     int = Field(default=0)
+
+
+@app.post("/api/extension/dna_analysis")
+async def extension_dna_analysis(payload: DNAAnalysisRequest):
+    """
+    🧬 DNA Analiz Motoru — v5.2.0 "Hibrit DNA"
+    1. Transcript çek
+    2. Eğer transcript yoksa → Başlık + Açıklama + Etiketlerden Fallback Metin oluştur
+    3. 4 bölüme ayır → 4 saf-Python NLP puanı hesapla (hook, retention, cta, emotion)
+    4. Fallback modda konuşma temelli metrikler (Tempo/Retention) metadata kalitesiyle simüle edilir
+    5. Groq ile Master Prompt üret (fallback modda 'Tahmini Analiz' notu eklenir)
+    6. is_estimated flag'iyle birlikte tüm verileri JSON döndür
+
+    KISŞ PRENSİBİ: Hiçbir zaman "Hesaplanamadı" hatası vermez. Her video için anlamlı çıktı üretir.
+    """
+    app_logger.info(f"[dna_analysis] Başlatıldı: video_id={payload.videoId} title='{payload.title[:50]}'")
+
+    video_id = payload.videoId.strip()
+    if not video_id:
+        raise HTTPException(status_code=400, detail="Video ID boş olamaz.")
+
+    # ── 1. Transcript Çek ─────────────────────────────────────────────────────
+    try:
+        transcript = await run_in_threadpool(_fetch_transcript_sync, video_id)
+    except Exception as e:
+        app_logger.warning(f"[dna_analysis] Transcript çağrı hatası: {e}")
+        transcript = ""
+
+    if not transcript or transcript.startswith("HATA:"):
+        transcript = ""
+
+    # ── 2. Fallback: Altyazı yoksa Metadata metnini kullan ───────────────────
+    is_estimated = False
+    analysis_text = transcript
+
+    if not transcript:
+        app_logger.info(f"[dna_analysis] Altyazı yok → Metadata Fallback: video_id={video_id}")
+        is_estimated = True
+        # Başlık + Açıklama + Etiketleri birleştirerek analiz metni oluştur
+        metadata_parts = []
+        if payload.title and payload.title not in ("Başlık Yok", "Baslik Yok"):
+            metadata_parts.append(payload.title)
+        if payload.description:
+            metadata_parts.append(payload.description[:2000])  # İlk 2000 karakter yeterli
+        if payload.tags:
+            metadata_parts.append(payload.tags)
+        analysis_text = " ".join(metadata_parts).strip()
+
+        if not analysis_text:
+            # Son çare: Yalnızca başlığı kullan
+            analysis_text = payload.title
+
+    # ── 3. Metin Bölümle ─────────────────────────────────────────────────────
+    sections = _dna_split_transcript(analysis_text)
+    full_text = analysis_text
+
+    # ── 4. NLP Puanları (Saf Python) ─────────────────────────────────────────
+    hook_score      = _dna_hook_score(sections["intro"])
+    emotion_score   = _dna_emotion_score(full_text)
+    cta_score       = _dna_cta_score(sections["outro"])
+
+    # Retention/Tempo: Altyazı tabanlı bir metriktir.
+    # Fallback modda konuşma temposu ölçülemez; bunun yerine
+    # başlık/açıklama zenginliğine göre simüle edilir.
+    if is_estimated:
+        # Metadata kalitesini word count ve cümle çeşitliliğine göre tahmin et
+        import re as _re_ret
+        word_count = len(full_text.split())
+        sentence_count = len(_re_ret.split(r'[.!?]', full_text))
+        # Makul bir aralıkta simüle edilmiş Tempo puanı (35–65 arası)
+        simulated_retention = min(65.0, max(35.0, round(
+            35.0 + min(30.0, (word_count / 50.0)) + min(15.0, sentence_count * 1.5)
+        , 1)))
+        retention_score = simulated_retention
+    else:
+        retention_score = _dna_retention_score(sections["dev_a"], sections["dev_b"])
+
+    # ── Elite Calibration Algoritması v5.5.0 ─────────────────────────────────────
+    # DR Koruması + Synergy Bonusu + Ceiling
+    weighted_overall = _dna_elite_overall(hook_score, retention_score, cta_score, emotion_score)
+    scores = {
+        "hook":      hook_score,
+        "retention": retention_score,
+        "cta":       cta_score,
+        "emotion":   emotion_score,
+        "overall":   weighted_overall,
+    }
+
+    app_logger.info(f"[dna_analysis] Puanlar (is_estimated={is_estimated}): {scores}")
+
+    # ── 5. Groq Master Prompt ─────────────────────────────────────────────────
+    api_key = await get_groq_api_key()
+    dna_prompt = None
+
+    # Groq'a gönderilecek metin: Fallback modda başlık/açıklama kullanılır
+    groq_text = analysis_text if is_estimated else transcript
+
+    if api_key:
+        try:
+            dna_prompt = await _call_groq_dna_prompt(
+                api_key, payload.title, payload.channel, groq_text, scores,
+                is_estimated=is_estimated
+            )
+        except Exception as e:
+            app_logger.warning(f"[dna_analysis] Master Prompt üretilemedi: {e}")
+            dna_prompt = f"Master Prompt üretilemedi: {str(e)}"
+    else:
+        dna_prompt = "Groq API anahtarı ayarlanmamış — Master Prompt üretilemedi."
+
+    app_logger.info(f"[dna_analysis] ✅ Tamamlandı: video_id={video_id} is_estimated={is_estimated}")
+
+    return {
+        "success":              True,
+        "is_estimated":         is_estimated,
+        "transcript_available": not is_estimated,
+        "transcript_length":    len(analysis_text),
+        "scores": scores,
+        "sections": {
+            "intro_words":  len(sections["intro"].split()),
+            "dev_words":    len(sections["dev_a"].split()) + len(sections["dev_b"].split()),
+            "outro_words":  len(sections["outro"].split()),
+        },
+        "dna_prompt": dna_prompt,
+    }
+
+
+# ── Kanal DNA'sı: Son 5 Videonun Ortalama DNA Puanları ──────────────────────
+
+class ChannelDNARequest(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    channel_url: str = Field(default="")
+    user_id:     int = Field(default=0)
+
+
+@app.post("/api/extension/channel_dna")
+async def extension_channel_dna(payload: ChannelDNARequest):
+    """
+    📊 Kanal DNA'sı
+    Kanalın son 5 videosunu çek → Her birinin DNA puanlarını hesapla
+    → Ortalamaları + Başarı Formülünü döndür.
+    Fail-Fast: Altyazı olmayan videolar hesaba katılmaz; sayı bildirilir.
+    """
+    app_logger.info(f"[channel_dna] Başlatıldı: {payload.channel_url}")
+
+    if not payload.channel_url:
+        raise HTTPException(status_code=400, detail="Kanal URL'si boş olamaz.")
+
+    # ── 1. Kanal Videolarını Çek ──────────────────────────────────────────────
+    try:
+        channel_data = await run_in_threadpool(extract_channel_stats_sync, payload.channel_url)
+    except Exception as e:
+        return {"success": False, "error": f"Kanal verileri çekilemedi: {str(e)}"}
+
+    # extract_channel_stats_sync sadece 5 video URL'si + başlık döndürür.
+    # Biz her videoyu ayrıca DNA analiz edeceğiz.
+    channel_name = channel_data.get("channel_name", "Bilinmeyen Kanal")
+
+    # Video ID'lerini çıkar (channel_data içinde video URL'si yoksa yt-dlp ile tekrar çek)
+    import re as _re
+
+    channel_url = payload.channel_url
+    if not channel_url.endswith('/videos'):
+        base_url = channel_url.split('/featured')[0].split('/shorts')[0].split('/streams')[0].rstrip('/')
+        channel_url_videos = f"{base_url}/videos"
+    else:
+        channel_url_videos = channel_url
+
+    video_ids = []
+    try:
+        import yt_dlp as _ydl_lib
+        opts_ids = {
+            'extract_flat': True,
+            'playlist_end': 5,
+            'quiet': True,
+            'no_warnings': True,
+        }
+        with _ydl_lib.YoutubeDL(opts_ids) as ydl:
+            info = ydl.extract_info(channel_url_videos, download=False)
+            for entry in (info.get('entries') or []):
+                if entry and entry.get('id'):
+                    video_ids.append(entry['id'])
+                elif entry and entry.get('url'):
+                    u = entry['url']
+                    m = _re.search(r'[?&]v=([^&]+)', u)
+                    if m:
+                        video_ids.append(m.group(1))
+                    else:
+                        vid = u.split('/')[-1].split('?')[0]
+                        if vid:
+                            video_ids.append(vid)
+    except Exception as e:
+        app_logger.warning(f"[channel_dna] Video ID çekme hatası: {e}")
+        return {"success": False, "error": f"Kanal videoları listelenemedi: {str(e)}"}
+
+    if not video_ids:
+        return {"success": False, "error": "Kanalda video bulunamadı."}
+
+    # ── 2. Her Video İçin DNA Puanı Hesapla (Hibrit: Altyazı → Metadata Fallback) ─
+    all_scores    = []
+    analyzed_count = 0
+    skipped_count  = 0
+    estimated_count = 0
+    import re as _re_chan
+
+    for vid_id in video_ids[:5]:
+        try:
+            tr = await run_in_threadpool(_fetch_transcript_sync, vid_id)
+            if not tr or tr.startswith("HATA:"):
+                tr = ""
+
+            if tr:
+                # ── Gerçek Altyazı Analizi ────────────────────────────────────
+                sections = _dna_split_transcript(tr)
+                s = {
+                    "hook":      _dna_hook_score(sections["intro"]),
+                    "retention": _dna_retention_score(sections["dev_a"], sections["dev_b"]),
+                    "cta":       _dna_cta_score(sections["outro"]),
+                    "emotion":   _dna_emotion_score(tr),
+                    "is_estimated": False,
+                }
+            else:
+                # ── Metadata Fallback: Kanalın bilinen videolarından başlık çek ─
+                # channel_data içindeki başlıkları kullan (yt-dlp'den gelir)
+                recent_titles = channel_data.get("recent_titles") or []
+                # Kanalın genel başlık diline göre simüle edilmiş puan üret
+                meta_text = " ".join(recent_titles[:5])
+                if not meta_text.strip():
+                    skipped_count += 1
+                    continue
+                word_count = len(meta_text.split())
+                sentence_count = len(_re_chan.split(r'[.!?]', meta_text))
+                simulated_retention = min(60.0, max(30.0, round(
+                    30.0 + min(30.0, (word_count / 20.0)), 1
+                )))
+                s = {
+                    "hook":      _dna_hook_score(meta_text),
+                    "retention": simulated_retention,
+                    "cta":       _dna_cta_score(meta_text),
+                    "emotion":   _dna_emotion_score(meta_text),
+                    "is_estimated": True,
+                }
+                estimated_count += 1
+
+            all_scores.append(s)
+            analyzed_count += 1
+        except Exception as e:
+            app_logger.warning(f"[channel_dna] video={vid_id} hata: {e}")
+            skipped_count += 1
+            continue
+
+    # Hiç veri yoksa (video listesi boş veya tüm videolar hata verdi)
+    if not all_scores:
+        analyzed_amount = min(len(video_ids), 5)
+        return {
+            "success": False,
+            "error": f"Kanalın son {analyzed_amount} videosu için hiç veri alınamadı.",
+            "channel_name": channel_name,
+        }
+
+    # ── 3. Ortalama Puanlar ───────────────────────────────────────────────────
+    avg_scores = {
+        "hook":      round(sum(s["hook"]      for s in all_scores) / len(all_scores), 1),
+        "retention": round(sum(s["retention"] for s in all_scores) / len(all_scores), 1),
+        "cta":       round(sum(s["cta"]       for s in all_scores) / len(all_scores), 1),
+        "emotion":   round(sum(s["emotion"]   for s in all_scores) / len(all_scores), 1),
+    }
+    # Kanal DNA genel skoru — Elite Calibration v5.5.0
+    avg_scores["overall"] = _dna_elite_overall(
+        avg_scores["hook"],
+        avg_scores["retention"],
+        avg_scores["cta"],
+        avg_scores["emotion"],
+    )
+
+    # ── 4. Başarı Formülü (Groq) ──────────────────────────────────────────────
+    api_key = await get_groq_api_key()
+    success_formula = None
+    if api_key:
+        try:
+            import requests as _req2
+            titles_str = ", ".join(f'"{t}"' for t in (channel_data.get("recent_titles") or [])[:5])
+            formula_prompt = f"""Sen viral YouTube içerik analistisin.
+
+[KANAL: {channel_name}]
+Son videolar: {titles_str}
+Ortalama DNA Puanları:
+- Hook (Kanca): {avg_scores['hook']}/100
+- Retention (Tempo): {avg_scores['retention']}/100
+- CTA (Aksiyon Çağrısı): {avg_scores['cta']}/100
+- Emotion (Duygu Yoğunluğu): {avg_scores['emotion']}/100
+
+Bu kanalın "Başarı Formülü"nü 3-4 cümleyle özetle. Hangi DNS skoru en güçlü? En zayıf nokta ne? Bu kanala rakip olmak için ne yapılmalı? Türkçe, kısa ve vurucu yaz."""
+
+            def _fpost():
+                return _req2.post(
+                    "https://api.groq.com/openai/v1/chat/completions",
+                    headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
+                    json={
+                        "model": "llama-3.3-70b-versatile",
+                        "messages": [{"role": "user", "content": formula_prompt}],
+                        "max_tokens": 300,
+                        "temperature": 0.5,
+                    },
+                    timeout=20,
+                )
+
+            fr = await run_in_threadpool(_fpost)
+            if fr.status_code == 200:
+                success_formula = fr.json()["choices"][0]["message"]["content"].strip()
+        except Exception as e:
+            app_logger.warning(f"[channel_dna] Başarı formülü üretilemedi: {e}")
+
+    channel_is_estimated = estimated_count == analyzed_count and analyzed_count > 0
+    app_logger.info(f"[channel_dna] ✅ Tamamlandı: kanal={channel_name} analyzed={analyzed_count} skipped={skipped_count} estimated={estimated_count}")
+
+    return {
+        "success":         True,
+        "is_estimated":    channel_is_estimated,
+        "channel_name":    channel_name,
+        "analyzed_count":  analyzed_count,
+        "skipped_count":   skipped_count,
+        "estimated_count": estimated_count,
+        "avg_scores":      avg_scores,
+        "success_formula": success_formula,
     }
 
 

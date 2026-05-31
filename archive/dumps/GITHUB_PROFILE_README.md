@@ -90,7 +90,7 @@ I'm always open to new SaaS collaborations, open-source projects, or football ta
 
 *   🐙 **GitHub:** [@oguzemirtopuz](https://github.com/oguzemirtopuz)
 *   📧 **Email:** [oguzemirtopuz10@gmail.com](mailto:oguzemirtopuz10@gmail.com)
-*   🌐 **Personal Website:** *Coming Soon!*
+*   🌐 **Personal Website:** [oguzemirtopuz.dev](https://oguzemirtopuz.github.io/)
 
 ---
 

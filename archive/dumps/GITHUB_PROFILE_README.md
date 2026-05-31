@@ -1,14 +1,14 @@
 # 👋 Hi, I'm Oğuz Emir Topuz (`oguzemirtopuz`)
 
 <div align="center">
-  <img src="https://readme-typing-svg.demolab.com?font=Outfit&size=24&pause=1000&color=F7DF1E&width=435&lines=14-Year-Old+Fullstack+Developer;Football+Enthusiast+%26+Dev;SaaS+Product+Builder;3D+Game+Designer" alt="Typing SVG" />
+  <img src="https://readme-typing-svg.demolab.com?font=Outfit&size=24&pause=1000&color=F7DF1E&width=435&lines=15-Year-Old+Fullstack+Developer;Football+Enthusiast+%26+Dev;SaaS+Product+Builder;3D+Game+Designer" alt="Typing SVG" />
 </div>
 
 ---
 
 ### 🚀 About Me
 
-I'm **Oğuz Emir Topuz**, a highly passionate and proactive 14-year-old full-stack software developer. My two greatest drives in life are **football** and **software**. 
+I'm **Oğuz Emir Topuz**, a highly passionate and proactive 15-year-old full-stack software developer. My two greatest drives in life are **football** and **software**. 
 
 From a very young age, I have immersed myself in technology, building production-grade SaaS platforms, web scraper systems, computer vision integrations, and immersive 3D games. I love designing projects from scratch, taking them all the way from databases to polished user experiences.
 
